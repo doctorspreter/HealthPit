@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.3.3
+
+- Fixed the app restarting forever after switching the role to slave. An
+  incomplete topology raised and killed the bootstrap; it now logs which field
+  is missing and keeps running with the configured role. It is never promoted
+  back to master, because two masters for one user must not happen.
+- Dropped the 32-character minimum on the master's API token. That token is
+  issued by the remote master, so its length is not ours to police.
+- A rejected setting prints one readable line instead of repeating the same
+  traceback on every restart.
+- The startup line now reports the active role.
+
 ## 1.3.2
 
 - Unified the default bridge username to `healthpit` across the app, the

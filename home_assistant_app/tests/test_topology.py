@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from contextlib import redirect_stdout
+from io import StringIO
 import json
 from pathlib import Path
 import tempfile
@@ -97,10 +99,29 @@ class NodeRoleTests(TestCase):
         resolved, _ = self._resolve({"node_role": "primary"})
         self.assertEqual(resolved["node_role"], "master")
 
-    def test_slave_requires_a_master_url(self) -> None:
-        with self.assertRaises(ValueError) as error:
-            self._resolve({"node_role": "slave", "master_api_token": VALID_TOKEN})
-        self.assertIn("master_url", str(error.exception))
+    def test_an_incomplete_slave_does_not_stop_the_bridge(self) -> None:
+        # A missing address used to raise, which restarted the app forever.
+        resolved, environment = self._resolve({"node_role": "slave"})
+        self.assertEqual(resolved["node_role"], "slave")
+        self.assertEqual(environment["MASTER_URL"], "")
+        self.assertEqual(environment["MASTER_API_TOKEN"], "")
+
+    def test_an_incomplete_slave_is_never_promoted_to_master(self) -> None:
+        resolved, _ = self._resolve({"node_role": "slave", "master_url": "10.0.0.5"})
+        self.assertEqual(resolved["node_role"], "slave")
+
+    def test_a_short_master_token_is_accepted(self) -> None:
+        # The token belongs to the remote master; its length is not ours to
+        # police, and rejecting it used to crash the app on start.
+        resolved, environment = self._resolve(
+            {
+                "node_role": "slave",
+                "master_url": "10.0.0.5",
+                "master_api_token": "short-token",
+            }
+        )
+        self.assertEqual(resolved["master_api_token"], "short-token")
+        self.assertEqual(environment["MASTER_API_TOKEN"], "short-token")
 
     def test_grouped_slave_options_are_resolved(self) -> None:
         resolved, environment = self._resolve(
@@ -117,10 +138,13 @@ class NodeRoleTests(TestCase):
         self.assertEqual(environment["MASTER_URL"], "http://10.0.0.5:8088")
         self.assertEqual(environment["BRIDGE_USERNAME"], "peter")
 
-    def test_slave_requires_a_master_token(self) -> None:
-        with self.assertRaises(ValueError) as error:
-            self._resolve({"node_role": "slave", "master_url": "10.0.0.5"})
-        self.assertIn("master_api_token", str(error.exception))
+    def test_a_slave_without_a_token_reports_it_and_keeps_running(self) -> None:
+        with redirect_stdout(StringIO()) as output:
+            resolved, _ = self._resolve(
+                {"node_role": "slave", "master_url": "10.0.0.5"}
+            )
+        self.assertEqual(resolved["node_role"], "slave")
+        self.assertIn("master API token", output.getvalue())
 
     def test_slave_defaults_username_to_the_bridge_username(self) -> None:
         resolved, environment = self._resolve(

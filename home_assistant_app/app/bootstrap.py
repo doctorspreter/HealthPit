@@ -226,13 +226,25 @@ def resolve_options() -> tuple[dict[str, object], dict[str, str]]:
     master_username = str(options.get("master_username") or "").strip() or username
     master_api_token = str(options.get("master_api_token") or "").strip()
     master_otp_code = "".join(str(options.get("master_otp_code") or "").split())
+    # An incomplete topology must never take the bridge down: the app would
+    # restart forever and the log would be unreadable. It keeps the configured
+    # role — silently promoting it back to master would risk two masters for
+    # one user — reports what is missing, and waits for the settings to be
+    # corrected. The master's token length is the master's business, so only
+    # its presence is checked here.
+    missing = []
     if node_role == "slave":
         if not master_url:
-            raise ValueError("master_url is required when node_role is slave")
-        if len(master_api_token) < 32:
-            raise ValueError(
-                "master_api_token must contain at least 32 characters when node_role is slave"
-            )
+            missing.append("the master address")
+        if not master_api_token:
+            missing.append("the master API token")
+    if missing:
+        print(
+            "Topology incomplete: this node is configured as a slave but "
+            f"{' and '.join(missing)} {'is' if len(missing) == 1 else 'are'} "
+            "missing. Fill it in under Configuration > Topology. The bridge "
+            "keeps running and accepts no sessions until then."
+        )
 
     resolved = {
         **options,
@@ -473,10 +485,15 @@ def main() -> None:
     register_supervisor_discovery(environment, session_token)
     print(
         "Healthpit configuration loaded: "
-        f"user={environment['BRIDGE_USERNAME']}, "
+        f"user={environment['BRIDGE_USERNAME']}, role={resolved['node_role']}, "
         f"credentials={resolved['credential_mode']}, otp={resolved['otp_mode']}"
     )
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except ValueError as error:
+        # A rejected setting restarts the app, so print one readable line
+        # instead of the same traceback over and over.
+        raise SystemExit(f"Healthpit configuration rejected: {error}") from None

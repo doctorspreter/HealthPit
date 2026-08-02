@@ -40,7 +40,19 @@ this node**:
   Apple Health, GymPit, Hevy and Garmin all feed into the master.
 - **slave** does not accept sessions. It signs in to the node given in
   **Master address** using **Master API token**, plus a one-time OTP code when
-  the master requires 2FA.
+  the master requires 2FA. The token is whatever the master issues; no length
+  is imposed on it here.
+
+An incomplete topology never stops the bridge. If the role is `slave` while the
+address or the token is missing, the log says which one and the app keeps
+running with the role it was given — it is not promoted back to master, because
+two masters for one user is the one state that must not happen.
+
+Switching the app to `slave` has a consequence worth planning for: it stops
+accepting sessions and reports `slave` on `GET /health`, so the native
+integration pointed at it will refuse to connect. Point the integration at the
+master instead. Note also that a slave does not yet mirror the master's data;
+it stands down rather than replicating.
 
 There must be exactly one master per user. A master rejects a second master
 with HTTP 409, and `GET /health` reports the configured role so the native
