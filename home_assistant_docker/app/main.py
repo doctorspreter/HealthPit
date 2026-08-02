@@ -467,24 +467,6 @@ def apply_session_security_changes(
         update_active_app_session_expirations(expires_at)
 
 
-def configured_node_role(current: dict[str, str]) -> str:
-    """Return the role this node runs in. Anything unknown falls back to master."""
-    role = str(current.get("node_role") or "master").strip().lower()
-    return role if role in {"master", "slave"} else "master"
-
-
-def require_master_role(current: dict[str, str]) -> None:
-    if configured_node_role(current) == "master":
-        return
-    raise HTTPException(
-        status_code=status.HTTP_409_CONFLICT,
-        detail=(
-            "This Healthpit node runs as a slave and cannot accept sessions. "
-            "Connect to the configured master instead."
-        ),
-    )
-
-
 def otp_provisioning_uri(current: dict[str, str]) -> str:
     secret = current.get("bridge_otp_shared_secret", "")
     if not secret:
@@ -514,11 +496,10 @@ def bridge_status_payload(current: dict[str, str]) -> dict:
                 "data": app_session_data_summary(row),
             }
         )
-    role = configured_node_role(current)
     return {
         "name": "Healthpit Bridge",
         "version": app.version,
-        "node_role": role,
+        "node_role": "master",
         "username": current["bridge_username"],
         "api_token_configured": bool(current["bridge_api_token"]),
         "otp_enabled": bool(current["bridge_otp_shared_secret"]),
@@ -529,19 +510,12 @@ def bridge_status_payload(current: dict[str, str]) -> dict:
             "items": session_items,
         },
         "topology": {
-            "role": role,
             "master": {
-                "name": "Healthpit Bridge" if role == "master" else "Remote Healthpit master",
+                "name": "Healthpit Bridge",
                 "node_role": "master",
-                "username": (
-                    current["bridge_username"]
-                    if role == "master"
-                    else current.get("master_username") or current["bridge_username"]
-                ),
-                "url": "" if role == "master" else current.get("master_url", ""),
+                "username": current["bridge_username"],
             },
-            "accepts_slaves": role == "master",
-            "active_slaves": len(active_sessions) if role == "master" else 0,
+            "active_slaves": len(active_sessions),
         },
         "interfaces": {
             "healthpit": app_interface_data_summary("healthpit"),
@@ -636,7 +610,7 @@ def health() -> dict:
     return {
         "status": "ok",
         "version": app.version,
-        "node_role": configured_node_role(get_bridge_settings()),
+        "node_role": "master",
         "brand_icon": "/brand/icon.png",
     }
 
@@ -669,7 +643,6 @@ def create_auth_session(payload: AppSessionCreateIn) -> dict:
     username = payload.username.strip()
     device_name = " ".join(payload.device_name.split()) or "App"
     require_api_credentials(username, payload.api_token.strip(), payload.otp_code)
-    require_master_role(get_bridge_settings())
     if payload.node_role != "slave":
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

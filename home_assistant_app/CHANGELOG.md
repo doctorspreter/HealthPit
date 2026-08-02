@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.4.0
+
+- Removed the configurable master/slave topology. It was half built: a node
+  could be told it was a slave, but nothing ever mirrored the master's data, so
+  the setting only made the app stand down. It also caused a restart loop when
+  filled in incompletely.
+- Connecting a second bridge needs a data model that holds more than one user,
+  which the bridge does not have yet. Multi-user support comes first; the
+  topology returns on top of it.
+- The client handshake is untouched: clients still connect as slaves and the
+  bridge still answers `server_role: master` and rejects a second master.
+
 ## 1.3.3
 
 - Fixed the app restarting forever after switching the role to slave. An

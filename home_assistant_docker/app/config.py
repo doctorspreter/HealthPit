@@ -2,11 +2,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    node_role: str = "master"
-    master_url: str = ""
-    master_username: str = ""
-    master_api_token: str = ""
-    master_otp_code: str = ""
     bridge_username: str = "healthpit"
     bridge_api_token: str
     bridge_otp_shared_secret: str = ""

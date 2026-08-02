@@ -68,37 +68,6 @@ configuration:
         description: >-
           Gültigkeit ausgegebener App-Sitzungen in Tagen. Voreinstellung 1825,
           also rund fünf Jahre.
-  topology:
-    name: "Topologie (nur für mehrere Bridges)"
-    description: >-
-      Als Master brauchst du hier nichts einzutragen — das ist die
-      Voreinstellung und der Normalfall. Die Felder darunter sind nur
-      auszufüllen, wenn du die Rolle auf „slave“ stellst, weil bereits eine
-      andere Bridge oder ein anderes Addon der Master ist. Pro Benutzer darf es
-      genau einen Master geben.
-    fields:
-      role:
-        name: "Rolle dieses Knotens"
-        description: >-
-          master: Diese App besitzt die Daten und nimmt Clients an. slave:
-          Diese App tritt zurück und meldet sich beim unten angegebenen Master.
-      master_url:
-        name: "Adresse des Masters"
-        description: >-
-          Nur bei „slave“. Zum Beispiel 192.168.178.20, host:8088 oder
-          http://host:8088. Fehlendes Schema wird zu http, fehlender Port zu
-          8088.
-      master_username:
-        name: "Benutzername beim Master"
-        description: "Nur bei „slave“. Leer lassen übernimmt den Benutzernamen von oben."
-      master_api_token:
-        name: "API-Token des Masters"
-        description: "Nur bei „slave“. Das Token, das der Master ausgibt."
-      master_otp_code:
-        name: "Einmaliger OTP-Code"
-        description: >-
-          Nur bei „slave“ und nur, wenn der Master 2FA verlangt. Der
-          6-stellige Code wird einmalig für die Anmeldung gebraucht.
   system:
     name: "System"
     description: "Betriebsverhalten der App."

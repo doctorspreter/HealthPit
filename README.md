@@ -53,14 +53,6 @@ a revocable session token.
 The app configuration is available in English and German and follows the Home
 Assistant language.
 
-## Master and slave
-
-Each Healthpit node — the app, the Docker bridge, or a second Home Assistant —
-runs as either `master` or `slave`, selected in its own configuration. The
-master owns the data and accepts slave sessions; a slave signs in to the
-configured master and accepts no sessions of its own. There must be exactly one
-master per user, and a master rejects a second master with HTTP 409.
-
 ## Security
 
 - Generated API tokens use 384 bits of randomness.

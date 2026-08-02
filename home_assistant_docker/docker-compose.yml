@@ -6,10 +6,6 @@ services:
     env_file:
       - .env
     environment:
-      NODE_ROLE: ${NODE_ROLE:-master}
-      MASTER_URL: ${MASTER_URL:-}
-      MASTER_USERNAME: ${MASTER_USERNAME:-}
-      MASTER_API_TOKEN: ${MASTER_API_TOKEN:-}
       BRIDGE_USERNAME: ${BRIDGE_USERNAME:?Set BRIDGE_USERNAME in .env}
       BRIDGE_API_TOKEN: ${BRIDGE_API_TOKEN:?Set BRIDGE_API_TOKEN in .env}
       BRIDGE_OTP_SHARED_SECRET: ${BRIDGE_OTP_SHARED_SECRET:-}

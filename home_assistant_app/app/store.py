@@ -244,10 +244,6 @@ def _ensure_column(conn: sqlite3.Connection, table: str, column: str, definition
 
 def default_bridge_settings() -> dict[str, str]:
     return {
-        "node_role": settings.node_role,
-        "master_url": settings.master_url,
-        "master_username": settings.master_username,
-        "master_api_token": settings.master_api_token,
         "bridge_username": settings.bridge_username,
         "bridge_api_token": settings.bridge_api_token,
         "bridge_otp_shared_secret": settings.bridge_otp_shared_secret,

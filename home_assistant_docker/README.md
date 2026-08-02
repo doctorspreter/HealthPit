@@ -19,16 +19,9 @@ health response advertises this path as `brand_icon`.
 
 ## Master and Slave Topology
 
-The role is selected with `NODE_ROLE` in `.env` and defaults to `master`.
-
-As `master` the bridge owns the data for its configured user. Healthpit on
+The bridge is always the single master for its configured user. Healthpit on
 iPhone, GymPit, and Home Assistant are slaves. Multiple slave devices can
 connect to the same master, but a second master cannot connect.
-
-As `slave` the bridge accepts no sessions of its own and signs in to the node
-given in `MASTER_URL` using `MASTER_API_TOKEN`. Use this when a second bridge
-or a Home Assistant app should attach to an existing master instead of
-competing with it. There must be exactly one master per user.
 
 Every session request includes `node_role`. The bridge accepts only `slave`,
 returns `server_role: master`, and rejects a master-to-master request with HTTP

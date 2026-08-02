@@ -30,11 +30,6 @@ SUPERVISOR_URL = os.environ.get("SUPERVISOR_URL", "http://supervisor").rstrip("/
 DISCOVERY_SERVICE = "healthpit_bridge"
 
 DEFAULT_OPTIONS: dict[str, object] = {
-    "node_role": "master",
-    "master_url": "",
-    "master_username": "",
-    "master_api_token": "",
-    "master_otp_code": "",
     "bridge_username": "healthpit",
     "credential_mode": "automatic",
     "bridge_api_token": "",
@@ -75,13 +70,6 @@ GROUPED_OPTIONS: dict[str, dict[str, str]] = {
         "two_factor_mode": "otp_mode",
         "totp_secret": "bridge_otp_shared_secret",
         "session_days": "app_session_expires_days",
-    },
-    "topology": {
-        "role": "node_role",
-        "master_url": "master_url",
-        "master_username": "master_username",
-        "master_api_token": "master_api_token",
-        "master_otp_code": "master_otp_code",
     },
     "system": {
         "log_level": "log_level",
@@ -142,18 +130,6 @@ def valid_totp_secret(value: str) -> bool:
 
 def generate_totp_secret() -> str:
     return base64.b32encode(secrets.token_bytes(20)).decode("ascii").rstrip("=")
-
-
-def normalize_master_url(value: object) -> str:
-    """Accept "host", "host:port" and full URLs, and return a usable base URL."""
-    text = str(value or "").strip().rstrip("/")
-    if not text:
-        return ""
-    if "://" not in text:
-        text = f"http://{text}"
-    if ":" not in text.split("://", 1)[1]:
-        text = f"{text}:8088"
-    return text
 
 
 def normalized_mode(value: object, allowed: set[str], default: str) -> str:
@@ -221,38 +197,8 @@ def resolve_options() -> tuple[dict[str, object], dict[str, str]]:
 
     write_private_json(GENERATED_SECRETS_PATH, generated)
 
-    node_role = normalized_mode(options.get("node_role"), {"master", "slave"}, "master")
-    master_url = normalize_master_url(options.get("master_url"))
-    master_username = str(options.get("master_username") or "").strip() or username
-    master_api_token = str(options.get("master_api_token") or "").strip()
-    master_otp_code = "".join(str(options.get("master_otp_code") or "").split())
-    # An incomplete topology must never take the bridge down: the app would
-    # restart forever and the log would be unreadable. It keeps the configured
-    # role — silently promoting it back to master would risk two masters for
-    # one user — reports what is missing, and waits for the settings to be
-    # corrected. The master's token length is the master's business, so only
-    # its presence is checked here.
-    missing = []
-    if node_role == "slave":
-        if not master_url:
-            missing.append("the master address")
-        if not master_api_token:
-            missing.append("the master API token")
-    if missing:
-        print(
-            "Topology incomplete: this node is configured as a slave but "
-            f"{' and '.join(missing)} {'is' if len(missing) == 1 else 'are'} "
-            "missing. Fill it in under Configuration > Topology. The bridge "
-            "keeps running and accepts no sessions until then."
-        )
-
     resolved = {
         **options,
-        "node_role": node_role,
-        "master_url": master_url,
-        "master_username": master_username,
-        "master_api_token": master_api_token,
-        "master_otp_code": master_otp_code,
         "bridge_username": username,
         "credential_mode": credential_mode,
         "bridge_api_token": api_token,
@@ -270,11 +216,6 @@ def resolve_options() -> tuple[dict[str, object], dict[str, str]]:
         ),
     }
     environment = {
-        "NODE_ROLE": node_role,
-        "MASTER_URL": master_url,
-        "MASTER_USERNAME": master_username,
-        "MASTER_API_TOKEN": master_api_token,
-        "MASTER_OTP_CODE": master_otp_code,
         "BRIDGE_USERNAME": username,
         "BRIDGE_API_TOKEN": api_token,
         "BRIDGE_OTP_SHARED_SECRET": otp_secret,
@@ -316,10 +257,6 @@ def sync_database(resolved: dict[str, object], environment: dict[str, str]) -> N
     init_db()
     current = get_bridge_settings()
     values = {
-        "node_role": environment["NODE_ROLE"],
-        "master_url": environment["MASTER_URL"],
-        "master_username": environment["MASTER_USERNAME"],
-        "master_api_token": environment["MASTER_API_TOKEN"],
         "bridge_username": environment["BRIDGE_USERNAME"],
         "bridge_api_token": environment["BRIDGE_API_TOKEN"],
         "bridge_otp_shared_secret": environment["BRIDGE_OTP_SHARED_SECRET"],
@@ -423,10 +360,6 @@ def register_supervisor_discovery(
     session_token: str = "",
 ) -> None:
     """Advertise the app to the separately installed HACS integration."""
-    if environment.get("NODE_ROLE", "master") != "master":
-        print("Supervisor discovery skipped: this node runs as a slave")
-        return
-
     token = os.environ.get("SUPERVISOR_TOKEN", "").strip()
     if not token:
         print("Supervisor discovery skipped outside Home Assistant OS")
@@ -475,17 +408,16 @@ def main() -> None:
     write_runtime_environment(environment)
     sync_database(resolved, environment)
     session_token = ""
-    if environment["NODE_ROLE"] == "master":
-        try:
-            session_token = ensure_home_assistant_session(resolved, environment)
-        except Exception as err:  # noqa: BLE001
-            # One-click setup is a convenience; it must never block the bridge.
-            # Home Assistant can still be paired with token and OTP by hand.
-            print(f"Home Assistant session could not be issued: {err}")
+    try:
+        session_token = ensure_home_assistant_session(resolved, environment)
+    except Exception as err:  # noqa: BLE001
+        # One-click setup is a convenience; it must never block the bridge.
+        # Home Assistant can still be paired with token and OTP by hand.
+        print(f"Home Assistant session could not be issued: {err}")
     register_supervisor_discovery(environment, session_token)
     print(
         "Healthpit configuration loaded: "
-        f"user={environment['BRIDGE_USERNAME']}, role={resolved['node_role']}, "
+        f"user={environment['BRIDGE_USERNAME']}, "
         f"credentials={resolved['credential_mode']}, otp={resolved['otp_mode']}"
     )
 
