@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.3.0
+
+- Home Assistant now sets the integration up from discovery with a single
+  confirmation. The master issues one scoped, revocable slave session for
+  Home Assistant and advertises only that token; the API token and the TOTP
+  secret never leave the app.
+- The session is reused across restarts, revoked together with the other app
+  sessions when credentials change, and revocable on its own.
+- A node running as slave no longer advertises itself through discovery.
+- Clients other than Home Assistant, including Healthpit on iPhone and GymPit,
+  are unaffected and keep using username, API token and OTP.
+
 ## 1.2.0
 
 - Grouped the configuration into collapsible sections — Garmin, Hevy, Access,

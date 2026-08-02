@@ -363,8 +363,58 @@ def supervisor_request(
     return data if isinstance(data, dict) else {}
 
 
-def register_supervisor_discovery(environment: dict[str, str]) -> None:
+HOME_ASSISTANT_SESSION_KEY = "home_assistant_session_token"
+
+
+def ensure_home_assistant_session(resolved: dict[str, object], environment: dict[str, str]) -> str:
+    """Issue the session Home Assistant uses, so discovery carries no secrets.
+
+    The token is a scoped, revocable slave session — never the API token and
+    never the TOTP secret. It is reused across restarts while it stays valid.
+    """
+    from app.main import (  # pylint: disable=import-outside-toplevel
+        app_session_token_hash,
+        valid_bearer_app_session,
+    )
+    from app.store import (  # pylint: disable=import-outside-toplevel
+        create_app_session,
+    )
+
+    username = environment["BRIDGE_USERNAME"]
+    generated = read_json(GENERATED_SECRETS_PATH)
+    existing = str(generated.get(HOME_ASSISTANT_SESSION_KEY) or "")
+    if existing and valid_bearer_app_session(existing, username, {"home_assistant"}):
+        return existing
+
+    token = f"hbs_{secrets.token_urlsafe(48)}"
+    expires_days = int(resolved.get("app_session_expires_days") or 1825)
+    expires_at = (
+        datetime.now(timezone.utc) + timedelta(days=expires_days)
+    ).strftime("%Y-%m-%dT%H:%M:%SZ")
+    create_app_session(
+        session_id=secrets.token_urlsafe(18),
+        token_hash=app_session_token_hash(token),
+        username=username,
+        device_name="Home Assistant",
+        scope="home_assistant",
+        client_app="home_assistant",
+        node_role="slave",
+        expires_at=expires_at,
+    )
+    generated[HOME_ASSISTANT_SESSION_KEY] = token
+    write_private_json(GENERATED_SECRETS_PATH, generated)
+    return token
+
+
+def register_supervisor_discovery(
+    environment: dict[str, str],
+    session_token: str = "",
+) -> None:
     """Advertise the app to the separately installed HACS integration."""
+    if environment.get("NODE_ROLE", "master") != "master":
+        print("Supervisor discovery skipped: this node runs as a slave")
+        return
+
     token = os.environ.get("SUPERVISOR_TOKEN", "").strip()
     if not token:
         print("Supervisor discovery skipped outside Home Assistant OS")
@@ -403,6 +453,10 @@ def register_supervisor_discovery(environment: dict[str, str]) -> None:
                     "username": environment["BRIDGE_USERNAME"],
                     "use_ssl": False,
                     "verify_ssl": True,
+                    # A revocable, scoped session token — not the API token and
+                    # not the TOTP secret. It lets Home Assistant finish setup
+                    # with one confirmation instead of a copied credential.
+                    **({"session_token": session_token} if session_token else {}),
                 },
             },
         )
@@ -416,7 +470,10 @@ def main() -> None:
     resolved, environment = resolve_options()
     write_runtime_environment(environment)
     sync_database(resolved, environment)
-    register_supervisor_discovery(environment)
+    session_token = ""
+    if environment["NODE_ROLE"] == "master":
+        session_token = ensure_home_assistant_session(resolved, environment)
+    register_supervisor_discovery(environment, session_token)
     print(
         "Healthpit configuration loaded: "
         f"user={environment['BRIDGE_USERNAME']}, "

@@ -14,16 +14,21 @@
           "use_ssl": "Use HTTPS",
           "verify_ssl": "Verify SSL certificate"
         }
+      },
+      "hassio_confirm": {
+        "title": "Healthpit Bridge",
+        "description": "Home Assistant found the Healthpit Bridge app at {host} for user {username}. The app already issued a revocable session, so no token or 2FA code is needed. Set it up?"
       }
     },
     "error": {
       "cannot_connect": "Cannot reach the bridge. Check host, port and network.",
       "invalid_auth": "The bridge rejected the username/token (or OTP).",
-      "role_conflict": "Connection rejected: the Docker bridge must be the master and Home Assistant must be a slave.",
+      "role_conflict": "Connection rejected: the configured node is a slave. Point Home Assistant at the master instead.",
       "unknown": "Unexpected error."
     },
     "abort": {
-      "already_configured": "This bridge is already configured."
+      "already_configured": "This bridge is already configured.",
+      "role_conflict": "Connection rejected: the configured node is a slave. Point Home Assistant at the master instead."
     }
   }
 }

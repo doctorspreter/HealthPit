@@ -21,6 +21,7 @@ from .const import (
     CONF_OTP_CODE,
     CONF_PORT,
     CONF_SESSION_EXPIRES_DAYS,
+    CONF_SESSION_TOKEN,
     CONF_TOKEN,
     CONF_USE_SSL,
     CONF_USERNAME,
@@ -62,6 +63,7 @@ class HealthpitBridgeConfigFlow(ConfigFlow, domain=DOMAIN):
 
     def __init__(self) -> None:
         self._discovery_defaults: dict[str, Any] = {}
+        self._discovery_session_token = ""
 
     async def async_step_hassio(
         self, discovery_info: dict[str, Any]
@@ -76,6 +78,11 @@ class HealthpitBridgeConfigFlow(ConfigFlow, domain=DOMAIN):
             CONF_USE_SSL: bool(discovery_info.get(CONF_USE_SSL, False)),
             CONF_VERIFY_SSL: bool(discovery_info.get(CONF_VERIFY_SSL, True)),
         }
+        # The app hands over a scoped, revocable session token. Neither the API
+        # token nor the TOTP secret ever leaves it.
+        self._discovery_session_token = str(
+            discovery_info.get(CONF_SESSION_TOKEN) or ""
+        ).strip()
         unique = (
             f"{self._discovery_defaults[CONF_HOST]}:"
             f"{self._discovery_defaults[CONF_PORT]}:"
@@ -83,7 +90,58 @@ class HealthpitBridgeConfigFlow(ConfigFlow, domain=DOMAIN):
         )
         await self.async_set_unique_id(unique)
         self._abort_if_unique_id_configured()
+        self.context["title_placeholders"] = {
+            "host": self._discovery_defaults[CONF_HOST]
+        }
+        if self._discovery_session_token:
+            return await self.async_step_hassio_confirm()
         return await self.async_step_user()
+
+    async def async_step_hassio_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Confirm the app the Supervisor advertised; no credentials needed."""
+        if user_input is None:
+            return self.async_show_form(
+                step_id="hassio_confirm",
+                description_placeholders={
+                    "host": self._discovery_defaults[CONF_HOST],
+                    "username": self._discovery_defaults[CONF_USERNAME],
+                },
+            )
+
+        defaults = self._discovery_defaults
+        client = HealthpitBridgeClient(
+            async_get_clientsession(self.hass),
+            host=defaults[CONF_HOST],
+            port=defaults[CONF_PORT],
+            username=defaults[CONF_USERNAME],
+            token=self._discovery_session_token,
+            use_ssl=defaults.get(CONF_USE_SSL, False),
+            verify_ssl=defaults.get(CONF_VERIFY_SSL, True),
+        )
+        try:
+            health = await client.async_health()
+            if health.get("node_role") != "master":
+                raise BridgeRoleError("Remote endpoint is not a Healthpit master")
+            await client.async_latest_metrics()
+        except BridgeRoleError:
+            return self.async_abort(reason="role_conflict")
+        except (BridgeAuthError, BridgeConnectionError, Exception):  # noqa: BLE001
+            # Fall back to manual entry rather than leaving the user stuck.
+            return await self.async_step_user()
+
+        return self.async_create_entry(
+            title=f"Healthpit Bridge ({defaults[CONF_HOST]})",
+            data={
+                CONF_HOST: defaults[CONF_HOST],
+                CONF_PORT: defaults[CONF_PORT],
+                CONF_USERNAME: defaults[CONF_USERNAME],
+                CONF_TOKEN: self._discovery_session_token,
+                CONF_USE_SSL: defaults.get(CONF_USE_SSL, False),
+                CONF_VERIFY_SSL: defaults.get(CONF_VERIFY_SSL, True),
+            },
+        )
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None

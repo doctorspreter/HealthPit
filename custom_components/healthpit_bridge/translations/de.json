@@ -14,16 +14,21 @@
           "use_ssl": "HTTPS verwenden",
           "verify_ssl": "SSL-Zertifikat prüfen"
         }
+      },
+      "hassio_confirm": {
+        "title": "Healthpit Bridge",
+        "description": "Home Assistant hat die Healthpit-Bridge-App unter {host} für den Benutzer {username} gefunden. Die App hat bereits eine widerrufbare Sitzung ausgestellt, ein Token oder 2FA-Code ist nicht nötig. Jetzt einrichten?"
       }
     },
     "error": {
       "cannot_connect": "Bridge nicht erreichbar. Host, Port und Netzwerk prüfen.",
       "invalid_auth": "Bridge hat Benutzer/Token (oder OTP) abgelehnt.",
-      "role_conflict": "Verbindung abgelehnt: Die Docker-Bridge muss Master und Home Assistant Slave sein.",
+      "role_conflict": "Verbindung abgelehnt: Der konfigurierte Knoten ist ein Slave. Richte Home Assistant stattdessen auf den Master.",
       "unknown": "Unerwarteter Fehler."
     },
     "abort": {
-      "already_configured": "Diese Bridge ist bereits eingerichtet."
+      "already_configured": "Diese Bridge ist bereits eingerichtet.",
+      "role_conflict": "Verbindung abgelehnt: Der konfigurierte Knoten ist ein Slave. Richte Home Assistant stattdessen auf den Master."
     }
   }
 }

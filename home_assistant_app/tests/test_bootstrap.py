@@ -29,7 +29,9 @@ class SupervisorDiscoveryTests(TestCase):
         with patch.dict(os.environ, {"SUPERVISOR_TOKEN": "test-token"}), patch.object(
             bootstrap, "supervisor_request", side_effect=fake_request
         ):
-            bootstrap.register_supervisor_discovery({"BRIDGE_USERNAME": "healthpit"})
+            bootstrap.register_supervisor_discovery(
+                {"BRIDGE_USERNAME": "healthpit", "NODE_ROLE": "master"}
+            )
 
         post = next(call for call in calls if call[:2] == ("POST", "/discovery"))
         self.assertEqual(
@@ -47,9 +49,53 @@ class SupervisorDiscoveryTests(TestCase):
         )
         self.assertNotIn("token", post[2]["config"])
 
+    def test_discovery_carries_only_the_session_token(self) -> None:
+        calls: list[tuple[str, str, dict[str, object] | None]] = []
+
+        def fake_request(
+            method: str,
+            path: str,
+            _token: str,
+            payload: dict[str, object] | None = None,
+        ) -> dict[str, object]:
+            calls.append((method, path, payload))
+            if path == "/addons/self/info":
+                return {"hostname": "abc123-healthpit-bridge", "slug": "abc123_healthpit_bridge"}
+            if path == "/discovery":
+                return {"discovery": []}
+            return {}
+
+        with patch.dict(os.environ, {"SUPERVISOR_TOKEN": "test-token"}), patch.object(
+            bootstrap, "supervisor_request", side_effect=fake_request
+        ):
+            bootstrap.register_supervisor_discovery(
+                {"BRIDGE_USERNAME": "healthpit", "NODE_ROLE": "master"},
+                "hbs_session",
+            )
+
+        config = next(
+            call for call in calls if call[:2] == ("POST", "/discovery")
+        )[2]["config"]
+        self.assertEqual(config["session_token"], "hbs_session")
+        # The API token and the TOTP secret must never be advertised.
+        self.assertNotIn("token", config)
+        self.assertNotIn("api_token", config)
+        self.assertNotIn("otp_secret", config)
+
+    def test_a_slave_does_not_advertise_itself(self) -> None:
+        with patch.dict(os.environ, {"SUPERVISOR_TOKEN": "test-token"}), patch.object(
+            bootstrap, "supervisor_request"
+        ) as request:
+            bootstrap.register_supervisor_discovery(
+                {"BRIDGE_USERNAME": "healthpit", "NODE_ROLE": "slave"}
+            )
+        request.assert_not_called()
+
     def test_discovery_is_optional_outside_supervisor(self) -> None:
         with patch.dict(os.environ, {}, clear=True), patch.object(
             bootstrap, "supervisor_request"
         ) as request:
-            bootstrap.register_supervisor_discovery({"BRIDGE_USERNAME": "healthpit"})
+            bootstrap.register_supervisor_discovery(
+                {"BRIDGE_USERNAME": "healthpit", "NODE_ROLE": "master"}
+            )
         request.assert_not_called()

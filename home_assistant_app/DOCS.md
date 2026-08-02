@@ -106,9 +106,26 @@ slave session.
 ## Native Home Assistant entities
 
 Add `https://github.com/doctorspreter/healthpit` to HACS as an Integration
-repository and install **Healthpit Bridge**. Restart Home Assistant. The app
-advertises its internal address through Supervisor discovery, so the host,
-port, and username are pre-filled under **Settings > Devices & services**.
+repository and install **Healthpit Bridge**. Restart Home Assistant.
+
+The app then appears on its own under **Settings > Devices & services** as a
+discovered integration. Press **Configure**, confirm, and setup is done — no
+token to copy and no OTP code to type.
+
+That shortcut does not weaken anything. On start the master issues one
+`home_assistant`-scoped slave session for itself and advertises only that
+session token through Supervisor discovery. The API token and the TOTP secret
+never leave the app. The session is listed like any other under active app
+sessions, expires with the configured session lifetime, is revoked whenever the
+username, API token or TOTP secret changes, and can be revoked on its own at
+any time. It is reused across restarts while it stays valid.
+
+A node running as `slave` does not advertise itself at all, so Home Assistant
+never offers to attach to the wrong one.
+
+If discovery is unavailable — the standalone Docker bridge, for instance — the
+manual dialog still asks for host, port, username, API token and a current OTP
+code, and exchanges them for the same kind of session.
 
 The integration creates dynamic health sensors, workout/exercise sensors, the
 2FA image entity, native workout services, and route `geo_location` entities.
