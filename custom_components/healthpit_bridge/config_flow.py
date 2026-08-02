@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import voluptuous as vol
@@ -31,6 +32,9 @@ from .const import (
     DEFAULT_USERNAME,
     DOMAIN,
 )
+
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def discovery_config(discovery_info: Any) -> dict[str, Any]:
@@ -96,6 +100,7 @@ class HealthpitBridgeConfigFlow(ConfigFlow, domain=DOMAIN):
     def __init__(self) -> None:
         self._discovery_defaults: dict[str, Any] = {}
         self._discovery_session_token = ""
+        self._discovery_error = ""
 
     async def async_step_hassio(self, discovery_info: Any) -> ConfigFlowResult:
         """Handle discovery from the Healthpit Home Assistant app."""
@@ -158,8 +163,19 @@ class HealthpitBridgeConfigFlow(ConfigFlow, domain=DOMAIN):
             await client.async_latest_metrics()
         except BridgeRoleError:
             return self.async_abort(reason="role_conflict")
-        except (BridgeAuthError, BridgeConnectionError, Exception):  # noqa: BLE001
-            # Fall back to manual entry rather than leaving the user stuck.
+        except BridgeAuthError as err:
+            _LOGGER.warning("Discovered bridge rejected its own session: %s", err)
+            self._discovery_error = "invalid_auth"
+        except BridgeConnectionError as err:
+            _LOGGER.warning("Discovered bridge at %s is unreachable: %s", defaults[CONF_HOST], err)
+            self._discovery_error = "cannot_connect"
+        except Exception:  # noqa: BLE001
+            _LOGGER.exception("Unexpected error while confirming the discovered bridge")
+            self._discovery_error = "unknown"
+
+        if self._discovery_error:
+            # Fall back to manual entry, but say why rather than silently
+            # dropping the user into an empty form.
             return await self.async_step_user()
 
         return self.async_create_entry(
@@ -178,6 +194,9 @@ class HealthpitBridgeConfigFlow(ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         errors: dict[str, str] = {}
+        if user_input is None and self._discovery_error:
+            errors["base"] = self._discovery_error
+            self._discovery_error = ""
 
         if user_input is not None:
             session = async_get_clientsession(self.hass)
