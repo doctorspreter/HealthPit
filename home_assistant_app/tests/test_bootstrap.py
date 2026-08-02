@@ -82,6 +82,39 @@ class SupervisorDiscoveryTests(TestCase):
         self.assertNotIn("api_token", config)
         self.assertNotIn("otp_secret", config)
 
+    def test_registration_never_reads_or_deletes_discovery(self) -> None:
+        """GET and DELETE on /discovery are Home Assistant only and answer 401."""
+        calls: list[tuple[str, str]] = []
+
+        def fake_request(
+            method: str,
+            path: str,
+            _token: str,
+            payload: dict[str, object] | None = None,
+        ) -> dict[str, object]:
+            calls.append((method, path))
+            if path == "/discovery" and method != "POST":
+                raise AssertionError(f"{method} /discovery is forbidden for an app")
+            if path.startswith("/discovery/"):
+                raise AssertionError(f"{method} {path} is forbidden for an app")
+            if path == "/addons/self/info":
+                return {"hostname": "abc123-healthpit-bridge", "slug": "abc123_healthpit_bridge"}
+            return {}
+
+        with patch.dict(os.environ, {"SUPERVISOR_TOKEN": "test-token"}), patch.object(
+            bootstrap, "supervisor_request", side_effect=fake_request
+        ):
+            bootstrap.register_supervisor_discovery(
+                {"BRIDGE_USERNAME": "healthpit", "NODE_ROLE": "master"},
+                "hbs_session",
+            )
+
+        self.assertIn(("POST", "/discovery"), calls)
+        self.assertEqual(
+            [call for call in calls if call[1].startswith("/discovery")],
+            [("POST", "/discovery")],
+        )
+
     def test_a_slave_does_not_advertise_itself(self) -> None:
         with patch.dict(os.environ, {"SUPERVISOR_TOKEN": "test-token"}), patch.object(
             bootstrap, "supervisor_request"

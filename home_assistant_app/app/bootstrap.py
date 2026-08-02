@@ -423,24 +423,13 @@ def register_supervisor_discovery(
     try:
         app_info = supervisor_request("GET", "/addons/self/info", token)
         hostname = str(app_info.get("hostname") or app_info.get("ip_address") or "").strip()
-        addon_slug = str(app_info.get("slug") or "").strip()
         if not hostname:
             raise ValueError("Supervisor did not return the app hostname")
 
-        discovery_data = supervisor_request("GET", "/discovery", token)
-        discoveries = discovery_data.get("discovery", [])
-        if isinstance(discoveries, list):
-            for item in discoveries:
-                if not isinstance(item, dict):
-                    continue
-                if item.get("service") != DISCOVERY_SERVICE:
-                    continue
-                if addon_slug and item.get("addon") != addon_slug:
-                    continue
-                discovery_id = str(item.get("uuid") or "").strip()
-                if discovery_id:
-                    supervisor_request("DELETE", f"/discovery/{discovery_id}", token)
-
+        # Never read or delete existing discovery messages here: GET /discovery
+        # and DELETE /discovery/<uuid> are reserved for Home Assistant itself
+        # and answer an app with 401, which would abort registration. Supervisor
+        # already replaces the previous message for the same app and service.
         supervisor_request(
             "POST",
             "/discovery",
@@ -460,7 +449,10 @@ def register_supervisor_discovery(
                 },
             },
         )
-        print(f"Supervisor discovery registered for {hostname}:8088")
+        print(
+            f"Supervisor discovery registered for {hostname}:8088 "
+            f"(session token {'attached' if session_token else 'missing'})"
+        )
     except (HTTPError, URLError, TimeoutError, ValueError, json.JSONDecodeError) as err:
         # Discovery improves setup but must never prevent the bridge from starting.
         print(f"Supervisor discovery unavailable: {err}")
@@ -472,7 +464,12 @@ def main() -> None:
     sync_database(resolved, environment)
     session_token = ""
     if environment["NODE_ROLE"] == "master":
-        session_token = ensure_home_assistant_session(resolved, environment)
+        try:
+            session_token = ensure_home_assistant_session(resolved, environment)
+        except Exception as err:  # noqa: BLE001
+            # One-click setup is a convenience; it must never block the bridge.
+            # Home Assistant can still be paired with token and OTP by hand.
+            print(f"Home Assistant session could not be issued: {err}")
     register_supervisor_discovery(environment, session_token)
     print(
         "Healthpit configuration loaded: "

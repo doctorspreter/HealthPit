@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.3.1
+
+- Fixed discovery never reaching Home Assistant. Registration first called
+  GET /discovery to clear stale messages, but that endpoint is reserved for
+  Home Assistant itself and answers an app with 401, so the POST that follows
+  never ran. Supervisor already replaces the previous message for the same app
+  and service, so the read and delete are gone.
+- A failure while issuing the Home Assistant session no longer stops the app
+  from starting; it falls back to manual pairing and says so in the log.
+- The log line now states whether the session token was attached.
+
 ## 1.3.0
 
 - Home Assistant now sets the integration up from discovery with a single
