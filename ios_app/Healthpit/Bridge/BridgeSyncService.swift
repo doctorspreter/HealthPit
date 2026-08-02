@@ -383,7 +383,22 @@ final class BridgeSyncService {
             throw BridgeSyncError.serverRejected(statusCode)
         }
 
-        let session = try decoder.decode(BridgeSessionResponse.self, from: data)
+        let session: BridgeSessionResponse
+        do {
+            session = try decoder.decode(BridgeSessionResponse.self, from: data)
+        } catch {
+            // Foundation only says "the data is missing". Show what actually
+            // came back, otherwise this is impossible to diagnose from the app.
+            let body = String(data: data.prefix(300), encoding: .utf8) ?? "-"
+            throw BridgeSyncError.serverMessage(
+                L10n.string("Die Bridge unter")
+                + " \(endpoint.absoluteString) "
+                + L10n.string("hat mit HTTP")
+                + " \(statusCode) "
+                + L10n.string("geantwortet, aber nicht im erwarteten Format.")
+                + " " + L10n.string("Antwort:") + " \(body)"
+            )
+        }
         guard session.nodeRole == "slave", session.serverRole == "master" else {
             throw BridgeSyncError.serverMessage(
                 "Verbindung abgelehnt: Die Gegenstelle ist keine Healthpit-Bridge im Master-Betrieb."
@@ -923,14 +938,17 @@ final class BridgeSyncService {
 
         if !localHost.isEmpty {
             let localURL = try localBaseURL(host: localHost, port: localPort)
-            if await isBridgeReachable(at: localURL) {
+            let reason = await bridgeUnreachableReason(at: localURL)
+            if reason == nil {
                 return (localURL, true)
             }
             let external = defaults.string(forKey: BridgeSettings.baseURLKey)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             if external.isEmpty {
                 throw BridgeSyncError.serverMessage(
-                    "Die lokale Bridge unter \(localURL.absoluteString) antwortet nicht. "
-                    + "Adresse und Port prüfen, oder eine externe Adresse eintragen."
+                    L10n.string("Die lokale Bridge unter")
+                    + " \(localURL.absoluteString) "
+                    + L10n.string("antwortet nicht:")
+                    + " \(reason ?? "-")"
                 )
             }
         }
@@ -943,7 +961,7 @@ final class BridgeSyncService {
         guard !baseURLText.isEmpty else { throw BridgeSyncError.missingURL }
         guard let baseURL = URL(string: baseURLText) else { throw BridgeSyncError.invalidURL }
         guard baseURL.scheme?.lowercased() == "https" else {
-            throw BridgeSyncError.serverMessage("Bitte die externe Cloudflare-Adresse mit https:// eintragen.")
+            throw BridgeSyncError.serverMessage("Die externe Adresse muss mit https:// beginnen.")
         }
         return baseURL
     }
@@ -980,7 +998,8 @@ final class BridgeSyncService {
         return localURL
     }
 
-    private static func isBridgeReachable(at baseURL: URL) async -> Bool {
+    /// Why a bridge could not be used, or nil when it answered properly.
+    private static func bridgeUnreachableReason(at baseURL: URL) async -> String? {
         var endpoint = baseURL
         endpoint.append(path: "health")
 
@@ -990,16 +1009,29 @@ final class BridgeSyncService {
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
             let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
-            guard (200..<300).contains(statusCode),
-                  let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-                return false
+            guard (200..<300).contains(statusCode) else {
+                return L10n.string("HTTP") + " \(statusCode)"
+            }
+            guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                return L10n.string("Antwort ist kein JSON")
             }
             let healthy = object["status"] as? String == "ok"
                 || object["ok"] as? Bool == true
-            return healthy && object["node_role"] as? String == "master"
+            guard healthy else {
+                return L10n.string("Bridge meldet sich nicht als betriebsbereit")
+            }
+            guard object["node_role"] as? String == "master" else {
+                let role = object["node_role"] as? String ?? "-"
+                return L10n.string("Gegenstelle meldet die Rolle") + " \(role)"
+            }
+            return nil
         } catch {
-            return false
+            return error.localizedDescription
         }
+    }
+
+    private static func isBridgeReachable(at baseURL: URL) async -> Bool {
+        await bridgeUnreachableReason(at: baseURL) == nil
     }
 
     private func authorizedRequest(url: URL, method: String, credentials: BridgeCredentials) -> URLRequest {

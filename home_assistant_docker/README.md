@@ -108,15 +108,15 @@ Create the required `.env` file and set your own credentials:
 cp .env.example .env
 ```
 
-For production, put the bridge behind HTTPS, for example with Caddy, Traefik,
-Nginx Proxy Manager, or Cloudflare Tunnel.
+For production, put the bridge behind HTTPS using a reverse proxy or a tunnel
+of your choice.
 
 ## Security
 
-The public bridge endpoint should always use HTTPS. Cloudflare Tunnel is a good
-fit because it exposes only the bridge service, not the whole server. If you do
-not use Cloudflare Access, the endpoint is still public, so the app-level checks
-matter:
+The public bridge endpoint should always use HTTPS. Prefer a setup that exposes
+only the bridge service rather than the whole server. Without an additional
+authentication layer in front the endpoint is still public, so the app-level
+checks matter:
 
 - `BRIDGE_USERNAME` and `BRIDGE_API_TOKEN` are required for every data request.
 - API clients send the username in `X-Healthpit-User`.
