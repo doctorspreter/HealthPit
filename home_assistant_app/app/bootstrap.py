@@ -33,6 +33,7 @@ DEFAULT_OPTIONS: dict[str, object] = {
     "bridge_username": "healthpit",
     "credential_mode": "automatic",
     "bridge_api_token": "",
+    "regenerate_api_token": False,
     "otp_mode": "disabled",
     "bridge_otp_shared_secret": "",
     "app_session_expires_days": 1825,
@@ -67,6 +68,7 @@ GROUPED_OPTIONS: dict[str, dict[str, str]] = {
         "username": "bridge_username",
         "token_mode": "credential_mode",
         "api_token": "bridge_api_token",
+        "regenerate_api_token": "regenerate_api_token",
         "two_factor_mode": "otp_mode",
         "totp_secret": "bridge_otp_shared_secret",
         "session_days": "app_session_expires_days",
@@ -167,9 +169,10 @@ def resolve_options() -> tuple[dict[str, object], dict[str, str]]:
         options.get("credential_mode"), {"automatic", "manual"}, "automatic"
     )
     configured_token = str(options.get("bridge_api_token") or "").strip()
+    regenerate = bool_text(options.get("regenerate_api_token")) == "true"
     if credential_mode == "automatic":
         api_token = configured_token or generated.get("bridge_api_token", "")
-        if len(api_token) < 32:
+        if regenerate or len(api_token) < 32:
             api_token = secrets.token_urlsafe(48)
         generated["bridge_api_token"] = api_token
     else:
@@ -199,6 +202,7 @@ def resolve_options() -> tuple[dict[str, object], dict[str, str]]:
 
     resolved = {
         **options,
+        "regenerate_api_token": False,
         "bridge_username": username,
         "credential_mode": credential_mode,
         "bridge_api_token": api_token,
@@ -312,6 +316,44 @@ def supervisor_request(
     return data if isinstance(data, dict) else {}
 
 
+def publish_generated_credentials(resolved: dict[str, object]) -> None:
+    """Write generated secrets back into the options so they are readable.
+
+    A token nobody can read is useless, so an automatically generated token and
+    TOTP secret are stored in the app options. Home Assistant masks them as
+    password fields with a reveal button. Values entered by hand are left
+    untouched, and the one-shot regeneration switch is turned back off here.
+    """
+    token = os.environ.get("SUPERVISOR_TOKEN", "").strip()
+    if not token:
+        return
+
+    stored = read_json(OPTIONS_PATH)
+    access = stored.get("access")
+    access = dict(access) if isinstance(access, dict) else {}
+    updated = dict(access)
+    if resolved["credential_mode"] == "automatic":
+        updated["api_token"] = resolved["bridge_api_token"]
+    if resolved["otp_mode"] == "automatic":
+        updated["totp_secret"] = resolved["bridge_otp_shared_secret"]
+    updated["regenerate_api_token"] = False
+    if updated == access:
+        return
+
+    try:
+        supervisor_request(
+            "POST",
+            "/addons/self/options",
+            token,
+            {"options": {**stored, "access": updated}},
+        )
+        print("Generated credentials written back to the app options")
+    except (HTTPError, URLError, TimeoutError, ValueError, json.JSONDecodeError) as err:
+        # The bridge already runs with these values; only their visibility in
+        # the Configuration tab is lost, which must not stop the start.
+        print(f"Could not write the generated credentials to the options: {err}")
+
+
 HOME_ASSISTANT_SESSION_KEY = "home_assistant_session_token"
 
 
@@ -407,6 +449,7 @@ def main() -> None:
     resolved, environment = resolve_options()
     write_runtime_environment(environment)
     sync_database(resolved, environment)
+    publish_generated_credentials(resolved)
     session_token = ""
     try:
         session_token = ensure_home_assistant_session(resolved, environment)

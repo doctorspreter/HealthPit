@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.5.0
+
+- An automatically generated API token is now written back into the
+  Configuration tab, so it can actually be read and copied. Home Assistant
+  masks it as a password field. The same applies to an automatically generated
+  TOTP secret.
+- Added **Generate a new token**: a one-shot switch that creates a fresh random
+  token on the next start, writes it into the field and turns itself back off.
+  Existing sessions are revoked, as with any credential change.
+- A manually entered token or secret is never overwritten.
+
 ## 1.4.0
 
 - Removed the configurable master/slave topology. It was half built: a node

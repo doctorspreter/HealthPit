@@ -1,5 +1,5 @@
 name: "Healthpit Bridge"
-version: "1.4.0"
+version: "1.5.0"
 slug: "healthpit_bridge"
 description: >-
   Healthpit bridge for Apple Health, GymPit, Hevy, Garmin and native Home
@@ -37,6 +37,7 @@ options:
     username: "healthpit"
     token_mode: "automatic"
     api_token: ""
+    regenerate_api_token: false
     two_factor_mode: "disabled"
     totp_secret: ""
     session_days: 1825
@@ -57,6 +58,7 @@ schema:
     username: "str(1,80)"
     token_mode: "list(automatic|manual)"
     api_token: "password?"
+    regenerate_api_token: bool
     two_factor_mode: "list(disabled|automatic|manual)"
     totp_secret: "password?"
     session_days: "int(1,3650)"

@@ -55,6 +55,12 @@ configuration:
         description: >-
           Leave empty in automatic mode. The active token is stored in the app
           data and included in Home Assistant backups.
+      regenerate_api_token:
+        name: "Generate a new token"
+        description: >-
+          Switching this on and saving creates a fresh random token on the next
+          start, writes it into the field above and turns itself back off. All
+          existing sessions are revoked in the process.
       two_factor_mode:
         name: "Two-factor authentication"
         description: >-

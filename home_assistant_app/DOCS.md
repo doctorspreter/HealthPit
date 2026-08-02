@@ -40,10 +40,21 @@ The defaults are safe for a local first start:
 - API port: `8088`
 
 In automatic token mode the app generates a cryptographically random token on
-first start and keeps it across restarts and backups. Choose **manual** to
-provide a token with at least 32 characters. The active token is readable in
-`/data/options.json` inside an app backup and can be replaced at any time from
-the Configuration tab.
+first start, writes it back into **Access and security · API token** and keeps
+it across restarts and backups. Leave the field empty and the token appears
+there after the first start; Home Assistant masks it like any password field
+and reveals it on request.
+
+To roll the token, switch on **Generate a new token** and save. The next start
+creates a fresh random token, writes it into the field and turns the switch
+back off by itself. Every existing session is revoked in the process, so the
+iPhone, GymPit and the integration have to sign in again.
+
+Choose **manual** to provide a token of at least 32 characters. A manually
+entered token is never overwritten.
+
+An automatically generated TOTP secret is written back the same way, so it can
+be typed into an authenticator that cannot scan the QR code.
 
 2FA supports three modes:
 

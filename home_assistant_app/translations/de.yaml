@@ -55,6 +55,12 @@ configuration:
         description: >-
           Bei automatischer Erzeugung leer lassen. Das aktive Token steht in
           den App-Daten und ist in Home-Assistant-Sicherungen enthalten.
+      regenerate_api_token:
+        name: "Neues Token erzeugen"
+        description: >-
+          Einschalten und speichern erzeugt beim nächsten Start ein frisches
+          Zufalls-Token, trägt es oben ein und setzt diesen Schalter selbst
+          wieder zurück. Alle bestehenden Sitzungen werden dabei ungültig.
       two_factor_mode:
         name: "Zwei-Faktor-Authentifizierung"
         description: >-
