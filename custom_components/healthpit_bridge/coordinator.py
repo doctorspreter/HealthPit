@@ -74,11 +74,27 @@ class HealthpitCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 )
             )
         route_points = build_route_points(workouts)
+        # Counting what the bridge holds per source and per device makes it
+        # obvious whether data is missing on the bridge or merely not showing
+        # up as entities yet.
+        by_source: dict[str, int] = {}
+        by_device: dict[str, int] = {}
+        for workout in workouts:
+            if not isinstance(workout, dict):
+                continue
+            by_source[str(workout.get("source") or "unknown")] = (
+                by_source.get(str(workout.get("source") or "unknown"), 0) + 1
+            )
+            by_device[str(workout.get("device_id") or "unknown")] = (
+                by_device.get(str(workout.get("device_id") or "unknown"), 0) + 1
+            )
         return {
             "by_category": by_category,
             "metric_count": len(metrics),
             "workout_metrics": build_workout_metrics(workouts),
             "workout_count": len(workouts),
+            "workouts_by_source": dict(sorted(by_source.items())),
+            "workouts_by_device": dict(sorted(by_device.items())),
             "route_points": route_points,
             "route_point_count": len(route_points),
         }
