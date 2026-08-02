@@ -68,13 +68,6 @@ actor LocalWorkoutStore {
         persist(deduplicated(workouts))
     }
 
-    func replaceBridgeManaged(sources: Set<LocalWorkout.Source>, with incoming: [LocalWorkout]) {
-        var workouts = load()
-        workouts.removeAll { sources.contains($0.source) }
-        workouts.append(contentsOf: incoming.filter { sources.contains($0.source) })
-        persist(deduplicated(workouts))
-    }
-
     func delete(id: UUID) {
         var workouts = load()
         workouts.removeAll { $0.id == id }

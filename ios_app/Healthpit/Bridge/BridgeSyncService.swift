@@ -608,27 +608,7 @@ final class BridgeSyncService {
         guard !workouts.isEmpty else { return 0 }
         let enrichedWorkouts = await enrichedForUpload(workouts)
         await LocalWorkoutStore.shared.saveMany(enrichedWorkouts)
-
-        var endpoint = credentials.baseURL
-        endpoint.append(path: "v1/workouts/imports")
-
-        let payload = BridgeImportedWorkoutBatchPayload(
-            deviceID: credentials.deviceID,
-            workouts: enrichedWorkouts.map(BridgeImportedWorkoutPayload.init)
-        )
-        var request = authorizedRequest(url: endpoint, method: "POST", credentials: credentials)
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try encoder.encode(payload)
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-        let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
-        guard (200..<300).contains(statusCode) else {
-            if let message = Self.bridgeErrorMessage(from: data, statusCode: statusCode) {
-                throw BridgeSyncError.serverMessage(message)
-            }
-            throw BridgeSyncError.serverRejected(statusCode)
-        }
-        return enrichedWorkouts.count
+        return try await uploadWorkouts(enrichedWorkouts, credentials: credentials)
     }
 
     private func uploadAppleHealthWorkoutDelta(credentials: BridgeCredentials) async throws -> Int {
@@ -843,14 +823,53 @@ final class BridgeSyncService {
             let responseBody = try decoder.decode(BridgeImportedWorkoutListResponse.self, from: data)
             downloaded.append(contentsOf: responseBody.workouts.compactMap(LocalWorkout.init))
         }
-        await LocalWorkoutStore.shared.saveMany(
-            downloaded.filter { !bridgeManagedSources.contains($0.source) }
+        await LocalWorkoutStore.shared.saveMany(downloaded)
+
+        // A workout the bridge does not have is missing, not deleted. Wiping
+        // the local copy here used to empty the history as soon as the app was
+        // pointed at a fresh bridge. Instead the gap is filled from the device,
+        // so whichever side still has the data hands it to the other.
+        // Deletions the user makes in Healthpit still propagate, because those
+        // call deleteImportedWorkout explicitly.
+        let onBridge = Set(downloaded.map(\.id))
+        let missingOnBridge = await LocalWorkoutStore.shared.load().filter {
+            bridgeManagedSources.contains($0.source) && !onBridge.contains($0.id)
+        }
+        let restored = try await uploadWorkouts(missingOnBridge, credentials: credentials)
+        return downloaded.count + restored
+    }
+
+    /// Push a set of workouts to the bridge, keeping their own source.
+    ///
+    /// The bridge only rewrites the source for GymPit clients, so Healthpit may
+    /// hand back workouts that originally came from GymPit or Garmin.
+    @discardableResult
+    private func uploadWorkouts(
+        _ workouts: [LocalWorkout],
+        credentials: BridgeCredentials
+    ) async throws -> Int {
+        guard !workouts.isEmpty else { return 0 }
+
+        var endpoint = credentials.baseURL
+        endpoint.append(path: "v1/workouts/imports")
+
+        let payload = BridgeImportedWorkoutBatchPayload(
+            deviceID: credentials.deviceID,
+            workouts: workouts.map(BridgeImportedWorkoutPayload.init)
         )
-        await LocalWorkoutStore.shared.replaceBridgeManaged(
-            sources: bridgeManagedSources,
-            with: downloaded.filter { bridgeManagedSources.contains($0.source) }
-        )
-        return downloaded.count
+        var request = authorizedRequest(url: endpoint, method: "POST", credentials: credentials)
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try encoder.encode(payload)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200..<300).contains(statusCode) else {
+            if let message = Self.bridgeErrorMessage(from: data, statusCode: statusCode) {
+                throw BridgeSyncError.serverMessage(message)
+            }
+            throw BridgeSyncError.serverRejected(statusCode)
+        }
+        return workouts.count
     }
 
     private func deleteImportedWorkout(id: UUID, credentials: BridgeCredentials) async throws {

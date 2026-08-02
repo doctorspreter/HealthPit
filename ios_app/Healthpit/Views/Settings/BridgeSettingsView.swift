@@ -7,6 +7,7 @@
 
 import SwiftUI
 import UIKit
+import UniformTypeIdentifiers
 
 struct BridgeSettingsView: View {
     @Environment(\.dismiss) private var dismiss
@@ -31,6 +32,10 @@ struct BridgeSettingsView: View {
     @State private var isBridgeConnected = false
     @State private var connectionStatus = ""
     @State private var message: String?
+    @State private var backupDocument: HealthpitBackupDocument?
+    @State private var isExportingBackup = false
+    @State private var isImportingBackup = false
+    @State private var backupStatus = ""
 
     var body: some View {
         NavigationStack {
@@ -106,6 +111,27 @@ struct BridgeSettingsView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                Section("Datensicherung") {
+                    Button {
+                        Task { await prepareBackup() }
+                    } label: {
+                        Label("Daten exportieren", systemImage: "square.and.arrow.up")
+                    }
+                    Button {
+                        isImportingBackup = true
+                    } label: {
+                        Label("Daten importieren", systemImage: "square.and.arrow.down")
+                    }
+                    if !backupStatus.isEmpty {
+                        Text(backupStatus)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Text("Die Sicherung enthält alle lokalen Workouts als JSON-Datei. Beim Import wird nichts gelöscht, nur ergänzt und aktualisiert. Zugangsdaten sind aus Sicherheitsgründen nicht enthalten und müssen nach einer Wiederherstellung neu eingetragen werden.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
                 DashboardOrderSettingsSection(orderRaw: $dashboardOrderRaw,
                                               sizesRaw: $dashboardSizesRaw)
 
@@ -153,6 +179,26 @@ struct BridgeSettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+            }
+            .fileExporter(
+                isPresented: $isExportingBackup,
+                document: backupDocument,
+                contentType: .json,
+                defaultFilename: backupDocument?.backup.suggestedFileName ?? "healthpit-backup"
+            ) { result in
+                switch result {
+                case let .success(url):
+                    backupStatus = L10n.string("Sicherung gespeichert:") + " \(url.lastPathComponent)"
+                case let .failure(error):
+                    backupStatus = L10n.string("Export fehlgeschlagen:") + " \(error.localizedDescription)"
+                }
+                backupDocument = nil
+            }
+            .fileImporter(
+                isPresented: $isImportingBackup,
+                allowedContentTypes: [.json]
+            ) { result in
+                Task { await restoreBackup(from: result) }
             }
             .navigationTitle("Einstellungen")
             .navigationBarTitleDisplayMode(.inline)
@@ -256,6 +302,36 @@ struct BridgeSettingsView: View {
             message = L10n.format("%lld Apple-Health-Workouts neu synchronisiert.", count)
         } catch {
             message = error.localizedDescription
+        }
+    }
+
+    private func prepareBackup() async {
+        backupStatus = L10n.string("Sicherung wird erstellt …")
+        let backup = await HealthpitBackupService.makeBackup(
+            deviceID: deviceID,
+            username: username
+        )
+        guard !backup.workouts.isEmpty else {
+            backupStatus = L10n.string("Es sind keine lokalen Workouts vorhanden.")
+            return
+        }
+        backupDocument = HealthpitBackupDocument(backup: backup)
+        backupStatus = L10n.format("%lld Workouts vorbereitet.", backup.workouts.count)
+        isExportingBackup = true
+    }
+
+    private func restoreBackup(from result: Result<URL, Error>) async {
+        switch result {
+        case let .success(url):
+            do {
+                let backup = try HealthpitBackupService.readBackup(at: url)
+                let count = await HealthpitBackupService.restore(backup)
+                backupStatus = L10n.format("%lld Workouts aus der Sicherung übernommen.", count)
+            } catch {
+                backupStatus = L10n.string("Import fehlgeschlagen:") + " \(error.localizedDescription)"
+            }
+        case let .failure(error):
+            backupStatus = L10n.string("Import fehlgeschlagen:") + " \(error.localizedDescription)"
         }
     }
 
