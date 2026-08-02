@@ -244,6 +244,23 @@ struct BridgeSessionResponse: Decodable {
         case serverRole = "server_role"
         case username
     }
+
+    /// Only the session token is essential.
+    ///
+    /// The other fields are echoes of the request or descriptive extras that
+    /// older bridges do not send. Refusing a perfectly good session because a
+    /// device name is absent would make the app unusable against any bridge
+    /// that has not been rebuilt yet.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        sessionToken = try container.decode(String.self, forKey: .sessionToken)
+        tokenType = try container.decodeIfPresent(String.self, forKey: .tokenType) ?? "bearer"
+        expiresAt = try container.decodeIfPresent(String.self, forKey: .expiresAt) ?? ""
+        deviceName = try container.decodeIfPresent(String.self, forKey: .deviceName) ?? ""
+        username = try container.decodeIfPresent(String.self, forKey: .username) ?? ""
+        nodeRole = try container.decodeIfPresent(String.self, forKey: .nodeRole) ?? "slave"
+        serverRole = try container.decodeIfPresent(String.self, forKey: .serverRole) ?? "master"
+    }
 }
 
 private struct BridgeSessionCreatePayload: Encodable {
@@ -1020,8 +1037,9 @@ final class BridgeSyncService {
             guard healthy else {
                 return L10n.string("Bridge meldet sich nicht als betriebsbereit")
             }
-            guard object["node_role"] as? String == "master" else {
-                let role = object["node_role"] as? String ?? "-"
+            // An older bridge does not report a role at all. Only a role that
+            // is present and wrong disqualifies it.
+            if let role = object["node_role"] as? String, role != "master" {
                 return L10n.string("Gegenstelle meldet die Rolle") + " \(role)"
             }
             return nil
