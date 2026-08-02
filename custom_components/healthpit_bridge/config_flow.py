@@ -33,6 +33,21 @@ from .const import (
 )
 
 
+def discovery_config(discovery_info: Any) -> dict[str, Any]:
+    """Return the payload of a Supervisor discovery message.
+
+    Home Assistant hands the step a HassioServiceInfo dataclass whose payload
+    sits in ``.config``; it is not a mapping. Older cores passed the dict
+    straight through, so both shapes are accepted.
+    """
+    config = getattr(discovery_info, "config", None)
+    if isinstance(config, dict):
+        return config
+    if isinstance(discovery_info, dict):
+        return discovery_info
+    return {}
+
+
 def resolved_port(raw: Any, use_ssl: bool) -> int:
     """Empty means 8088, or 443 when the bridge sits behind HTTPS.
 
@@ -82,23 +97,22 @@ class HealthpitBridgeConfigFlow(ConfigFlow, domain=DOMAIN):
         self._discovery_defaults: dict[str, Any] = {}
         self._discovery_session_token = ""
 
-    async def async_step_hassio(
-        self, discovery_info: dict[str, Any]
-    ) -> ConfigFlowResult:
+    async def async_step_hassio(self, discovery_info: Any) -> ConfigFlowResult:
         """Handle discovery from the Healthpit Home Assistant app."""
+        config = discovery_config(discovery_info)
         self._discovery_defaults = {
-            CONF_HOST: str(discovery_info.get(CONF_HOST) or "").strip(),
-            CONF_PORT: int(discovery_info.get(CONF_PORT) or DEFAULT_PORT),
-            CONF_USERNAME: str(
-                discovery_info.get(CONF_USERNAME) or DEFAULT_USERNAME
-            ).strip(),
-            CONF_USE_SSL: bool(discovery_info.get(CONF_USE_SSL, False)),
-            CONF_VERIFY_SSL: bool(discovery_info.get(CONF_VERIFY_SSL, True)),
+            CONF_HOST: str(config.get(CONF_HOST) or "").strip(),
+            CONF_PORT: int(config.get(CONF_PORT) or DEFAULT_PORT),
+            CONF_USERNAME: str(config.get(CONF_USERNAME) or DEFAULT_USERNAME).strip(),
+            CONF_USE_SSL: bool(config.get(CONF_USE_SSL, False)),
+            CONF_VERIFY_SSL: bool(config.get(CONF_VERIFY_SSL, True)),
         }
+        if not self._discovery_defaults[CONF_HOST]:
+            return self.async_abort(reason="invalid_discovery_info")
         # The app hands over a scoped, revocable session token. Neither the API
         # token nor the TOTP secret ever leaves it.
         self._discovery_session_token = str(
-            discovery_info.get(CONF_SESSION_TOKEN) or ""
+            config.get(CONF_SESSION_TOKEN) or ""
         ).strip()
         unique = (
             f"{self._discovery_defaults[CONF_HOST]}:"

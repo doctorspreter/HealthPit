@@ -34,7 +34,8 @@
     },
     "abort": {
       "already_configured": "This bridge is already configured.",
-      "role_conflict": "Connection rejected: the configured node is a slave. Point Home Assistant at the master instead."
+      "role_conflict": "Connection rejected: the configured node is a slave. Point Home Assistant at the master instead.",
+      "invalid_discovery_info": "The app did not send a usable address. Check the Healthpit Bridge app log."
     }
   }
 }

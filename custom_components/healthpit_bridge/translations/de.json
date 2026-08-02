@@ -34,7 +34,8 @@
     },
     "abort": {
       "already_configured": "Diese Bridge ist bereits eingerichtet.",
-      "role_conflict": "Verbindung abgelehnt: Der konfigurierte Knoten ist ein Slave. Richte Home Assistant stattdessen auf den Master."
+      "role_conflict": "Verbindung abgelehnt: Der konfigurierte Knoten ist ein Slave. Richte Home Assistant stattdessen auf den Master.",
+      "invalid_discovery_info": "Die App hat keine brauchbare Adresse gesendet. Bitte das Protokoll der Healthpit-Bridge-App prüfen."
     }
   }
 }
