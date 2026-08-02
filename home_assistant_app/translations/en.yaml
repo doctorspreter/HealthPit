@@ -49,7 +49,7 @@ configuration:
         name: "Token generation"
         description: >-
           Automatic: the app generates a random token on first start and keeps
-          it. Manual: provide your own token of at least 32 characters.
+          it. Manual: provide your own token of at least 8 characters.
       api_token:
         name: "API token"
         description: >-

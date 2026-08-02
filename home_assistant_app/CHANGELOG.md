@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.1
+
+- Lowered the API token minimum from 32 to 8 characters, and generated tokens
+  are now 16 characters instead of 64. Sixteen characters from a cryptographic
+  source are 96 bits of entropy, which is plenty for a local bridge.
+- Existing longer tokens keep working; nothing has to be re-entered.
+
 ## 1.5.0
 
 - An automatically generated API token is now written back into the

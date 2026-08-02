@@ -49,7 +49,7 @@ configuration:
         name: "Token-Erzeugung"
         description: >-
           Automatisch: die App erzeugt beim ersten Start ein zufälliges Token
-          und behält es. Manuell: eigenes Token mit mindestens 32 Zeichen.
+          und behält es. Manuell: eigenes Token mit mindestens 8 Zeichen.
       api_token:
         name: "API-Token"
         description: >-

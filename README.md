@@ -55,7 +55,7 @@ Assistant language.
 
 ## Security
 
-- Generated API tokens use 384 bits of randomness.
+- Generated API tokens are 16 characters, or 96 bits of randomness.
 - Generated TOTP secrets use 160 bits of randomness.
 - Credentials and the SQLite database remain in the app's `/data` volume and
   are included in Home Assistant backups.

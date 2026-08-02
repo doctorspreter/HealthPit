@@ -50,7 +50,7 @@ creates a fresh random token, writes it into the field and turns the switch
 back off by itself. Every existing session is revoked in the process, so the
 iPhone, GymPit and the integration have to sign in again.
 
-Choose **manual** to provide a token of at least 32 characters. A manually
+Choose **manual** to provide a token of at least 8 characters. A manually
 entered token is never overwritten.
 
 An automatically generated TOTP secret is written back the same way, so it can

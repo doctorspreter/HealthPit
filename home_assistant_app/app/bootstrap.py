@@ -130,6 +130,15 @@ def valid_totp_secret(value: str) -> bool:
         return False
 
 
+MINIMUM_API_TOKEN_LENGTH = 8
+GENERATED_API_TOKEN_LENGTH = 16
+
+
+def generate_api_token() -> str:
+    """A 16-character random token, which is 96 bits of entropy."""
+    return secrets.token_urlsafe(GENERATED_API_TOKEN_LENGTH * 3 // 4)
+
+
 def generate_totp_secret() -> str:
     return base64.b32encode(secrets.token_bytes(20)).decode("ascii").rstrip("=")
 
@@ -172,14 +181,15 @@ def resolve_options() -> tuple[dict[str, object], dict[str, str]]:
     regenerate = bool_text(options.get("regenerate_api_token")) == "true"
     if credential_mode == "automatic":
         api_token = configured_token or generated.get("bridge_api_token", "")
-        if regenerate or len(api_token) < 32:
-            api_token = secrets.token_urlsafe(48)
+        if regenerate or len(api_token) < MINIMUM_API_TOKEN_LENGTH:
+            api_token = generate_api_token()
         generated["bridge_api_token"] = api_token
     else:
         api_token = configured_token
-        if len(api_token) < 32:
+        if len(api_token) < MINIMUM_API_TOKEN_LENGTH:
             raise ValueError(
-                "bridge_api_token must contain at least 32 characters in manual mode"
+                "bridge_api_token must contain at least "
+                f"{MINIMUM_API_TOKEN_LENGTH} characters in manual mode"
             )
 
     otp_mode = normalized_mode(

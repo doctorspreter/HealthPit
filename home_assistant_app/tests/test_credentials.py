@@ -117,11 +117,21 @@ class RegenerationTests(TestCase):
                 resolved, _ = bootstrap.resolve_options()
         return resolved
 
-    def test_an_automatic_token_is_random_and_long(self) -> None:
+    def test_an_automatic_token_is_random_and_16_characters(self) -> None:
         first = self._resolve({})["bridge_api_token"]
         second = self._resolve({})["bridge_api_token"]
-        self.assertGreaterEqual(len(first), 32)
+        self.assertEqual(len(first), bootstrap.GENERATED_API_TOKEN_LENGTH)
         self.assertNotEqual(first, second)
+
+    def test_a_short_manual_token_is_rejected(self) -> None:
+        with self.assertRaises(ValueError):
+            self._resolve({"access": {"token_mode": "manual", "api_token": "short"}})
+
+    def test_an_eight_character_manual_token_is_accepted(self) -> None:
+        resolved = self._resolve(
+            {"access": {"token_mode": "manual", "api_token": "12345678"}}
+        )
+        self.assertEqual(resolved["bridge_api_token"], "12345678")
 
     def test_a_stored_token_is_kept_across_starts(self) -> None:
         kept = "k" * 50
@@ -134,5 +144,7 @@ class RegenerationTests(TestCase):
             {"access": {"api_token": kept, "regenerate_api_token": True}}
         )
         self.assertNotEqual(resolved["bridge_api_token"], kept)
-        self.assertGreaterEqual(len(resolved["bridge_api_token"]), 32)
+        self.assertEqual(
+            len(resolved["bridge_api_token"]), bootstrap.GENERATED_API_TOKEN_LENGTH
+        )
         self.assertIs(resolved["regenerate_api_token"], False)
