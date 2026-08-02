@@ -75,7 +75,7 @@ struct BridgeSettingsView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-                    Text("Die Docker-Bridge ist der Master; diese App verbindet sich als Slave. Die externe Verbindung ist nur nötig, wenn die lokale Bridge nicht erreichbar ist. Den OTP-Code nur eintragen, wenn 2FA in der Bridge aktiv ist.")
+                    Text("Die Bridge ist der Master — das kann die Home-Assistant-App oder der Docker-Container sein. Die lokale Adresse wird bevorzugt; die externe ist nur nötig, wenn die lokale nicht antwortet. Den OTP-Code nur eintragen, wenn 2FA in der Bridge aktiv ist.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -159,7 +159,7 @@ struct BridgeSettingsView: View {
             .onAppear {
                 apiToken = KeychainStore.string(for: BridgeSettings.apiTokenKey)
                 otpCode = ""
-                refreshBridgeConnectionStatus()
+                Task { await refreshBridgeConnectionStatus() }
             }
             .onChange(of: apiToken) { _, newValue in
                 KeychainStore.set(newValue, for: BridgeSettings.apiTokenKey)
@@ -182,14 +182,13 @@ struct BridgeSettingsView: View {
         isConnecting = true
         connectionStatus = L10n.string("Bridge verbindet …")
         do {
-            let session = try await BridgeSyncService.shared.connect(otpCode: otpCode)
+            _ = try await BridgeSyncService.shared.connect(otpCode: otpCode)
             otpCode = ""
             isConnecting = false
-            isBridgeConnected = true
-            connectionStatus = L10n.string("Slave mit Docker-Master verbunden bis") + " \(session.expiresAt)"
+            await refreshBridgeConnectionStatus()
         } catch {
             isConnecting = false
-            refreshBridgeConnectionStatus()
+            isBridgeConnected = BridgeSyncService.shared.hasSession
             connectionStatus = L10n.string("Bridge-Verbindungsfehler:") + " \(error.localizedDescription)"
         }
     }
@@ -197,20 +196,43 @@ struct BridgeSettingsView: View {
     private func disconnectBridge() {
         BridgeSyncService.shared.disconnect()
         otpCode = ""
-        refreshBridgeConnectionStatus()
+        Task { await refreshBridgeConnectionStatus() }
     }
 
-    private func refreshBridgeConnectionStatus() {
+    /// Report the bridge actually in use, not merely that some session exists.
+    ///
+    /// A session issued by a different bridge is worthless, and the local
+    /// address silently losing out to the external one used to be invisible.
+    private func refreshBridgeConnectionStatus() async {
         let service = BridgeSyncService.shared
         isBridgeConnected = service.hasSession
-        if service.hasSession {
-            let expiresAt = service.sessionExpiresAtText
-            connectionStatus = expiresAt.isEmpty
-                ? L10n.string("Slave ist mit dem Docker-Master verbunden")
-                : L10n.string("Slave mit Docker-Master verbunden bis") + " \(expiresAt)"
-        } else {
-            connectionStatus = L10n.string("Bridge ist nicht verbunden")
+
+        let active = await BridgeSyncService.activeEndpoint()
+        guard let activeURL = active.url else {
+            connectionStatus = L10n.string("Keine erreichbare Bridge. Adresse und Port prüfen.")
+            return
         }
+        let scope = active.isLocal ? L10n.string("lokal") : L10n.string("extern")
+
+        guard service.hasSession else {
+            connectionStatus = L10n.string("Bridge erreichbar unter")
+                + " \(activeURL.absoluteString) (\(scope)) — "
+                + L10n.string("noch nicht verbunden")
+            return
+        }
+
+        let sessionEndpoint = service.sessionEndpointText
+        if !sessionEndpoint.isEmpty && sessionEndpoint != activeURL.absoluteString {
+            connectionStatus = L10n.string("Die gespeicherte Sitzung gehört zu")
+                + " \(sessionEndpoint). "
+                + L10n.string("Jetzt aktiv ist") + " \(activeURL.absoluteString) (\(scope)). "
+                + L10n.string("Bitte neu verbinden.")
+            return
+        }
+
+        let expiresAt = service.sessionExpiresAtText
+        let base = L10n.string("Verbunden mit") + " \(activeURL.absoluteString) (\(scope))"
+        connectionStatus = expiresAt.isEmpty ? base : base + " " + L10n.string("bis") + " \(expiresAt)"
     }
 
     private func sync() async {

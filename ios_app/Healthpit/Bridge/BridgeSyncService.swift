@@ -332,6 +332,21 @@ final class BridgeSyncService {
         defaults.string(forKey: BridgeSettings.sessionExpiresAtKey) ?? ""
     }
 
+    /// The bridge the stored session was issued by, empty when there is none.
+    var sessionEndpointText: String {
+        defaults.string(forKey: BridgeSettings.sessionEndpointKey) ?? ""
+    }
+
+    /// Resolve the bridge that would be used right now, without connecting.
+    static func activeEndpoint(defaults: UserDefaults = .standard) async -> (url: URL?, isLocal: Bool) {
+        do {
+            let resolved = try await resolveEndpoint(defaults: defaults)
+            return (resolved.url, resolved.isLocal)
+        } catch {
+            return (nil, false)
+        }
+    }
+
     @discardableResult
     func connect(otpCode: String) async throws -> BridgeSessionResponse {
         let apiToken = Self.trimmedKeychainValue(for: BridgeSettings.apiTokenKey)
@@ -371,12 +386,13 @@ final class BridgeSyncService {
         let session = try decoder.decode(BridgeSessionResponse.self, from: data)
         guard session.nodeRole == "slave", session.serverRole == "master" else {
             throw BridgeSyncError.serverMessage(
-                "Verbindung abgelehnt: Docker muss Master und Healthpit muss Slave sein."
+                "Verbindung abgelehnt: Die Gegenstelle ist keine Healthpit-Bridge im Master-Betrieb."
             )
         }
         KeychainStore.set(session.sessionToken, for: BridgeSettings.sessionTokenKey)
         KeychainStore.set("", for: BridgeSettings.otpCodeKey)
         defaults.set(session.expiresAt, forKey: BridgeSettings.sessionExpiresAtKey)
+        defaults.set(baseURL.absoluteString, forKey: BridgeSettings.sessionEndpointKey)
         return session
     }
 
@@ -384,6 +400,7 @@ final class BridgeSyncService {
         KeychainStore.set("", for: BridgeSettings.sessionTokenKey)
         KeychainStore.set("", for: BridgeSettings.otpCodeKey)
         defaults.removeObject(forKey: BridgeSettings.sessionExpiresAtKey)
+        defaults.removeObject(forKey: BridgeSettings.sessionEndpointKey)
     }
 
     @discardableResult
@@ -860,7 +877,7 @@ final class BridgeSyncService {
         guard !username.isEmpty else { throw BridgeSyncError.serverMessage("Bridge-Benutzername fehlt.") }
         guard !sessionToken.isEmpty else {
             throw BridgeSyncError.serverMessage(
-                "Healthpit ist nicht als Slave verbunden. Bitte zuerst mit der Docker-Bridge verbinden."
+                "Healthpit ist nicht verbunden. Bitte zuerst in den Einstellungen mit der Bridge verbinden."
             )
         }
         let baseURL = try await Self.configuredBaseURL(defaults: defaults)
@@ -871,17 +888,35 @@ final class BridgeSyncService {
     }
 
     static func configuredBaseURL(defaults: UserDefaults = .standard) async throws -> URL {
+        try await resolveEndpoint(defaults: defaults).url
+    }
+
+    /// Pick the bridge to talk to and report whether it is the local one.
+    ///
+    /// The local address wins when it answers. Falling back to the external
+    /// address silently would leave the app talking to a different bridge than
+    /// the one just configured, so callers are told which one was chosen.
+    static func resolveEndpoint(
+        defaults: UserDefaults = .standard
+    ) async throws -> (url: URL, isLocal: Bool) {
         let localHost = defaults.string(forKey: BridgeSettings.localHostKey)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let localPort = defaults.string(forKey: BridgeSettings.localPortKey)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "8088"
 
         if !localHost.isEmpty {
             let localURL = try localBaseURL(host: localHost, port: localPort)
             if await isBridgeReachable(at: localURL) {
-                return localURL
+                return (localURL, true)
+            }
+            let external = defaults.string(forKey: BridgeSettings.baseURLKey)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if external.isEmpty {
+                throw BridgeSyncError.serverMessage(
+                    "Die lokale Bridge unter \(localURL.absoluteString) antwortet nicht. "
+                    + "Adresse und Port prüfen, oder eine externe Adresse eintragen."
+                )
             }
         }
 
-        return try externalBaseURL(defaults: defaults)
+        return (try externalBaseURL(defaults: defaults), false)
     }
 
     private static func externalBaseURL(defaults: UserDefaults) throws -> URL {
@@ -931,7 +966,7 @@ final class BridgeSyncService {
         endpoint.append(path: "health")
 
         var request = URLRequest(url: endpoint)
-        request.timeoutInterval = 1.2
+        request.timeoutInterval = 4
 
         do {
             let (data, response) = try await URLSession.shared.data(for: request)

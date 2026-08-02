@@ -18,6 +18,10 @@ enum BridgeSettings {
     nonisolated static let otpSecretKey = "bridgeOtpSecret"
     nonisolated static let sessionTokenKey = "bridgeSessionToken"
     nonisolated static let sessionExpiresAtKey = "bridgeSessionExpiresAt"
+    // The bridge a session was issued by. A session from a different bridge is
+    // worthless, so the settings screen can tell the user to reconnect instead
+    // of claiming a connection that no longer applies.
+    nonisolated static let sessionEndpointKey = "bridgeSessionEndpoint"
     nonisolated static let deviceIDKey = "bridgeDeviceID"
     nonisolated static let syncEnabledKey = "bridgeSyncEnabled"
     nonisolated static let syncIntervalKey = "bridgeSyncInterval"
