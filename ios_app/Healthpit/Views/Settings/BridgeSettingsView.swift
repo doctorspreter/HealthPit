@@ -14,7 +14,7 @@ struct BridgeSettingsView: View {
     @AppStorage(BridgeSettings.baseURLKey) private var baseURL = ""
     @AppStorage(BridgeSettings.localHostKey) private var localHost = ""
     @AppStorage(BridgeSettings.localPortKey) private var localPort = "8088"
-    @AppStorage(BridgeSettings.usernameKey) private var username = "peter"
+    @AppStorage(BridgeSettings.usernameKey) private var username = "healthpit"
     @AppStorage(BridgeSettings.deviceIDKey) private var deviceID = UIDevice.current.name
     @AppStorage(BridgeSettings.syncEnabledKey) private var syncEnabled = true
     @AppStorage(BridgeSettings.syncIntervalKey) private var syncInterval = 3600.0

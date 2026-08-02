@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.2
+
+- Unified the default bridge username to `healthpit` across the app, the
+  Docker bridge, the integration and the iPhone app. The integration and the
+  iPhone app previously defaulted to `peter`, so a fresh install disagreed with
+  the app about who was signing in.
+
 ## 1.3.1
 
 - Fixed discovery never reaching Home Assistant. Registration first called

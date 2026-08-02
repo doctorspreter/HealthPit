@@ -319,7 +319,7 @@ final class BridgeSyncService {
             defaults.set("iPhone", forKey: BridgeSettings.deviceIDKey)
         }
         if defaults.string(forKey: BridgeSettings.usernameKey)?.isEmpty != false {
-            defaults.set("peter", forKey: BridgeSettings.usernameKey)
+            defaults.set("healthpit", forKey: BridgeSettings.usernameKey)
         }
         KeychainStore.set("", for: BridgeSettings.otpCodeKey)
     }
@@ -335,7 +335,7 @@ final class BridgeSyncService {
     @discardableResult
     func connect(otpCode: String) async throws -> BridgeSessionResponse {
         let apiToken = Self.trimmedKeychainValue(for: BridgeSettings.apiTokenKey)
-        let username = defaults.string(forKey: BridgeSettings.usernameKey)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "peter"
+        let username = defaults.string(forKey: BridgeSettings.usernameKey)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "healthpit"
         guard !username.isEmpty else { throw BridgeSyncError.serverMessage("Bridge-Benutzername fehlt.") }
         guard !apiToken.isEmpty else { throw BridgeSyncError.missingToken }
 
@@ -854,7 +854,7 @@ final class BridgeSyncService {
 
     private func bridgeCredentials() async throws -> BridgeCredentials {
         let sessionToken = Self.trimmedKeychainValue(for: BridgeSettings.sessionTokenKey)
-        let username = defaults.string(forKey: BridgeSettings.usernameKey)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "peter"
+        let username = defaults.string(forKey: BridgeSettings.usernameKey)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "healthpit"
         let deviceID = defaults.string(forKey: BridgeSettings.deviceIDKey)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "iPhone"
 
         guard !username.isEmpty else { throw BridgeSyncError.serverMessage("Bridge-Benutzername fehlt.") }

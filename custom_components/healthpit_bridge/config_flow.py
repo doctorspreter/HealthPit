@@ -33,12 +33,29 @@ from .const import (
 )
 
 
+def resolved_port(raw: Any, use_ssl: bool) -> int:
+    """Empty means 8088, or 443 when the bridge sits behind HTTPS.
+
+    An external address usually carries no port at all, so the field has to
+    accept being left blank.
+    """
+    text = str(raw if raw is not None else "").strip()
+    if not text:
+        return 443 if use_ssl else DEFAULT_PORT
+    try:
+        port = int(text)
+    except ValueError:
+        return 443 if use_ssl else DEFAULT_PORT
+    return port if 1 <= port <= 65535 else DEFAULT_PORT
+
+
 def _schema(defaults: dict[str, Any] | None = None) -> vol.Schema:
     defaults = defaults or {}
+    port_default = defaults.get(CONF_PORT, "")
     return vol.Schema(
         {
             vol.Required(CONF_HOST, default=defaults.get(CONF_HOST, "")): str,
-            vol.Required(CONF_PORT, default=defaults.get(CONF_PORT, DEFAULT_PORT)): int,
+            vol.Optional(CONF_PORT, default=str(port_default or "")): str,
             vol.Required(
                 CONF_USERNAME, default=defaults.get(CONF_USERNAME, DEFAULT_USERNAME)
             ): str,
@@ -152,7 +169,9 @@ class HealthpitBridgeConfigFlow(ConfigFlow, domain=DOMAIN):
             session = async_get_clientsession(self.hass)
             host, port, use_ssl, _base_url = normalize_bridge_connection(
                 user_input[CONF_HOST],
-                user_input[CONF_PORT],
+                resolved_port(
+                    user_input.get(CONF_PORT), user_input.get(CONF_USE_SSL, False)
+                ),
                 user_input.get(CONF_USE_SSL, False),
             )
             normalized_input = {

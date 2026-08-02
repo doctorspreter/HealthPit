@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     master_username: str = ""
     master_api_token: str = ""
     master_otp_code: str = ""
-    bridge_username: str = "peter"
+    bridge_username: str = "healthpit"
     bridge_api_token: str
     bridge_otp_shared_secret: str = ""
     hevy_api_key: str = ""

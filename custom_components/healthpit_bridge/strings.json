@@ -6,13 +6,19 @@
         "description": "Connect Home Assistant to the Healthpit Bridge. Values discovered from the Home Assistant app are filled in automatically. Enter the generated API token and, when 2FA is enabled, the current 6-digit authenticator code once.",
         "data": {
           "host": "Host / IP address",
-          "port": "Port",
+          "port": "Port (optional)",
           "username": "Bridge username",
           "token": "API token",
           "otp_code": "Current 6-digit OTP code",
           "session_expires_days": "App session lifetime in days",
           "use_ssl": "Use HTTPS",
           "verify_ssl": "Verify SSL certificate"
+        },
+        "data_description": {
+          "host": "Host name or IP only, without http:// and without a port — for example 192.168.178.109, homeassistant.local or bridge.example.com.",
+          "port": "Leave empty for the default: 8088, or 443 when \"Use HTTPS\" is on. An external address usually needs no port.",
+          "username": "Must match the bridge username configured in the app, the Docker bridge and the iPhone app. Default: healthpit.",
+          "token": "The API token from the app configuration. Leave the OTP field empty when 2FA is disabled."
         }
       },
       "hassio_confirm": {

@@ -16,7 +16,7 @@ final class BridgeFitnessService {
     private init() {}
 
     func fetchHevySummary() async throws -> HevyFitnessSummary {
-        let username = defaults.string(forKey: BridgeSettings.usernameKey)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "peter"
+        let username = defaults.string(forKey: BridgeSettings.usernameKey)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "healthpit"
         let sessionToken = KeychainStore.string(for: BridgeSettings.sessionTokenKey).trimmingCharacters(in: .whitespacesAndNewlines)
         let apiToken = KeychainStore.string(for: BridgeSettings.apiTokenKey).trimmingCharacters(in: .whitespacesAndNewlines)
 
