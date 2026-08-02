@@ -1,0 +1,135 @@
+//
+//  WorkoutActivityType+Display.swift
+//  Healthpit
+//
+//  Anzeigename + SF-Symbol für die wichtigsten HKWorkoutActivityType-Werte.
+//  Bewusst nur die häufigsten Typen ausformuliert – der Rest bekommt einen
+//  sinnvollen Default.
+//
+
+import HealthKit
+
+extension HKWorkoutActivityType {
+
+    var displayName: String {
+        let key: String
+        switch self {
+        case .walking:                   key = "Gehen"
+        case .running:                   key = "Laufen"
+        case .cycling:                   key = "Radfahren"
+        case .hiking:                    key = "Wandern"
+        case .swimming:                  key = "Schwimmen"
+        case .traditionalStrengthTraining: key = "Krafttraining"
+        case .functionalStrengthTraining:  key = "Funktionelles Training"
+        case .highIntensityIntervalTraining: key = "HIIT"
+        case .yoga:                      key = "Yoga"
+        case .pilates:                   key = "Pilates"
+        case .coreTraining:              key = "Core-Training"
+        case .elliptical:                key = "Crosstrainer"
+        case .rowing:                    key = "Rudern"
+        case .stairClimbing, .stairs:    key = "Treppensteigen"
+        case .dance, .cardioDance:       key = "Tanzen"
+        case .mixedCardio:               key = "Cardio"
+        case .flexibility:               key = "Beweglichkeit"
+        case .cooldown:                  key = "Cooldown"
+        case .tennis:                    key = "Tennis"
+        case .soccer:                    key = "Fußball"
+        case .basketball:                key = "Basketball"
+        case .climbing:                  key = "Klettern"
+        case .jumpRope:                  key = "Seilspringen"
+        case .boxing:                    key = "Boxen"
+        case .kickboxing:                key = "Kickboxen"
+        case .martialArts:               key = "Kampfsport"
+        case .golf:                      key = "Golf"
+        case .tableTennis:               key = "Tischtennis"
+        case .badminton:                 key = "Badminton"
+        case .volleyball:                key = "Volleyball"
+        case .handball:                  key = "Handball"
+        case .hockey:                    key = "Hockey"
+        case .baseball:                  key = "Baseball"
+        case .americanFootball:          key = "Football"
+        case .rugby:                     key = "Rugby"
+        case .cricket:                   key = "Cricket"
+        case .skatingSports:             key = "Skaten"
+        case .downhillSkiing:            key = "Ski Alpin"
+        case .crossCountrySkiing:        key = "Langlauf"
+        case .snowboarding:              key = "Snowboard"
+        case .surfingSports:             key = "Surfen"
+        case .paddleSports:              key = "Paddeln"
+        case .waterFitness, .waterSports: key = "Wassersport"
+        case .barre:                     key = "Barre"
+        case .gymnastics:                key = "Gymnastik"
+        case .equestrianSports:          key = "Reiten"
+        case .fishing:                   key = "Angeln"
+        case .hunting:                   key = "Jagd"
+        case .play:                      key = "Spielen"
+        case .crossTraining:             key = "Cross-Training"
+        case .wrestling:                 key = "Ringen"
+        case .fencing:                   key = "Fechten"
+        case .archery:                   key = "Bogenschießen"
+        case .bowling:                   key = "Bowling"
+        case .squash, .racquetball:      key = "Squash"
+        case .other:                     key = "Sonstiges"
+        default:                         key = "Workout"
+        }
+        return L10n.string(key)
+    }
+
+    var symbol: String {
+        switch self {
+        case .walking:                   return "figure.walk"
+        case .running:                   return "figure.run"
+        case .cycling:                   return "figure.outdoor.cycle"
+        case .hiking:                    return "figure.hiking"
+        case .swimming:                  return "figure.pool.swim"
+        case .traditionalStrengthTraining, .functionalStrengthTraining:
+                                         return "dumbbell.fill"
+        case .highIntensityIntervalTraining: return "bolt.heart.fill"
+        case .yoga:                      return "figure.yoga"
+        case .pilates:                   return "figure.pilates"
+        case .coreTraining:              return "figure.core.training"
+        case .elliptical:                return "figure.elliptical"
+        case .rowing:                    return "figure.rower"
+        case .stairClimbing, .stairs:    return "figure.stairs"
+        case .dance, .cardioDance:       return "figure.dance"
+        case .mixedCardio:               return "figure.mixed.cardio"
+        case .tennis:                    return "figure.tennis"
+        case .soccer:                    return "figure.soccer"
+        case .basketball:                return "figure.basketball"
+        case .climbing:                  return "figure.climbing"
+        case .jumpRope:                  return "figure.jumprope"
+        case .boxing:                    return "figure.boxing"
+        case .kickboxing:                return "figure.kickboxing"
+        case .martialArts:               return "figure.martial.arts"
+        case .golf:                      return "figure.golf"
+        case .tableTennis:               return "figure.table.tennis"
+        case .badminton:                 return "figure.badminton"
+        case .volleyball:                return "figure.volleyball"
+        case .handball:                  return "figure.handball"
+        case .hockey:                    return "figure.hockey"
+        case .baseball:                  return "figure.baseball"
+        case .americanFootball:          return "figure.american.football"
+        case .rugby:                     return "figure.rugby"
+        case .cricket:                   return "figure.cricket"
+        case .skatingSports:             return "figure.skating"
+        case .downhillSkiing:            return "figure.skiing.downhill"
+        case .crossCountrySkiing:        return "figure.skiing.crosscountry"
+        case .snowboarding:              return "figure.snowboarding"
+        case .surfingSports:             return "figure.surfing"
+        case .paddleSports:              return "figure.outdoor.rowing"
+        case .waterFitness, .waterSports: return "figure.water.fitness"
+        case .barre:                     return "figure.barre"
+        case .gymnastics:                return "figure.gymnastics"
+        case .equestrianSports:          return "figure.equestrian.sports"
+        case .fishing:                   return "figure.fishing"
+        case .hunting:                   return "figure.hunting"
+        case .crossTraining:             return "figure.cross.training"
+        case .wrestling:                 return "figure.wrestling"
+        case .fencing:                   return "figure.fencing"
+        case .archery:                   return "figure.archery"
+        case .bowling:                   return "figure.bowling"
+        case .squash, .racquetball:      return "figure.squash"
+        default:                         return "figure.mixed.cardio"
+        }
+    }
+}

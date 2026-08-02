@@ -1,0 +1,33 @@
+services:
+  healthpit-bridge:
+    build: .
+    container_name: healthpit-bridge
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NODE_ROLE: ${NODE_ROLE:-master}
+      MASTER_URL: ${MASTER_URL:-}
+      MASTER_USERNAME: ${MASTER_USERNAME:-}
+      MASTER_API_TOKEN: ${MASTER_API_TOKEN:-}
+      BRIDGE_USERNAME: ${BRIDGE_USERNAME:?Set BRIDGE_USERNAME in .env}
+      BRIDGE_API_TOKEN: ${BRIDGE_API_TOKEN:?Set BRIDGE_API_TOKEN in .env}
+      BRIDGE_OTP_SHARED_SECRET: ${BRIDGE_OTP_SHARED_SECRET:-}
+      HEVY_API_KEY: ${HEVY_API_KEY:-}
+      HEVY_SYNC_ENABLED: ${HEVY_SYNC_ENABLED:-false}
+      HEVY_MAX_PAGES: ${HEVY_MAX_PAGES:-10}
+      HEVY_SYNC_INTERVAL_MINUTES: ${HEVY_SYNC_INTERVAL_MINUTES:-60}
+      GARMIN_EMAIL: ${GARMIN_EMAIL:-}
+      GARMIN_PASSWORD: ${GARMIN_PASSWORD:-}
+      GARMIN_SYNC_ENABLED: ${GARMIN_SYNC_ENABLED:-false}
+      GARMIN_ACTIVITY_LIMIT: ${GARMIN_ACTIVITY_LIMIT:-200}
+    ports:
+      - "${BRIDGE_PORT:-8088}:8088"
+    volumes:
+      - ./data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8088/health', timeout=5).read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s

@@ -1,0 +1,29 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Healthpit Bridge",
+        "description": "Home Assistant mit der Healthpit Bridge verbinden. Von der Home-Assistant-App erkannte Werte werden automatisch eingetragen. Gib einmal das erzeugte API-Token und bei aktivierter 2FA den aktuellen 6-stelligen Authenticator-Code ein.",
+        "data": {
+          "host": "Host / IP-Adresse",
+          "port": "Port",
+          "username": "Bridge-Benutzername",
+          "token": "API-Token",
+          "otp_code": "Aktueller 6-stelliger OTP-Code",
+          "session_expires_days": "App-Session gültig in Tagen",
+          "use_ssl": "HTTPS verwenden",
+          "verify_ssl": "SSL-Zertifikat prüfen"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Bridge nicht erreichbar. Host, Port und Netzwerk prüfen.",
+      "invalid_auth": "Bridge hat Benutzer/Token (oder OTP) abgelehnt.",
+      "role_conflict": "Verbindung abgelehnt: Die Docker-Bridge muss Master und Home Assistant Slave sein.",
+      "unknown": "Unerwarteter Fehler."
+    },
+    "abort": {
+      "already_configured": "Diese Bridge ist bereits eingerichtet."
+    }
+  }
+}

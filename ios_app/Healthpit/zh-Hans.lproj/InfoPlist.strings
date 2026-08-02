@@ -1,0 +1,4 @@
+"CFBundleTypeName" = "训练文件";
+"NSCameraUsageDescription" = "此 App 用于扫描桥接器的 OTP 二维码。";
+"NSHealthShareUsageDescription" = "此 App 会读取你的健康数据并清晰展示。";
+"NSHealthUpdateUsageDescription" = "此 App 可将手动记录的训练时长、卡路里和距离保存到 Apple 健康。";

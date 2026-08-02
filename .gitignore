@@ -1,0 +1,25 @@
+.DS_Store
+**/.DS_Store
+**/__pycache__/
+**/*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+.env
+**/.env
+
+home_assistant_docker/.env
+home_assistant_docker/data/
+*.sqlite3
+*.sqlite3-*
+*.db
+
+ios_app/DerivedData/
+ios_app/**/*.xcuserdatad/
+ios_app/**/*.xcuserstate
+ios_app/**/*.xcworkspace/xcuserdata/
+
+# Legacy paths recreated by Finder/Xcode; canonical sources live above.
+Xcode/
+homeassistant_apps/

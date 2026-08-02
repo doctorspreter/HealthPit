@@ -1,0 +1,109 @@
+configuration:
+  garmin:
+    name: "Garmin Connect"
+    description: >-
+      Imports activities from Garmin Connect. The credentials stay inside the
+      app and are never returned by the bridge API.
+    fields:
+      enabled:
+        name: "Synchronize"
+        description: "Import activities periodically (every six hours)."
+      email:
+        name: "Email"
+        description: "Email address of the Garmin Connect account."
+      password:
+        name: "Password"
+        description: "Password of the Garmin Connect account."
+      activity_limit:
+        name: "Activity limit"
+        description: "Maximum number of activities imported per run."
+  hevy:
+    name: "Hevy"
+    description: >-
+      Imports workouts through the Hevy API. Public access currently requires a
+      Hevy Pro account.
+    fields:
+      enabled:
+        name: "Synchronize"
+        description: "Import workouts from Hevy periodically."
+      api_key:
+        name: "API key"
+        description: "API key from the developer settings of the Hevy web app."
+      max_pages:
+        name: "Page limit"
+        description: "Maximum number of API pages fetched per run."
+      interval_minutes:
+        name: "Interval"
+        description: "Synchronization interval in minutes."
+  access:
+    name: "Access and security"
+    description: >-
+      Credentials for Healthpit on iPhone, GymPit and the Home Assistant
+      integration. The defaults are fine for a first start; the token is
+      generated automatically.
+    fields:
+      username:
+        name: "Username"
+        description: "Username every client sends when signing in."
+      token_mode:
+        name: "Token generation"
+        description: >-
+          Automatic: the app generates a random token on first start and keeps
+          it. Manual: provide your own token of at least 32 characters.
+      api_token:
+        name: "API token"
+        description: >-
+          Leave empty in automatic mode. The active token is stored in the app
+          data and included in Home Assistant backups.
+      two_factor_mode:
+        name: "Two-factor authentication"
+        description: >-
+          As soon as this is not "disabled", the integration publishes the QR
+          code as an image entity for scanning.
+      totp_secret:
+        name: "TOTP secret"
+        description: "Only needed for \"manual\". Base32, at least 16 characters."
+      session_days:
+        name: "Session lifetime"
+        description: >-
+          Lifetime of issued app sessions in days. The default of 1825 is
+          roughly five years.
+  topology:
+    name: "Topology (only for multiple bridges)"
+    description: >-
+      As a master you do not need to fill in anything here — that is the
+      default and the normal case. The fields below only apply when you set the
+      role to "slave" because another bridge or app is already the master.
+      There must be exactly one master per user.
+    fields:
+      role:
+        name: "Role of this node"
+        description: >-
+          master: this app owns the data and accepts clients. slave: this app
+          stands down and signs in to the master configured below.
+      master_url:
+        name: "Master address"
+        description: >-
+          Slave only. For example 192.168.178.20, host:8088 or
+          http://host:8088. A missing scheme becomes http, a missing port
+          becomes 8088.
+      master_username:
+        name: "Username on the master"
+        description: "Slave only. Leave empty to reuse the username above."
+      master_api_token:
+        name: "Master API token"
+        description: "Slave only. The token issued by the master."
+      master_otp_code:
+        name: "One-time OTP code"
+        description: >-
+          Slave only, and only when the master requires 2FA. The 6-digit code
+          is used once for the handshake.
+  system:
+    name: "System"
+    description: "Runtime behaviour of the app."
+    fields:
+      log_level:
+        name: "Log level"
+        description: "Verbosity of the app log."
+network:
+  8088/tcp: "Bridge API for apps and Home Assistant"
