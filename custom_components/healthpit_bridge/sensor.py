@@ -4,9 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from homeassistant.components.sensor import SensorEntity, SensorStateClass
+from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -26,7 +25,6 @@ async def async_setup_entry(
 
     known: set[str] = set()
     entities: list[SensorEntity] = [
-        HealthpitBridgeContentSensor(coordinator, entry),
         *_new_metric_sensors(coordinator, entry, known),
         *_new_workout_sensors(coordinator, entry, known),
     ]
@@ -230,42 +228,4 @@ class HealthpitWorkoutSensor(CoordinatorEntity[HealthpitCoordinator], SensorEnti
             "workout_metric": self._descriptor_key,
             "node_role": "slave",
             **dict(item.get("attributes") or {}),
-        }
-
-
-class HealthpitBridgeContentSensor(CoordinatorEntity[HealthpitCoordinator], SensorEntity):
-    """What the bridge actually stores, broken down by source and device.
-
-    Without this it is impossible to tell from Home Assistant whether a source
-    such as GymPit never reached the bridge or merely has not produced entities
-    yet.
-    """
-
-    _attr_has_entity_name = True
-    _attr_name = "Workouts on the bridge"
-    _attr_icon = "mdi:database-search"
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-
-    def __init__(
-        self,
-        coordinator: HealthpitCoordinator,
-        entry: ConfigEntry,
-    ) -> None:
-        super().__init__(coordinator)
-        self._attr_unique_id = f"{entry.entry_id}_bridge_content"
-        self._attr_device_info = _healthpit_device_info(entry, "workouts")
-
-    @property
-    def native_value(self) -> int:
-        return int((self.coordinator.data or {}).get("workout_count") or 0)
-
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        data = self.coordinator.data or {}
-        return {
-            "by_source": data.get("workouts_by_source", {}),
-            "by_device": data.get("workouts_by_device", {}),
-            "metric_count": data.get("metric_count", 0),
-            "route_point_count": data.get("route_point_count", 0),
         }
