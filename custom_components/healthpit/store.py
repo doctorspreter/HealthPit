@@ -209,12 +209,36 @@ class HealthpitStore:
             self._schedule_save()
         return len(stale)
 
-    def unified_workouts(self, user_id: str) -> list[dict[str, Any]]:
-        """Return merged workouts for one user, one entry per session."""
+    def unified_workouts(
+        self,
+        user_id: str,
+        *,
+        source: str | None = None,
+        device_id: str | None = None,
+        include_apple_health: bool = True,
+    ) -> list[dict[str, Any]]:
+        """Return merged workouts for one user, one entry per session.
+
+        The filters matter for the app's download step: it asks per source and
+        excludes Apple Health, because those workouts already live on the phone.
+        Ignoring the filters would hand it every workout four times over.
+        """
         bucket = self._users.get(user_id)
         if bucket is None:
             return []
-        return unify_workouts(list(bucket["workouts"].values()), bucket["links"])
+
+        workouts = list(bucket["workouts"].values())
+        if source:
+            workouts = [item for item in workouts if item.get("source") == source]
+        elif not include_apple_health:
+            workouts = [
+                item for item in workouts if item.get("source") != "apple_health"
+            ]
+        if device_id:
+            workouts = [
+                item for item in workouts if str(item.get("device_id")) == device_id
+            ]
+        return unify_workouts(workouts, bucket["links"])
 
     def workout(self, user_id: str, workout_id: str) -> dict[str, Any] | None:
         """Find one merged workout by the ID the entities show."""

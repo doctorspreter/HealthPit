@@ -63,6 +63,14 @@ async def _json_body(request: web.Request) -> Any:
         raise web.HTTPBadRequest(reason="Body is not valid JSON") from err
 
 
+def _positive_int(raw: Any, *, default: int) -> int:
+    try:
+        value = int(str(raw))
+    except (TypeError, ValueError):
+        return default
+    return value if value > 0 else default
+
+
 def _bad_request(err: PayloadError) -> web.Response:
     # Both keys on purpose: "detail" is what the app has always read, "error" is
     # the plainer name. Sending only one of them left the app showing a bare 400.
@@ -125,9 +133,20 @@ class HealthpitWorkoutImportView(HomeAssistantView):
     async def get(self, request: web.Request) -> web.Response:
         coordinator = _coordinator(request)
         user_id, _ = _user(request)
-        return web.json_response(
-            {"workouts": coordinator.store.unified_workouts(user_id)}
+        query = request.query
+        workouts = coordinator.store.unified_workouts(
+            user_id,
+            source=(query.get("source") or "").strip() or None,
+            device_id=(query.get("device_id") or "").strip() or None,
+            include_apple_health=query.get("include_apple_health", "true") != "false",
         )
+        offset = _positive_int(query.get("offset"), default=0)
+        limit = _positive_int(query.get("limit"), default=0)
+        if offset:
+            workouts = workouts[offset:]
+        if limit:
+            workouts = workouts[:limit]
+        return web.json_response({"workouts": workouts})
 
 
 class HealthpitWorkoutReconcileView(HomeAssistantView):
