@@ -1,0 +1,105 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Healthpit",
+        "description": "The app sends its data to {api_path}. Nothing to enter here.\n\nEach person needs their own long-lived access token from their Home Assistant profile, and gets their own device with their own entities."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Healthpit is already set up. One entry covers every user."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "last_route": {
+        "name": "Last route"
+      }
+    },
+    "image": {
+      "last_route": {
+        "name": "Last route"
+      }
+    }
+  },
+  "services": {
+    "delete_workout": {
+      "name": "Delete workout",
+      "description": "Remove one stored workout.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "Which device the workout came from."
+        },
+        "workout_id": {
+          "name": "Workout",
+          "description": "Which workout is meant."
+        },
+        "user_id": {
+          "name": "User",
+          "description": "Only needed when more than one person sends data."
+        }
+      }
+    },
+    "save_workout_link": {
+      "name": "Link or separate workouts",
+      "description": "Decide yourself whether two recordings are the same session.",
+      "fields": {
+        "primary": {
+          "name": "First recording",
+          "description": "For example apple_health:1234-ABCD."
+        },
+        "linked": {
+          "name": "Second recording",
+          "description": "The other one."
+        },
+        "action": {
+          "name": "Action",
+          "description": "merge joins them, separate keeps them apart."
+        },
+        "user_id": {
+          "name": "User",
+          "description": "Only needed when more than one person sends data."
+        }
+      }
+    },
+    "delete_workout_link": {
+      "name": "Remove a workout link",
+      "description": "Drop a saved merge or separate rule.",
+      "fields": {
+        "primary": {
+          "name": "First recording",
+          "description": "For example apple_health:1234-ABCD."
+        },
+        "linked": {
+          "name": "Second recording",
+          "description": "The other one."
+        },
+        "user_id": {
+          "name": "User",
+          "description": "Only needed when more than one person sends data."
+        }
+      }
+    },
+    "import_history": {
+      "name": "Import history",
+      "description": "Write the totals of all stored workouts into the long-term statistics, so graphs cover the past. Safe to repeat.",
+      "fields": {
+        "user_id": {
+          "name": "User",
+          "description": "Leave empty for everyone."
+        }
+      }
+    },
+    "forget_user": {
+      "name": "Forget a user",
+      "description": "Delete everything one person sent.",
+      "fields": {
+        "user_id": {
+          "name": "User",
+          "description": "Whose data to delete."
+        }
+      }
+    }
+  }
+}

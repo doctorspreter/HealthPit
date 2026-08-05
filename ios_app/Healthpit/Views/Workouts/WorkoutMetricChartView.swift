@@ -66,7 +66,7 @@ struct WorkoutMetricChartView: View {
                 }
                 .frame(height: 260)
                 .chartForegroundStyleScale(colorScale)
-                .chartXAxisLabel("Kilometer")
+                .chartXAxisLabel(WorkoutUnits.isImperial ? L10n.string("Meilen") : L10n.string("Kilometer"))
                 .chartYAxis(.hidden)
                 .chartLegend(position: .bottom, alignment: .leading)
                 .chartXAxis {
@@ -229,10 +229,9 @@ struct WorkoutMetricChartView: View {
     private func displayValue(_ value: Double, for kind: WorkoutMetricKind) -> String {
         switch kind {
         case .pace:
-            let seconds = Int((value * 60).rounded())
-            return "\(seconds / 60):" + String(format: "%02d /km", seconds % 60)
+            return WorkoutUnits.pace(secondsPerKilometer: Int((value * 60).rounded()))
         case .speed:
-            return String(format: "%.1f km/h", value)
+            return WorkoutUnits.speed(kmh: value)
         case .heartRate:
             return "\(Int(value.rounded())) bpm"
         case .elevation:
@@ -475,10 +474,9 @@ struct WorkoutSampleTimelineChartView: View {
     private func displayValue(_ value: Double, for kind: WorkoutMetricKind) -> String {
         switch kind {
         case .pace:
-            let seconds = Int((value * 60).rounded())
-            return "\(seconds / 60):" + String(format: "%02d /km", seconds % 60)
+            return WorkoutUnits.pace(secondsPerKilometer: Int((value * 60).rounded()))
         case .speed:
-            return String(format: "%.1f km/h", value)
+            return WorkoutUnits.speed(kmh: value)
         case .heartRate:
             return "\(Int(value.rounded())) bpm"
         case .elevation:

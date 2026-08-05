@@ -45,10 +45,12 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Diese App scannt den OTP-QR-Code der Bridge.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Healthpit verbindet sich mit deiner Bridge im Heimnetz.</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Diese App liest deine Gesundheitsdaten, um sie übersichtlich darzustellen.</string>
 	<key>NSHealthUpdateUsageDescription</key>
-	<string>Diese App kann manuell erfasste Trainings mit Dauer, Kalorien und Distanz in Apple Health speichern.</string>
+	<string>Diese App kann manuell erfasste Trainings mit Dauer, Kalorien und Distanz sowie selbst eingetragene Zyklusdaten in Apple Health speichern.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>

@@ -26,8 +26,17 @@ struct ManualWorkoutView: View {
     @State private var exportToAppleHealth = true
     @State private var message: String?
     @State private var isSaving = false
+    @State private var repeatRule: WorkoutRepeatRule = .none
+    @State private var repeatEnd = Date()
+    /// Solange der Anwender das Enddatum nicht selbst gesetzt hat, zieht es mit
+    /// der Rhythmusauswahl mit.
+    @State private var repeatEndTouched = false
     @AppStorage(HealthDataSourceSettings.writeWorkoutsKey) private var appleHealthWorkoutWritingEnabled = true
 
+    /// Der gespeicherte Wert bleibt bewusst deutsch: er wandert als `sport` in
+    /// die Bridge und nach Home Assistant. Wuerde er mit der App-Sprache
+    /// wechseln, entstuenden dort fuer dieselbe Sportart neue Entitaeten.
+    /// Uebersetzt wird deshalb nur die Beschriftung.
     private let sports = ["Bouldern", "Squash", "Krafttraining", "Laufen", "Radfahren", "Sonstiges"]
 
     var body: some View {
@@ -35,7 +44,7 @@ struct ManualWorkoutView: View {
             Form {
                 Section("Training") {
                     Picker("Sportart", selection: $sport) {
-                        ForEach(sports, id: \.self) { Text($0).tag($0) }
+                        ForEach(sports, id: \.self) { Text(L10n.string($0)).tag($0) }
                     }
                     TextField("Titel optional", text: $title)
                     DatePicker("Start", selection: $start)
@@ -43,7 +52,7 @@ struct ManualWorkoutView: View {
                 }
 
                 Section("Daten") {
-                    TextField("Distanz km", text: $distanceKm)
+                    TextField(L10n.string("Distanz") + " \(WorkoutUnits.distanceSymbol)", text: $distanceKm)
                         .keyboardType(.decimalPad)
                     TextField("Kalorien", text: $energyKcal)
                         .keyboardType(.decimalPad)
@@ -52,6 +61,20 @@ struct ManualWorkoutView: View {
                     TextField("Max Puls", text: $maxHeartRate)
                         .keyboardType(.decimalPad)
                     TextField("Notizen", text: $notes, axis: .vertical)
+                }
+
+                Section("Wiederholung") {
+                    Picker("Rhythmus", selection: $repeatRule) {
+                        ForEach(WorkoutRepeatRule.allCases) { rule in
+                            Text(rule.title).tag(rule)
+                        }
+                    }
+                    if repeatRule != .none {
+                        DatePicker("Bis", selection: $repeatEnd, in: start..., displayedComponents: .date)
+                        Text(repeatSummary)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 Section {
@@ -73,6 +96,22 @@ struct ManualWorkoutView: View {
                 if !appleHealthWorkoutWritingEnabled {
                     exportToAppleHealth = false
                 }
+                repeatEnd = repeatRule.defaultEnd(from: start)
+            }
+            .onChange(of: repeatRule) { _, newValue in
+                if !repeatEndTouched {
+                    repeatEnd = newValue.defaultEnd(from: start)
+                }
+            }
+            .onChange(of: start) { _, newValue in
+                if !repeatEndTouched {
+                    repeatEnd = repeatRule.defaultEnd(from: newValue)
+                } else if repeatEnd < newValue {
+                    repeatEnd = newValue
+                }
+            }
+            .onChange(of: repeatEnd) { _, _ in
+                repeatEndTouched = true
             }
             .navigationTitle("Training")
             .navigationBarTitleDisplayMode(.inline)
@@ -96,30 +135,66 @@ struct ManualWorkoutView: View {
         }
     }
 
+    /// Die Termine, die dieses Formular gerade anlegen wuerde.
+    private var repeatDates: [Date] {
+        repeatRule.occurrences(from: start, until: repeatEnd)
+    }
+
+    private var repeatSummary: String {
+        let count = repeatDates.count
+        if count >= WorkoutRepeatRule.maximumOccurrences {
+            return L10n.format("%lld Trainings — mehr legt Healthpit auf einmal nicht an.", Int64(count))
+        }
+        return count == 1
+            ? L10n.string("1 Training")
+            : L10n.format("%lld Trainings", Int64(count))
+    }
+
+    private func workout(startingAt date: Date) -> LocalWorkout {
+        LocalWorkout(id: UUID(),
+                     source: .manual,
+                     sport: sport,
+                     title: title.isEmpty ? sport : title,
+                     start: date,
+                     end: date.addingTimeInterval(durationMinutes * 60),
+                     // Eingabe steht in der angezeigten Einheit,
+                     // gespeichert wird immer in Kilometern.
+                     distanceKm: Double(distanceKm.replacingOccurrences(of: ",", with: "."))
+                         .map(WorkoutUnits.kilometers(fromDisplayDistance:)),
+                     energyKcal: Double(energyKcal.replacingOccurrences(of: ",", with: ".")),
+                     averageHeartRate: Double(averageHeartRate.replacingOccurrences(of: ",", with: ".")),
+                     maxHeartRate: Double(maxHeartRate.replacingOccurrences(of: ",", with: ".")),
+                     notes: notes,
+                     weather: nil,
+                     injury: nil,
+                     route: [])
+    }
+
     private func save() async {
         isSaving = true
         defer { isSaving = false }
-        let workout = LocalWorkout(id: UUID(),
-                                   source: .manual,
-                                   sport: sport,
-                                   title: title.isEmpty ? sport : title,
-                                   start: start,
-                                   end: start.addingTimeInterval(durationMinutes * 60),
-                                   distanceKm: Double(distanceKm.replacingOccurrences(of: ",", with: ".")),
-                                   energyKcal: Double(energyKcal.replacingOccurrences(of: ",", with: ".")),
-                                   averageHeartRate: Double(averageHeartRate.replacingOccurrences(of: ",", with: ".")),
-                                   maxHeartRate: Double(maxHeartRate.replacingOccurrences(of: ",", with: ".")),
-                                   notes: notes,
-                                   weather: nil,
-                                   injury: nil,
-                                   route: [])
-        onSave(workout)
+
+        let workouts = repeatDates.map(workout(startingAt:))
+        for item in workouts {
+            onSave(item)
+        }
+
         if exportToAppleHealth {
-            do {
-                try await HealthKitManager.shared.saveToAppleHealth(workout)
-            } catch {
-                message = L10n.string("Lokal gespeichert, Apple Health Export fehlgeschlagen:")
-                    + " \(error.localizedDescription)"
+            var failed = 0
+            var lastError: Error?
+            for item in workouts {
+                do {
+                    try await HealthKitManager.shared.saveToAppleHealth(item)
+                } catch {
+                    // Ein einzelner fehlgeschlagener Export darf die uebrigen
+                    // Termine nicht verschlucken; lokal liegen sie ohnehin schon.
+                    failed += 1
+                    lastError = error
+                }
+            }
+            if failed > 0 {
+                message = L10n.format("Lokal gespeichert, %lld Apple-Health-Exporte fehlgeschlagen:", Int64(failed))
+                    + " \(lastError?.localizedDescription ?? "")"
                 return
             }
         }
@@ -233,7 +308,11 @@ struct LocalWorkoutDetailView: View {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text(exercise.name)
                                     .font(.headline)
-                                Text("\(exercise.sets.count) Sätze · \(formatKg(exercise.sets.map { $0.volumeKg ?? (($0.weightKg ?? 0) * ($0.reps ?? 0)) }.reduce(0, +)))")
+                                Text(L10n.format(
+                                    "%lld Sätze · %@",
+                                    Int64(exercise.sets.count),
+                                    formatKg(exercise.sets.map { $0.volumeKg ?? (($0.weightKg ?? 0) * ($0.reps ?? 0)) }.reduce(0, +))
+                                ))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -245,7 +324,7 @@ struct LocalWorkoutDetailView: View {
             Section {
                 LazyVGrid(columns: statColumns, spacing: 12) {
                     stat("Dauer", durationText(workout.duration))
-                    stat("Distanz", workout.distanceKm.map { String(format: "%.2f km", $0) } ?? "-")
+                    stat("Distanz", workout.distanceKm.map { WorkoutUnits.distance(km: $0, fractionDigits: 2) } ?? "-")
                     stat("Kalorien", workout.energyKcal.map { "\(Int($0.rounded())) kcal" } ?? "-")
                     stat("Ø Puls", effectiveHeartRate.map { "\(Int($0.average.rounded())) bpm" } ?? "-")
                 }
@@ -281,11 +360,12 @@ struct LocalWorkoutDetailView: View {
                                                    heartRate: effectiveHeartRate,
                                                    isCycling: isCycling)
 
-                    DisclosureGroup("Kilometer anzeigen", isExpanded: $showingSplitTable) {
+                    DisclosureGroup(WorkoutUnits.isImperial ? L10n.string("Meilen anzeigen") : L10n.string("Kilometer anzeigen"),
+                                    isExpanded: $showingSplitTable) {
                         ForEach(splits) { split in
                             HStack {
                                 VStack(alignment: .leading, spacing: 3) {
-                                    Text("km \(split.id)")
+                                    Text("\(WorkoutUnits.distanceSymbol) \(split.id)")
                                         .font(.subheadline.bold())
                                     Text(splitDurationText(split.duration))
                                         .font(.caption)
@@ -591,12 +671,11 @@ struct LocalWorkoutDetailView: View {
     }
 
     private func paceText(_ secondsPerKm: TimeInterval) -> String {
-        let total = Int(secondsPerKm.rounded())
-        return "\(total / 60):" + String(format: "%02d /km", total % 60)
+        WorkoutUnits.pace(secondsPerKilometer: Int(secondsPerKm.rounded()))
     }
 
     private func speedText(_ value: Double) -> String {
-        String(format: "%.1f km/h", value)
+        WorkoutUnits.speed(kmh: value)
     }
 
     private func splitDurationText(_ duration: TimeInterval) -> String {

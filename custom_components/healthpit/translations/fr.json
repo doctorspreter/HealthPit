@@ -1,0 +1,105 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Healthpit",
+        "description": "L'app envoie ses données à {api_path}. Rien à saisir ici.\n\nChaque personne a besoin de son propre jeton d'accès longue durée depuis son profil Home Assistant, et obtient son propre appareil avec ses propres entités."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Healthpit est déjà configuré. Une entrée suffit pour tous les utilisateurs."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "last_route": {
+        "name": "Dernier parcours"
+      }
+    },
+    "image": {
+      "last_route": {
+        "name": "Dernier parcours"
+      }
+    }
+  },
+  "services": {
+    "delete_workout": {
+      "name": "Supprimer l'entraînement",
+      "description": "Retire un entraînement enregistré.",
+      "fields": {
+        "device_id": {
+          "name": "Appareil",
+          "description": "De quel appareil vient l'entraînement."
+        },
+        "workout_id": {
+          "name": "Entraînement",
+          "description": "Quel entraînement est visé."
+        },
+        "user_id": {
+          "name": "Utilisateur",
+          "description": "Nécessaire seulement si plusieurs personnes envoient des données."
+        }
+      }
+    },
+    "save_workout_link": {
+      "name": "Lier ou séparer des entraînements",
+      "description": "Décidez vous-même si deux enregistrements sont la même séance.",
+      "fields": {
+        "primary": {
+          "name": "Premier enregistrement",
+          "description": "Par exemple apple_health:1234-ABCD."
+        },
+        "linked": {
+          "name": "Second enregistrement",
+          "description": "L'autre."
+        },
+        "action": {
+          "name": "Action",
+          "description": "merge les réunit, separate les garde distincts."
+        },
+        "user_id": {
+          "name": "Utilisateur",
+          "description": "Nécessaire seulement si plusieurs personnes envoient des données."
+        }
+      }
+    },
+    "delete_workout_link": {
+      "name": "Retirer la liaison",
+      "description": "Supprime une règle de fusion ou de séparation enregistrée.",
+      "fields": {
+        "primary": {
+          "name": "Premier enregistrement",
+          "description": "Par exemple apple_health:1234-ABCD."
+        },
+        "linked": {
+          "name": "Second enregistrement",
+          "description": "L'autre."
+        },
+        "user_id": {
+          "name": "Utilisateur",
+          "description": "Nécessaire seulement si plusieurs personnes envoient des données."
+        }
+      }
+    },
+    "import_history": {
+      "name": "Importer l'historique",
+      "description": "Écrit les totaux de tous les entraînements enregistrés dans les statistiques longue durée, pour que les graphiques couvrent le passé. Peut être relancé.",
+      "fields": {
+        "user_id": {
+          "name": "Utilisateur",
+          "description": "Laissez vide pour tout le monde."
+        }
+      }
+    },
+    "forget_user": {
+      "name": "Oublier un utilisateur",
+      "description": "Supprime tout ce qu'une personne a envoyé.",
+      "fields": {
+        "user_id": {
+          "name": "Utilisateur",
+          "description": "Les données de qui supprimer."
+        }
+      }
+    }
+  }
+}

@@ -32,10 +32,17 @@ struct SleepDetailView: View {
     @State private var isLoading = false
 
     /// Reihenfolge der Y-Achse im Hypnogramm (unten → oben).
-    private let stageOrder = ["Tief", "Core", "REM", "Wach"]
-    private let styleScale: KeyValuePairs<String, Color> = [
-        "Tief": .indigo, "Core": .blue, "REM": .cyan, "Wach": .orange
-    ]
+    ///
+    /// Reihenfolge und Farben werden aus `SleepStage` abgeleitet, nicht
+    /// getrennt gepflegt. Feste deutsche Schlüssel hier führten in jeder
+    /// anderen Sprache zum Absturz, weil Swift Charts einen Wert, den seine
+    /// Skala nicht kennt, nicht zeichnen kann.
+    private var stageOrder: [String] {
+        [SleepStage.deep, .core, .rem, .awake].map(\.title)
+    }
+    private var styleScale: [(String, Color)] {
+        [SleepStage.deep, .core, .rem, .awake].map { ($0.title, $0.color) }
+    }
     private let metricColumns = [GridItem(.adaptive(minimum: 150), spacing: 12)]
 
     var body: some View {
@@ -119,7 +126,9 @@ struct SleepDetailView: View {
                 .font(.system(.largeTitle, design: .rounded, weight: .bold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
-            Text("\(sessions.count) Nacht\(sessions.count == 1 ? "" : "e") im Zeitraum")
+            Text(sessions.count == 1
+                 ? L10n.string("1 Nacht im Zeitraum")
+                 : L10n.format("%lld Nächte im Zeitraum", Int64(sessions.count)))
                 .font(.caption)
                 .foregroundStyle(.secondary)
             phaseBar(s)
@@ -305,7 +314,10 @@ struct SleepDetailView: View {
                     }
                 }
             }
-            .chartForegroundStyleScale(styleScale)
+            .chartForegroundStyleScale(
+                domain: styleScale.map(\.0),
+                range: styleScale.map(\.1)
+            )
             .id(range.rawValue)
             .frame(height: 220)
         }
@@ -320,7 +332,7 @@ struct SleepDetailView: View {
         let avgREM = sessions.reduce(0) { $0 + $1.rem } / count
         let avgEff = sessions.reduce(0) { $0 + $1.efficiency } / count
         return VStack(alignment: .leading, spacing: 8) {
-            Text("Durchschnitt (\(sessions.count) Nächte)").font(.headline)
+            Text(L10n.format("Durchschnitt (%lld Nächte)", Int64(sessions.count))).font(.headline)
             LazyVGrid(columns: metricColumns, spacing: 12) {
                 smallStat(avgSleep.hoursMinutes, "Ø Schlaf")
                 smallStat(avgDeep.hoursMinutes, "Ø Tief")

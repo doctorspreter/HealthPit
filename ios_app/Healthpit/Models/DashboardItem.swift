@@ -16,15 +16,17 @@ enum DashboardItem: String, CaseIterable, Identifiable {
     case vitals
     case workouts
     case sleep
+    case cycle
     case records
 
     var id: String { rawValue }
 
     static let storageKey = "dashboardCardOrder"
     static let sizeStorageKey = "dashboardCardSizes"
+    static let hiddenStorageKey = "dashboardHiddenCards"
 
     static var defaultOrder: [DashboardItem] {
-        [.activity, .workouts, .sleep, .heart, .records, .body, .nutrition, .vitals]
+        [.activity, .workouts, .sleep, .heart, .records, .body, .nutrition, .vitals, .cycle]
     }
 
     static func ordered(from rawValue: String) -> [DashboardItem] {
@@ -38,6 +40,24 @@ enum DashboardItem: String, CaseIterable, Identifiable {
 
     static func encode(_ items: [DashboardItem]) -> String {
         items.map(\.rawValue).joined(separator: ",")
+    }
+
+    /// Die ausgeblendeten Kacheln.
+    ///
+    /// Sie werden getrennt von der Reihenfolge gespeichert, damit eine Kachel
+    /// beim Wiedereinblenden an ihre alte Stelle zurueckkehrt statt ans Ende.
+    static func hidden(from rawValue: String) -> Set<DashboardItem> {
+        Set(rawValue.split(separator: ",").compactMap { DashboardItem(rawValue: String($0)) })
+    }
+
+    static func encodeHidden(_ items: Set<DashboardItem>) -> String {
+        allCases.filter(items.contains).map(\.rawValue).joined(separator: ",")
+    }
+
+    /// Was die Startseite tatsaechlich zeigt.
+    static func visible(from orderRaw: String, hiddenRaw: String) -> [DashboardItem] {
+        let hiddenItems = hidden(from: hiddenRaw)
+        return ordered(from: orderRaw).filter { !hiddenItems.contains($0) }
     }
 
     static func sizes(from rawValue: String) -> [DashboardItem: DashboardWidgetSize] {
@@ -75,6 +95,7 @@ enum DashboardItem: String, CaseIterable, Identifiable {
         case .vitals: return HealthCategory.vitals.title
         case .workouts: return L10n.string("Workouts")
         case .sleep: return L10n.string("Schlaf")
+        case .cycle: return HealthCategory.cycle.title
         case .records: return L10n.string("Rekorde")
         }
     }
@@ -88,6 +109,7 @@ enum DashboardItem: String, CaseIterable, Identifiable {
         case .vitals: return HealthCategory.vitals.systemImage
         case .workouts: return "figure.run"
         case .sleep: return "bed.double.fill"
+        case .cycle: return HealthCategory.cycle.systemImage
         case .records: return "trophy.fill"
         }
     }
@@ -99,7 +121,8 @@ enum DashboardItem: String, CaseIterable, Identifiable {
         case .body: return .body
         case .nutrition: return .nutrition
         case .vitals: return .vitals
-        case .workouts, .sleep, .records: return nil
+        // Zyklus hat eine eigene Ansicht, keine Metrik-Liste.
+        case .workouts, .sleep, .cycle, .records: return nil
         }
     }
 }

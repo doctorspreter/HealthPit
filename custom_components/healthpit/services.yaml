@@ -1,0 +1,96 @@
+delete_workout:
+  name: Delete workout
+  description: Remove one stored workout.
+  fields:
+    device_id:
+      required: true
+      selector:
+        text:
+      name: Device ID
+    workout_id:
+      required: true
+      selector:
+        text:
+      name: Workout ID
+    user_id:
+      required: false
+      selector:
+        text:
+      name: Healthpit user ID
+      description: Only needed when more than one person pushes data.
+
+save_workout_link:
+  name: Link or separate workouts
+  description: >-
+    Override the automatic decision whether two recordings are the same session.
+  fields:
+    primary:
+      required: true
+      selector:
+        text:
+      name: Primary key
+      description: For example apple_health:1234-ABCD.
+    linked:
+      required: true
+      selector:
+        text:
+      name: Linked key
+    action:
+      required: true
+      selector:
+        select:
+          options:
+            - merge
+            - separate
+      name: Action
+    user_id:
+      required: false
+      selector:
+        text:
+      name: Healthpit user ID
+
+delete_workout_link:
+  name: Remove a workout link
+  description: Drop a previously saved merge or separate rule.
+  fields:
+    primary:
+      required: true
+      selector:
+        text:
+      name: Primary key
+    linked:
+      required: true
+      selector:
+        text:
+      name: Linked key
+    user_id:
+      required: false
+      selector:
+        text:
+      name: Healthpit user ID
+
+import_history:
+  name: Import history
+  description: >-
+    Write the cumulative sport values of all stored workouts into Home
+    Assistant's long-term statistics, so graphs cover the past instead of
+    starting today. Safe to run again; existing rows are overwritten.
+  fields:
+    user_id:
+      required: false
+      selector:
+        text:
+      name: Healthpit user ID
+      description: Leave empty to import for everyone.
+
+forget_user:
+  name: Forget a user
+  description: >-
+    Delete everything one person pushed. Their entities disappear on the next
+    restart.
+  fields:
+    user_id:
+      required: true
+      selector:
+        text:
+      name: Healthpit user ID

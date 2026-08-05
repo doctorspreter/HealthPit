@@ -211,7 +211,9 @@ struct MetricDetailView: View {
     }
 
     private func stat(_ title: String, _ value: Double) -> some View {
-        let status = BodyMetricStatus.evaluate(metric: metric, value: value / metric.displayScale)
+        // Die Schwellwerte sind in HealthKit-Einheiten definiert, der Wert liegt
+        // hier schon in der Anzeige-Einheit vor – deshalb zurueckrechnen.
+        let status = BodyMetricStatus.evaluate(metric: metric, value: metric.rawValue(fromDisplay: value))
         return VStack(spacing: 4) {
             Text(L10n.string(title))
                 .font(.caption)
@@ -219,8 +221,8 @@ struct MetricDetailView: View {
             Text(formattedScaled(value))
                 .font(.headline)
                 .foregroundStyle(status.color)
-            if !metric.unitSymbol.isEmpty {
-                Text(metric.unitSymbol)
+            if !metric.displaySymbol.isEmpty {
+                Text(metric.displaySymbol)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -237,9 +239,9 @@ struct MetricDetailView: View {
 
     // MARK: Daten
 
-    /// Datenpunkte mit bereits angewandter Anzeige-Skalierung (z. B. Prozent).
+    /// Datenpunkte in der Anzeige-Einheit (Prozent-Skalierung, mi statt km …).
     private var scaledPoints: [DailyStatistic] {
-        stats.map { DailyStatistic(id: $0.id, date: $0.date, value: $0.value * metric.displayScale) }
+        stats.map { DailyStatistic(id: $0.id, date: $0.date, value: metric.displayValue($0.value)) }
     }
 
     private var averageValue: Double {
@@ -263,9 +265,9 @@ struct MetricDetailView: View {
         return max(1, effectiveEnd == interval.end ? days : days + 1)
     }
 
-    /// Formatiert einen bereits skalierten Wert (daher displayScale hier rausrechnen).
+    /// Formatiert einen Wert, der bereits in der Anzeige-Einheit vorliegt.
     private func formattedScaled(_ value: Double) -> String {
-        metric.formattedValue(value / metric.displayScale)
+        metric.formattedDisplayValue(value)
     }
 
     private func load() async {

@@ -59,13 +59,39 @@ enum HealthKitTypes {
         types.insert(HKQuantityType(.activeEnergyBurned))
         types.insert(HKQuantityType(.distanceWalkingRunning))
         types.insert(HKQuantityType(.distanceCycling))
+        // Zyklusdaten werden in der App erfasst und muessen zurueckgeschrieben
+        // werden, sonst kennt die Health-App den Eintrag nicht.
+        for identifier in writableCycleIdentifiers {
+            if let type = HKCategoryType.categoryType(forIdentifier: identifier) {
+                types.insert(type)
+            }
+        }
         return types
     }
 
-    /// Kategoriale Typen (PLAN 2.1 / 2.4).
+    /// Kategoriale Typen (PLAN 2.1 / 2.4 sowie Zyklus).
     private static let categoryIdentifiers: [HKCategoryTypeIdentifier] = [
         .sleepAnalysis,
         .appleStandHour,
+    ] + cycleIdentifiers
+
+    /// Reproduktionsgesundheit – gelesen wird alles davon.
+    static let cycleIdentifiers: [HKCategoryTypeIdentifier] = [
+        .menstrualFlow,
+        .intermenstrualBleeding,
+        .ovulationTestResult,
+        .cervicalMucusQuality,
+        .sexualActivity,
+    ]
+
+    /// Wovon Healthpit auch eigene Eintraege anlegen darf.
+    ///
+    /// Zervixschleim und sexuelle Aktivitaet bleiben bewusst lesend: fuer beide
+    /// gibt es in der App keine Erfassung.
+    static let writableCycleIdentifiers: [HKCategoryTypeIdentifier] = [
+        .menstrualFlow,
+        .intermenstrualBleeding,
+        .ovulationTestResult,
     ]
 
     /// Stammdaten (PLAN 2.5).

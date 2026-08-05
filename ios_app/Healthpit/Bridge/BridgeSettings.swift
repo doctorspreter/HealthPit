@@ -8,16 +8,15 @@
 import Foundation
 
 enum BridgeSettings {
+    /// Long-Lived Access Token aus dem Home-Assistant-Profil. Er ist die
+    /// gesamte Anmeldung; Home Assistant leitet daraus ab, welchem Benutzer die
+    /// gesendeten Daten gehoeren.
+    nonisolated static let homeAssistantTokenKey = "bridgeHomeAssistantToken"
     nonisolated static let baseURLKey = "bridgeBaseURL"
     nonisolated static let localConnectionEnabledKey = "bridgeLocalConnectionEnabled"
     nonisolated static let localHostKey = "bridgeLocalHost"
     nonisolated static let localPortKey = "bridgeLocalPort"
     nonisolated static let usernameKey = "bridgeUsername"
-    nonisolated static let apiTokenKey = "bridgeApiToken"
-    nonisolated static let otpCodeKey = "bridgeOtpCode"
-    nonisolated static let otpSecretKey = "bridgeOtpSecret"
-    nonisolated static let sessionTokenKey = "bridgeSessionToken"
-    nonisolated static let sessionExpiresAtKey = "bridgeSessionExpiresAt"
     // The bridge a session was issued by. A session from a different bridge is
     // worthless, so the settings screen can tell the user to reconnect instead
     // of claiming a connection that no longer applies.

@@ -18,6 +18,11 @@ extension Calendar {
         calendar.minimumDaysInFirstWeek = 4
         return calendar
     }
+
+    /// Der Monatsanfang, auf den ein Kalenderraster aufsetzt.
+    nonisolated func startOfMonth(for date: Date) -> Date {
+        self.date(from: dateComponents([.year, .month], from: date)) ?? startOfDay(for: date)
+    }
 }
 
 /// Vordefinierter Auswertungszeitraum für Diagramme und Abfragen.

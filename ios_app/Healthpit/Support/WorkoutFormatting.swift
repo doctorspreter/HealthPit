@@ -13,11 +13,10 @@ func parseTrendDate(_ text: String) -> Date? {
     return formatter.date(from: text)
 }
 
+/// Gewicht in der eingestellten Einheit. Der Parameter bleibt in Kilogramm –
+/// gespeichert wird durchgaengig metrisch.
 func formatKg(_ value: Double) -> String {
-    if value >= 1000 {
-        return String(format: "%.1f t", value / 1000)
-    }
-    return String(format: "%.0f kg", value)
+    WorkoutUnits.weight(kg: value)
 }
 
 func formatWorkoutDuration(_ seconds: TimeInterval) -> String {

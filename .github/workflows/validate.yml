@@ -33,12 +33,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install YAML parser
-        run: python -m pip install --disable-pip-version-check PyYAML
-      - name: Validate Python, JSON, YAML, and shell
+      - name: Install test tools
+        run: python -m pip install --disable-pip-version-check PyYAML pytest
+      - name: Validate Python, JSON and YAML
         shell: bash
         run: |
-          python -m compileall -q custom_components home_assistant_app/app home_assistant_docker/app
+          python -m compileall -q custom_components
           python - <<'PY'
           import json
           from pathlib import Path
@@ -52,6 +52,5 @@ jobs:
                   if ".git" not in path.parts and ".github/workflows" not in path.as_posix():
                       yaml.safe_load(path.read_text(encoding="utf-8"))
           PY
-          bash -n home_assistant_app/run.sh
-          (cd home_assistant_app && python -m unittest discover -s tests -v)
-          python -m unittest discover -s tests -t tests -v
+      - name: Run tests
+        run: python -m pytest tests -q

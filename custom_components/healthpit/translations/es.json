@@ -1,0 +1,105 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Healthpit",
+        "description": "La app envía sus datos a {api_path}. Aquí no hay nada que introducir.\n\nCada persona necesita su propio token de acceso de larga duración desde su perfil de Home Assistant, y obtiene su propio dispositivo con sus propias entidades."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Healthpit ya está configurado. Una entrada vale para todos los usuarios."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "last_route": {
+        "name": "Última ruta"
+      }
+    },
+    "image": {
+      "last_route": {
+        "name": "Última ruta"
+      }
+    }
+  },
+  "services": {
+    "delete_workout": {
+      "name": "Eliminar entrenamiento",
+      "description": "Quita un entrenamiento guardado.",
+      "fields": {
+        "device_id": {
+          "name": "Dispositivo",
+          "description": "De qué dispositivo vino el entrenamiento."
+        },
+        "workout_id": {
+          "name": "Entrenamiento",
+          "description": "A qué entrenamiento se refiere."
+        },
+        "user_id": {
+          "name": "Usuario",
+          "description": "Solo necesario si más de una persona envía datos."
+        }
+      }
+    },
+    "save_workout_link": {
+      "name": "Unir o separar entrenamientos",
+      "description": "Decide tú si dos registros son la misma sesión.",
+      "fields": {
+        "primary": {
+          "name": "Primer registro",
+          "description": "Por ejemplo apple_health:1234-ABCD."
+        },
+        "linked": {
+          "name": "Segundo registro",
+          "description": "El otro."
+        },
+        "action": {
+          "name": "Acción",
+          "description": "merge los une, separate los mantiene aparte."
+        },
+        "user_id": {
+          "name": "Usuario",
+          "description": "Solo necesario si más de una persona envía datos."
+        }
+      }
+    },
+    "delete_workout_link": {
+      "name": "Quitar la vinculación",
+      "description": "Borra una regla de unión o separación guardada.",
+      "fields": {
+        "primary": {
+          "name": "Primer registro",
+          "description": "Por ejemplo apple_health:1234-ABCD."
+        },
+        "linked": {
+          "name": "Segundo registro",
+          "description": "El otro."
+        },
+        "user_id": {
+          "name": "Usuario",
+          "description": "Solo necesario si más de una persona envía datos."
+        }
+      }
+    },
+    "import_history": {
+      "name": "Importar historial",
+      "description": "Escribe los totales de todos los entrenamientos guardados en las estadísticas de largo plazo, para que los gráficos cubran el pasado. Se puede repetir.",
+      "fields": {
+        "user_id": {
+          "name": "Usuario",
+          "description": "Déjalo vacío para todos."
+        }
+      }
+    },
+    "forget_user": {
+      "name": "Olvidar un usuario",
+      "description": "Borra todo lo que ha enviado una persona.",
+      "fields": {
+        "user_id": {
+          "name": "Usuario",
+          "description": "De quién se borran los datos."
+        }
+      }
+    }
+  }
+}

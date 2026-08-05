@@ -20,6 +20,7 @@ struct HealthSourceDescriptor: Identifiable, Hashable, Sendable {
 struct HealthDataPointDescriptor: Identifiable, Hashable, Sendable {
     static let workoutsID = "healthpit.workouts"
     static let sleepID = "healthpit.sleep"
+    static let cycleID = "healthpit.cycle"
 
     let id: String
     let title: String
@@ -41,7 +42,11 @@ struct HealthDataPointDescriptor: Identifiable, Hashable, Sendable {
             HealthDataPointDescriptor(id: sleepID,
                                       title: "Schlaf",
                                       systemImage: "bed.double.fill",
-                                      section: "Schlaf")
+                                      section: "Schlaf"),
+            HealthDataPointDescriptor(id: cycleID,
+                                      title: "Zyklus",
+                                      systemImage: "drop.circle.fill",
+                                      section: "Zyklus")
         ]
     }()
 

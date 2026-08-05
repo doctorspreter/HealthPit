@@ -32,11 +32,15 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 struct HealthpitApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @AppStorage(AppLanguage.storageKey) private var appLanguageRawValue = AppLanguage.system.rawValue
+    @AppStorage(MeasurementSystemSetting.storageKey) private var measurementSystemRawValue = MeasurementSystemSetting.automatic.rawValue
 
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .id(appLanguageRawValue)
+                // Sprache und Maßeinheiten stecken in synchron gelesenen
+                // Einstellungen, nicht in beobachtbarem Zustand – beim Wechsel
+                // muss die Oberfläche daher komplett neu aufgebaut werden.
+                .id("\(appLanguageRawValue)-\(measurementSystemRawValue)")
                 .environment(\.locale, AppLanguage.from(appLanguageRawValue).locale)
                 .onOpenURL { url in
                     Task {

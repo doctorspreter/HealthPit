@@ -1,0 +1,105 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Healthpit",
+        "description": "Die App sendet ihre Daten an {api_path}. Hier ist nichts einzutragen.\n\nJede Person braucht einen eigenen Long-Lived Access Token aus ihrem Home-Assistant-Profil und bekommt ein eigenes Gerät mit eigenen Entitäten."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Healthpit ist bereits eingerichtet. Ein Eintrag gilt für alle Benutzer."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "last_route": {
+        "name": "Letzte Route"
+      }
+    },
+    "image": {
+      "last_route": {
+        "name": "Letzte Route"
+      }
+    }
+  },
+  "services": {
+    "delete_workout": {
+      "name": "Workout löschen",
+      "description": "Entfernt ein gespeichertes Workout.",
+      "fields": {
+        "device_id": {
+          "name": "Gerät",
+          "description": "Von welchem Gerät das Workout kam."
+        },
+        "workout_id": {
+          "name": "Workout",
+          "description": "Welches Workout gemeint ist."
+        },
+        "user_id": {
+          "name": "Benutzer",
+          "description": "Nur nötig, wenn mehr als eine Person Daten sendet."
+        }
+      }
+    },
+    "save_workout_link": {
+      "name": "Workouts verbinden oder trennen",
+      "description": "Selbst entscheiden, ob zwei Aufzeichnungen dieselbe Einheit sind.",
+      "fields": {
+        "primary": {
+          "name": "Erste Aufzeichnung",
+          "description": "Zum Beispiel apple_health:1234-ABCD."
+        },
+        "linked": {
+          "name": "Zweite Aufzeichnung",
+          "description": "Die andere."
+        },
+        "action": {
+          "name": "Aktion",
+          "description": "merge verbindet sie, separate hält sie getrennt."
+        },
+        "user_id": {
+          "name": "Benutzer",
+          "description": "Nur nötig, wenn mehr als eine Person Daten sendet."
+        }
+      }
+    },
+    "delete_workout_link": {
+      "name": "Verknüpfung entfernen",
+      "description": "Löscht eine gespeicherte Verbinde- oder Trenne-Regel.",
+      "fields": {
+        "primary": {
+          "name": "Erste Aufzeichnung",
+          "description": "Zum Beispiel apple_health:1234-ABCD."
+        },
+        "linked": {
+          "name": "Zweite Aufzeichnung",
+          "description": "Die andere."
+        },
+        "user_id": {
+          "name": "Benutzer",
+          "description": "Nur nötig, wenn mehr als eine Person Daten sendet."
+        }
+      }
+    },
+    "import_history": {
+      "name": "Historie importieren",
+      "description": "Schreibt die Summen aller gespeicherten Workouts in die Langzeitstatistik, damit Graphen die Vergangenheit abdecken. Wiederholbar.",
+      "fields": {
+        "user_id": {
+          "name": "Benutzer",
+          "description": "Leer lassen für alle."
+        }
+      }
+    },
+    "forget_user": {
+      "name": "Benutzer vergessen",
+      "description": "Löscht alles, was eine Person gesendet hat.",
+      "fields": {
+        "user_id": {
+          "name": "Benutzer",
+          "description": "Wessen Daten gelöscht werden."
+        }
+      }
+    }
+  }
+}

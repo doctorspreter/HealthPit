@@ -18,6 +18,7 @@ enum HealthCategory: String, CaseIterable, Identifiable, Sendable {
     case body
     case nutrition
     case vitals
+    case cycle
 
     var id: String { rawValue }
 
@@ -31,6 +32,7 @@ enum HealthCategory: String, CaseIterable, Identifiable, Sendable {
         case .body:      return L10n.string("Körper")
         case .nutrition: return L10n.string("Ernährung")
         case .vitals:    return L10n.string("Vitalwerte")
+        case .cycle:     return L10n.string("Zyklus")
         }
     }
 
@@ -44,6 +46,7 @@ enum HealthCategory: String, CaseIterable, Identifiable, Sendable {
         case .body:      return "figure.arms.open"
         case .nutrition: return "fork.knife"
         case .vitals:    return "lungs.fill"
+        case .cycle:     return "drop.circle.fill"
         }
     }
 
@@ -57,6 +60,7 @@ enum HealthCategory: String, CaseIterable, Identifiable, Sendable {
         case .body:      return .purple
         case .nutrition: return .teal
         case .vitals:    return .cyan
+        case .cycle:     return .red
         }
     }
 }

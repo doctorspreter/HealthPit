@@ -40,7 +40,6 @@ struct WorkoutRangeOverview: View {
                 NavigationLink {
                     WorkoutSportDetailView(sport: row.sport,
                                            items: itemsForSport(row.sport),
-                                           hevySummary: nil,
                                            onDelete: { _ in })
                 } label: {
                     HStack(spacing: 12) {
@@ -50,13 +49,13 @@ struct WorkoutRangeOverview: View {
                             .frame(width: 26)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(L10n.string(row.sport)).font(.subheadline.bold())
-                            Text("\(row.count) Trainings · \(durationText(row.duration))")
+                            Text(L10n.format("%lld Trainings · %@", Int64(row.count), durationText(row.duration)))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
                         Spacer()
                         if row.distanceKm > 0 {
-                            Text(String(format: "%.1f km", row.distanceKm))
+                            Text(WorkoutUnits.distance(km: row.distanceKm))
                                 .font(.caption.bold())
                                 .foregroundStyle(.secondary)
                         }
@@ -196,7 +195,7 @@ struct WorkoutRangeOverview: View {
 
     private var yearOverview: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("\(items.count) Trainings im Jahr")
+            Text(L10n.format("%lld Trainings im Jahr", Int64(items.count)))
                 .font(.headline)
             Chart(monthCounts) { item in
                 LineMark(x: .value("Monat", item.month),
@@ -350,7 +349,6 @@ private struct WorkoutSportStat: Identifiable {
 
 struct WorkoutSportListView: View {
     let items: [UnifiedWorkout]
-    let hevySummary: HevyFitnessSummary?
     let onDelete: (UnifiedWorkout) -> Void
 
     private var sports: [String] {
@@ -370,7 +368,6 @@ struct WorkoutSportListView: View {
                     NavigationLink(sport) {
                         WorkoutSportDetailView(sport: sport,
                                                items: items.filter { $0.sportName == sport },
-                                               hevySummary: hevySummary,
                                                onDelete: onDelete)
                     }
                 }
@@ -414,7 +411,6 @@ private enum WorkoutSportRange: String, CaseIterable, Identifiable {
 struct WorkoutSportDetailView: View {
     let sport: String
     let items: [UnifiedWorkout]
-    let hevySummary: HevyFitnessSummary?
     let onDelete: (UnifiedWorkout) -> Void
 
     @State private var range: WorkoutSportRange = .all
@@ -512,7 +508,7 @@ struct WorkoutSportDetailView: View {
                     if isStrength {
                         stat("Volumen", formatKg(totalVolumeKg))
                     } else {
-                        stat("Distanz", totalDistanceKm > 0 ? String(format: "%.1f km", totalDistanceKm) : "-")
+                        stat("Distanz", totalDistanceKm > 0 ? WorkoutUnits.distance(km: totalDistanceKm) : "-")
                     }
                 }
             }
@@ -526,7 +522,7 @@ struct WorkoutSportDetailView: View {
                             VStack(alignment: .leading, spacing: 5) {
                                 Text(row.name)
                                     .font(.headline)
-                                Text("\(row.workoutCount) Trainings · \(row.setCount) Sätze · \(formatKg(row.volumeKg))")
+                                Text(L10n.format("%lld Trainings · %lld Sätze · %@", Int64(row.workoutCount), Int64(row.setCount), formatKg(row.volumeKg)))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -540,7 +536,6 @@ struct WorkoutSportDetailView: View {
                 ForEach(visibleItems) { item in
                     NavigationLink {
                         UnifiedWorkoutDetailView(item: item,
-                                                 hevySummary: hevySummary,
                                                  records: [])
                     } label: {
                         UnifiedWorkoutRow(item: item, records: [])

@@ -1,4 +1,4 @@
 "CFBundleTypeName" = "Archivo de entrenamiento";
 "NSCameraUsageDescription" = "Esta app escanea el código QR OTP del puente.";
 "NSHealthShareUsageDescription" = "Esta app lee tus datos de salud para mostrarlos claramente.";
-"NSHealthUpdateUsageDescription" = "Esta app puede guardar en Apple Health entrenamientos registrados manualmente con duración, calorías y distancia.";
+"NSHealthUpdateUsageDescription" = "Esta app puede guardar en Apple Health los entrenamientos registrados manualmente con duración, calorías y distancia, así como las entradas del ciclo que añadas.";

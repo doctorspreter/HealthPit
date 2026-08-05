@@ -1,0 +1,14 @@
+{
+  "domain": "healthpit",
+  "name": "Healthpit",
+  "codeowners": [],
+  "config_flow": true,
+  "dependencies": ["http", "recorder"],
+  "documentation": "https://github.com/doctorspreter/healthpit",
+  "integration_type": "hub",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/doctorspreter/healthpit/issues",
+  "requirements": [],
+  "single_config_entry": true,
+  "version": "2.0.0"
+}

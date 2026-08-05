@@ -1,88 +1,112 @@
 # Healthpit
 
-Healthpit is an open-source, local-first health data platform for iPhone,
-Home Assistant, Docker, GymPit, Hevy, and Garmin.
+Healthpit is an open-source, local-first health data platform for iPhone and
+Home Assistant.
 
-This single repository intentionally supports two independent Home Assistant
-installation methods:
+The iPhone app reads Apple Health locally and pushes what you select straight
+into Home Assistant. A custom integration stores it and creates native entities.
+There is no bridge, no container and no add-on in between.
 
-- **HACS integration:** installs the native entities from
-  `custom_components/healthpit_bridge`.
-- **Home Assistant app repository:** installs the Healthpit Bridge from
-  `home_assistant_app` and manages its settings through
-  **Settings > Apps > Healthpit Bridge**.
+```text
+iPhone (HealthKit)  ──push──▶  Home Assistant  ──▶  sensors, map, statistics
+                    long-lived
+                    access token
+```
 
-The app and integration communicate through the versioned Healthpit Bridge
-API. The integration source exists only once; the app does not copy or write
-files into Home Assistant Core.
+## Several people, separate entities
+
+One config entry covers the whole household. Everyone creates their own
+long-lived access token in their own Home Assistant profile, and Home Assistant
+tells the tokens apart: each person gets their own device with their own
+entities, so `sensor.peter_schritte` and `sensor.anna_schritte` never collide.
+The app never claims an identity — the token decides.
 
 ## Repository layout
 
 | Path | Purpose | Installation |
 | --- | --- | --- |
-| `custom_components/healthpit_bridge` | Native Home Assistant integration | HACS |
-| `home_assistant_app` | Home Assistant OS app | Home Assistant app repository |
-| `home_assistant_docker` | Standalone Docker bridge | Docker Compose |
+| `custom_components/healthpit` | Home Assistant integration | HACS |
 | `ios_app` | Healthpit iPhone app | Xcode |
+| `tests` | Tests for the payload and merge logic | pytest |
 
-## Install the Home Assistant integration with HACS
+## Setup
 
-1. Open **HACS > Integrations**.
-2. Open the menu and choose **Custom repositories**.
-3. Add `https://github.com/doctorspreter/healthpit` as category
-   **Integration**.
-4. Install **Healthpit Bridge** and restart Home Assistant.
+1. Add `https://github.com/doctorspreter/healthpit` to HACS as a custom
+   **Integration** repository, install **Healthpit**, and restart Home
+   Assistant. Alternatively copy `custom_components/healthpit` into your
+   configuration folder.
+2. **Settings > Devices & Services > Add Integration > Healthpit**, then
+   confirm. There is nothing to enter.
+3. In your Home Assistant profile, scroll to **Long-lived access tokens** and
+   create one.
+4. In the app under **Settings > Verbindung**, enter your Home Assistant
+   address and paste the token.
 
-## Install the Home Assistant app
+The local address is preferred and the external one is only used when the local
+one does not answer, so the app works at home and away without switching
+anything. The external address must be HTTPS.
 
-1. Open **Settings > Apps > App store**.
-2. Open the repository menu and add
-   `https://github.com/doctorspreter/healthpit`.
-3. Install and start **Healthpit Bridge**.
-4. Configure everything in the app's **Configuration** tab. The app is headless:
-   it has no web interface and adds no sidebar entry.
-5. Optionally enable 2FA. The enrolment code is published by the integration as
-   the image entity `image.<user>_2fa_code`, scannable from any dashboard card.
+Verify a setup from the command line:
 
-When the HACS integration is already installed, the app advertises itself
-through Home Assistant Supervisor discovery. Home Assistant then pre-fills the
-internal hostname, port, and username. For security, the API token and current
-2FA code are still entered once during integration setup and are exchanged for
-a revocable session token.
+```bash
+curl -H "Authorization: Bearer YOUR_TOKEN" https://ha.example.com/api/healthpit/v1/status
+```
 
-The app configuration is available in English and German and follows the Home
-Assistant language.
+## Routes
+
+A track is one thing, so it is one entity. Each user gets:
+
+- **an image entity** that draws the newest track as a line, generated as SVG —
+  no image library, no map tiles, no request leaving the machine. Drop it on a
+  dashboard with a picture-entity card.
+- **a sensor** whose state is the distance of that track, with the workout it
+  belongs to, its bounding box and download links in the attributes.
+
+Any stored track can be fetched whole:
+
+```text
+GET /api/healthpit/v1/workouts/{workout_id}/route.gpx
+GET /api/healthpit/v1/workouts/{workout_id}/route.geojson
+GET /api/healthpit/v1/workouts/{workout_id}/route.svg
+```
+
+GPX goes into any other tool, GeoJSON into a map card. Both need the same
+long-lived access token as everything else.
+
+Incoming tracks are thinned to 500 points, which keeps the shape and keeps the
+store quick to load; the original sample count stays visible as
+`route_points_total`.
+
+## History
+
+Home Assistant cannot backdate its state history — there is no API for that.
+Its long-term statistics *can* be backdated, and for sensors carrying a
+`state_class` that is what long-range graphs are drawn from. The
+`healthpit.import_history` service walks the stored workouts and writes the
+cumulative sport values (count, total duration, total distance) into the
+statistics, so those graphs cover the past instead of starting on setup day.
+Run it again whenever you have imported older workouts; existing rows are
+overwritten rather than duplicated.
+
+Metric history is a different matter: the app sends only the current value per
+metric, so past step counts or weights cannot be reconstructed.
 
 ## Security
 
-- Generated API tokens are 16 characters, or 96 bits of randomness.
-- Generated TOTP secrets use 160 bits of randomness.
-- Credentials and the SQLite database remain in the app's `/data` volume and
-  are included in Home Assistant backups.
-- Changing the username, API token, or TOTP secret revokes existing sessions.
-- There is no management UI to expose; settings are written only through the
-  Home Assistant Supervisor.
-- Port `8088` is plain HTTP for the local network. Use HTTPS through a reverse
-  proxy or tunnel for remote access.
+- Home Assistant's own authentication guards the push API. Revoke a token in
+  the profile and that phone is locked out immediately.
+- The stored data lives in Home Assistant's own storage, marked private.
+- Use HTTPS for the external address. Behind Cloudflare or another reverse
+  proxy, remember that TLS terminates there and set `use_x_forwarded_for` plus
+  `trusted_proxies` in your `http:` configuration.
 
-Do not commit `.env` files, databases, backups, API tokens, OTP secrets, Garmin
-credentials, or Xcode user data. See [SECURITY.md](SECURITY.md) for reporting
-security issues.
+Do not commit `.env` files, databases, backups, tokens or Xcode user data. See
+[SECURITY.md](SECURITY.md) for reporting security issues.
 
 ## Development
 
-Build the Home Assistant app locally:
-
 ```bash
-docker build -t healthpit-ha-app ./home_assistant_app
-```
-
-Start the standalone bridge:
-
-```bash
-cd home_assistant_docker
-cp .env.example .env
-docker compose up -d --build
+python -m pytest tests -q
 ```
 
 ## License

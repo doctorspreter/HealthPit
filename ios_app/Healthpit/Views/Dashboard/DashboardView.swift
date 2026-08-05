@@ -20,15 +20,24 @@ struct DashboardView: View {
     @State private var isSyncing = false
     @State private var syncMessage: String?
     @State private var showingSyncStatus = false
+    @State private var needsHealthAccess = false
     @AppStorage(DashboardItem.storageKey) private var dashboardOrderRaw = DashboardItem.encode(DashboardItem.defaultOrder)
     @AppStorage(DashboardItem.sizeStorageKey) private var dashboardSizesRaw = ""
+    @AppStorage(DashboardItem.hiddenStorageKey) private var dashboardHiddenRaw = ""
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: dashboardSpacing) {
-                    if showingSyncStatus {
+                    if showingSyncStatus || SyncActivity.shared.isRunning {
                         SyncRefreshStatusView()
+                    }
+
+                    if needsHealthAccess {
+                        HealthAccessCard(size: .wide) {
+                            Task { await refreshHealthAccessState() }
+                        }
+                        .frame(height: DashboardWidgetSize.wide.minHeight)
                     }
 
                     ForEach(Array(dashboardRows.enumerated()), id: \.offset) { _, row in
@@ -89,6 +98,7 @@ struct DashboardView: View {
                 await refreshLocalAppleHealth()
                 SyncRefreshStatusStore.markLocalRefresh()
             }
+            .task { await refreshHealthAccessState() }
             .simultaneousGesture(
                 DragGesture(minimumDistance: 4).onChanged { _ in
                     showingSyncStatus = false
@@ -132,6 +142,14 @@ struct DashboardView: View {
                         .id("sleep-\(reloadToken)")
                 }
                 .buttonStyle(.plain)
+            case .cycle:
+                NavigationLink {
+                    CycleDetailView()
+                } label: {
+                    CycleCard(size: size)
+                        .id("cycle-\(reloadToken)")
+                }
+                .buttonStyle(.plain)
             case .records:
                 NavigationLink {
                     RecordsView()
@@ -151,7 +169,7 @@ struct DashboardView: View {
         var current: [DashboardItem] = []
         var usedColumns = 0
 
-        for item in DashboardItem.ordered(from: dashboardOrderRaw) {
+        for item in DashboardItem.visible(from: dashboardOrderRaw, hiddenRaw: dashboardHiddenRaw) {
             let columns = widgetSize(for: item).columns
             if usedColumns + columns > dashboardColumnCount, !current.isEmpty {
                 rows.append(current)
@@ -188,7 +206,7 @@ struct DashboardView: View {
             reloadToken += 1
             syncMessage = L10n.format("%lld Werte synchronisiert.", count)
         } catch {
-            syncMessage = error.localizedDescription
+            syncMessage = BridgeErrorText.message(for: error)
         }
         showingSyncStatus = true
     }
@@ -196,5 +214,13 @@ struct DashboardView: View {
     private func refreshLocalAppleHealth() async {
         await HealthpitPreloadService.shared.refreshLocalAppleHealthCaches()
         reloadToken += 1
+    }
+
+    private func refreshHealthAccessState() async {
+        let pending = await HealthKitManager.shared.needsAuthorizationRequest()
+        needsHealthAccess = pending
+        if !pending {
+            reloadToken += 1
+        }
     }
 }

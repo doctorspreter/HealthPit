@@ -2,7 +2,7 @@
 //  RecordsView.swift
 //  Healthpit
 //
-//  Persoenliche Rekorde aus Apple Health, Hevy und lokalen Importen.
+//  Persoenliche Rekorde aus Apple Health und lokalen Importen.
 //
 
 import SwiftUI
@@ -14,7 +14,6 @@ struct RecordsView: View {
     @State private var visibleRecordLimit = 10
     @State private var selectedSport = allSportsValue
     @State private var recordWorkouts: [UnifiedWorkout] = []
-    @State private var hevySummary: HevyFitnessSummary?
 
     private static let allSportsValue = "Alle"
 
@@ -152,7 +151,6 @@ struct RecordsView: View {
         if let workout = workout(for: record) {
             NavigationLink {
                 UnifiedWorkoutDetailView(item: workout,
-                                         hevySummary: hevySummary,
                                          records: [record])
             } label: {
                 content()
@@ -236,29 +234,23 @@ struct RecordsView: View {
         ensureSelectedSportExists()
         visibleRecordLimit = min(max(visibleRecordLimit, 10), max(visibleRecords.count, 10))
         if records.isEmpty {
-            message = L10n.string("Mehr Workouts, Hevy-Daten oder importierte Trainings benötigt.")
+            message = L10n.string("Mehr Workouts oder importierte Trainings benötigt.")
         }
     }
 
     private func loadRecordWorkouts() async {
         async let health = HealthWorkoutCacheStore.shared.loadAllTime()
-        async let hevy = HevyFitnessCacheStore.shared.load()
         async let local = LocalWorkoutStore.shared.loadSummaries()
 
         let healthWorkouts = await health
-        hevySummary = await hevy
         let localWorkouts = await local
 
         let defaults = UserDefaults.standard
-        let ignored = Set((defaults.string(forKey: "ignoredHevyWorkoutLinks") ?? "").split(separator: ",").map(String.init))
         let hiddenHealth = Set((defaults.string(forKey: BridgeSettings.hiddenHealthWorkoutIDsKey) ?? "").split(separator: ",").map(String.init))
-        let hiddenHevy = Set((defaults.string(forKey: "hiddenHevyWorkoutIDs") ?? "").split(separator: ",").map(String.init))
 
         recordWorkouts = UnifiedWorkoutBuilder.build(
             health: healthWorkouts.filter { !hiddenHealth.contains($0.uuid.uuidString) },
-            hevy: (hevySummary?.recentWorkouts ?? []).filter { !hiddenHevy.contains($0.id) },
-            local: localWorkouts,
-            ignoredLinks: ignored
+            local: localWorkouts
         )
     }
 

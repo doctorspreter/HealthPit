@@ -47,7 +47,9 @@ final class HealthKitManager: @unchecked Sendable {
     /// Geteilte Instanz – ein HKHealthStore pro App ist die empfohlene Praxis.
     nonisolated static let shared = HealthKitManager()
 
-    private let healthStore = HKHealthStore()
+    /// Nicht private: die Zyklus-Erweiterung in HealthKitManager+Cycle.swift
+    /// schreibt und loescht ueber denselben Store.
+    let healthStore = HKHealthStore()
 
     /// Logger – Ausgaben erscheinen in der Xcode-Konsole (Subsystem "Healthpit").
     private let log = Logger(subsystem: "Healthpit", category: "HealthKit")
@@ -55,7 +57,7 @@ final class HealthKitManager: @unchecked Sendable {
 
     private init() {}
 
-    private enum SampleQueryScope {
+    enum SampleQueryScope {
         case none
         case predicate(NSPredicate)
     }
@@ -84,6 +86,25 @@ final class HealthKitManager: @unchecked Sendable {
         }
     }
 
+    /// Ob der Freigabedialog noch aussteht.
+    ///
+    /// Bei reinem Lesezugriff verrät iOS nicht, ob zugestimmt wurde — wohl aber,
+    /// ob überhaupt schon gefragt wurde. Genau das braucht die Startseite, um
+    /// die Kachel für die erneute Anfrage einzublenden.
+    func needsAuthorizationRequest() async -> Bool {
+        guard isHealthDataAvailable else { return false }
+        do {
+            let status = try await healthStore.statusForAuthorizationRequest(
+                toShare: HealthKitTypes.shareTypes,
+                read: HealthKitTypes.readTypes
+            )
+            return status == .shouldRequest
+        } catch {
+            log.error("Autorisierungsstatus nicht ermittelbar: \(error.localizedDescription)")
+            return false
+        }
+    }
+
     private func performAuthorizationRequest() async throws {
         let types = HealthKitTypes.readTypes
         let shareTypes = HealthKitTypes.shareTypes
@@ -91,6 +112,9 @@ final class HealthKitManager: @unchecked Sendable {
         do {
             try await healthStore.requestAuthorization(toShare: shareTypes, read: types)
             log.info("requestAuthorization zurückgekehrt (Dialog beantwortet).")
+            // Erst jetzt darf nach den bevorzugten Einheiten gefragt werden –
+            // ohne Autorisierung liefert preferredUnits nichts Brauchbares.
+            await UnitPreference.refreshFromAppleHealth(store: healthStore)
         } catch {
             log.error("requestAuthorization fehlgeschlagen: \(error.localizedDescription)")
             throw HealthError.authorizationFailed(underlying: error)
@@ -122,6 +146,10 @@ final class HealthKitManager: @unchecked Sendable {
         if let sleepType = HKCategoryType.categoryType(forIdentifier: .sleepAnalysis) {
             collect(try await sources(for: sleepType), dataPointID: HealthDataPointDescriptor.sleepID)
         }
+        for identifier in HealthKitTypes.cycleIdentifiers {
+            guard let type = HKCategoryType.categoryType(forIdentifier: identifier) else { continue }
+            collect(try await sources(for: type), dataPointID: HealthDataPointDescriptor.cycleID)
+        }
 
         return names.map { id, name in
             HealthSourceDescriptor(id: id, name: name, dataPointIDs: dataPoints[id] ?? [])
@@ -146,7 +174,7 @@ final class HealthKitManager: @unchecked Sendable {
         }
     }
 
-    private func configuredScope(basePredicate: NSPredicate,
+    func configuredScope(basePredicate: NSPredicate,
                                  sampleType: HKSampleType,
                                  dataPointID: String) async throws -> SampleQueryScope {
         let disabledSources = Set(UserDefaults.standard.stringArray(
@@ -1029,13 +1057,21 @@ final class HealthKitManager: @unchecked Sendable {
         return "\(total / 60):" + String(format: "%02d /km", total % 60)
     }
 
+    /// Runden je Kilometer – oder je Meile, wenn imperial eingestellt ist.
+    ///
+    /// Die Schrittweite aendert nur, wo eine Runde endet. Die Felder von
+    /// `WorkoutSplit` bleiben metrisch definiert (`paceSecondsPerKm` sind immer
+    /// Sekunden pro Kilometer), damit die Anzeigeschicht genau einmal umrechnet.
     private static func splits(from route: [RoutePoint]) -> [WorkoutSplit] {
         guard route.count > 1 else { return [] }
+        let stepMeters = WorkoutUnits.isImperial ? 1609.344 : 1000.0
+        let stepKm = stepMeters / 1000
+
         var out: [WorkoutSplit] = []
-        var kmStart = route[0]
+        var lapStart = route[0]
         var previous = route[0]
         var accumulatedMeters = 0.0
-        var nextKm = 1000.0
+        var nextMark = stepMeters
 
         for point in route.dropFirst() {
             let a = CLLocation(latitude: previous.latitude, longitude: previous.longitude)
@@ -1043,20 +1079,19 @@ final class HealthKitManager: @unchecked Sendable {
             accumulatedMeters += a.distance(from: b)
             previous = point
 
-            if accumulatedMeters >= nextKm,
-               let startTime = kmStart.timestamp,
+            if accumulatedMeters >= nextMark,
+               let startTime = lapStart.timestamp,
                let endTime = point.timestamp {
                 let duration = max(endTime.timeIntervalSince(startTime), 1)
-                let distanceKm = nextKm / 1000
                 out.append(WorkoutSplit(id: out.count + 1,
-                                        distanceKm: distanceKm,
+                                        distanceKm: nextMark / 1000,
                                         duration: duration,
-                                        averageSpeedKmh: 3600 / duration,
-                                        paceSecondsPerKm: duration,
+                                        averageSpeedKmh: stepKm / (duration / 3600),
+                                        paceSecondsPerKm: duration / stepKm,
                                         start: startTime,
                                         end: endTime))
-                kmStart = point
-                nextKm += 1000
+                lapStart = point
+                nextMark += stepMeters
             }
         }
         return out

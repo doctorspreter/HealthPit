@@ -1,0 +1,105 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Healthpit",
+        "description": "App 会把数据发送到 {api_path}。这里无需填写任何内容。\n\n每个人都需要在自己的 Home Assistant 个人资料中创建长期访问令牌，并会获得独立的设备和独立的实体。"
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Healthpit 已设置。一个条目适用于所有用户。"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "last_route": {
+        "name": "最近的路线"
+      }
+    },
+    "image": {
+      "last_route": {
+        "name": "最近的路线"
+      }
+    }
+  },
+  "services": {
+    "delete_workout": {
+      "name": "删除训练",
+      "description": "移除一条已保存的训练。",
+      "fields": {
+        "device_id": {
+          "name": "设备",
+          "description": "训练来自哪台设备。"
+        },
+        "workout_id": {
+          "name": "训练",
+          "description": "指的是哪一次训练。"
+        },
+        "user_id": {
+          "name": "用户",
+          "description": "仅当有多人发送数据时才需要。"
+        }
+      }
+    },
+    "save_workout_link": {
+      "name": "合并或拆分训练",
+      "description": "自行决定两条记录是否属于同一次训练。",
+      "fields": {
+        "primary": {
+          "name": "第一条记录",
+          "description": "例如 apple_health:1234-ABCD。"
+        },
+        "linked": {
+          "name": "第二条记录",
+          "description": "另外一条。"
+        },
+        "action": {
+          "name": "操作",
+          "description": "merge 合并，separate 保持分开。"
+        },
+        "user_id": {
+          "name": "用户",
+          "description": "仅当有多人发送数据时才需要。"
+        }
+      }
+    },
+    "delete_workout_link": {
+      "name": "移除关联",
+      "description": "删除已保存的合并或拆分规则。",
+      "fields": {
+        "primary": {
+          "name": "第一条记录",
+          "description": "例如 apple_health:1234-ABCD。"
+        },
+        "linked": {
+          "name": "第二条记录",
+          "description": "另外一条。"
+        },
+        "user_id": {
+          "name": "用户",
+          "description": "仅当有多人发送数据时才需要。"
+        }
+      }
+    },
+    "import_history": {
+      "name": "导入历史",
+      "description": "把所有已保存训练的累计值写入长期统计，使图表覆盖过去。可重复运行。",
+      "fields": {
+        "user_id": {
+          "name": "用户",
+          "description": "留空表示所有人。"
+        }
+      }
+    },
+    "forget_user": {
+      "name": "忘记用户",
+      "description": "删除某人发送的全部数据。",
+      "fields": {
+        "user_id": {
+          "name": "用户",
+          "description": "要删除谁的数据。"
+        }
+      }
+    }
+  }
+}

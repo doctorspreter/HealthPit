@@ -2,7 +2,7 @@
 //  WorkoutListView.swift
 //  Healthpit
 //
-//  Gemeinsame Workout-Liste aus Apple Health und Hevy.
+//  Gemeinsame Workout-Liste aus Apple Health und lokalen Importen.
 //
 
 import Charts
@@ -21,22 +21,18 @@ struct WorkoutListView: View {
     @State private var range: TimeRange = .month
     @State private var healthWorkouts: [WorkoutSummary] = []
     @State private var allTimeHealthWorkouts: [WorkoutSummary] = []
-    @State private var hevySummary: HevyFitnessSummary?
     @State private var localWorkouts: [LocalWorkout] = []
     @State private var items: [UnifiedWorkout] = []
     @State private var allTimeItems: [UnifiedWorkout] = []
     @State private var referenceDate = Date()
     @State private var isLoading = false
-    @State private var showingLinks = false
     @State private var showingImporter = false
     @State private var showingManualWorkout = false
     @State private var itemPendingDeletion: UnifiedWorkout?
     @State private var showingDeleteConfirmation = false
     @State private var showingSyncStatus = false
     @State private var hasLoadedData = false
-    @AppStorage("ignoredHevyWorkoutLinks") private var ignoredLinksRaw = ""
     @AppStorage(BridgeSettings.hiddenHealthWorkoutIDsKey) private var hiddenHealthWorkoutIDsRaw = ""
-    @AppStorage("hiddenHevyWorkoutIDs") private var hiddenHevyWorkoutIDsRaw = ""
 
     var body: some View {
         List {
@@ -61,8 +57,7 @@ struct WorkoutListView: View {
 
             Section {
                 NavigationLink {
-                    WorkoutSportListView(items: allTimeItems,
-                                         hevySummary: hevySummary) { item in
+                    WorkoutSportListView(items: allTimeItems) { item in
                         itemPendingDeletion = item
                         showingDeleteConfirmation = true
                     }
@@ -81,7 +76,6 @@ struct WorkoutListView: View {
                 ForEach(items) { item in
                     NavigationLink {
                         UnifiedWorkoutDetailView(item: item,
-                                                 hevySummary: hevySummary,
                                                  records: [])
                     } label: {
                         UnifiedWorkoutRow(item: item, records: [])
@@ -117,19 +111,9 @@ struct WorkoutListView: View {
                     } label: {
                         Label("Training manuell", systemImage: "plus")
                     }
-                    Button {
-                        showingLinks = true
-                    } label: {
-                        Label("Verknüpfen", systemImage: "link")
-                    }
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }
-            }
-        }
-        .sheet(isPresented: $showingLinks) {
-            NavigationStack {
-                WorkoutLinkManagerView(items: allTimeItems, ignoredLinksRaw: $ignoredLinksRaw)
             }
         }
         .sheet(isPresented: $showingManualWorkout) {
@@ -162,12 +146,7 @@ struct WorkoutListView: View {
             showingSyncStatus = false
             filterItemsForSelectedRange()
         }
-        .onChange(of: ignoredLinksRaw) { _, _ in rebuildItems() }
         .onChange(of: hiddenHealthWorkoutIDsRaw) { _, _ in rebuildItems() }
-        .onChange(of: hiddenHevyWorkoutIDsRaw) { _, _ in rebuildItems() }
-        .onChange(of: showingLinks) { _, isShowing in
-            if isShowing { showingSyncStatus = false }
-        }
         .onChange(of: showingManualWorkout) { _, isShowing in
             if isShowing { showingSyncStatus = false }
         }
@@ -196,13 +175,11 @@ struct WorkoutListView: View {
     private func loadCached() async {
         isLoading = items.isEmpty
         async let allTimeHealth = HealthWorkoutCacheStore.shared.loadAllTime()
-        async let cachedHevy = HevyFitnessCacheStore.shared.load()
         async let cachedLocal = LocalWorkoutStore.shared.loadSummaries()
         let completeHealth = await allTimeHealth
         healthWorkouts = completeHealth.isEmpty
             ? await HealthWorkoutCacheStore.shared.load(range: range, referenceDate: referenceDate)
             : []
-        hevySummary = await cachedHevy
         localWorkouts = await cachedLocal
         rebuildItems(allTimeHealth: completeHealth)
         hasLoadedData = true
@@ -211,9 +188,7 @@ struct WorkoutListView: View {
 
     private func refreshCurrentRange() async {
         isLoading = items.isEmpty
-        let cachedHevy = hevySummary
         async let syncCount: Int? = try? BridgeSyncService.shared.syncNow()
-        async let freshHevy = try? BridgeFitnessService.shared.fetchHevySummary()
 
         _ = await syncCount
         if let freshHealth = try? await health.fetchWorkouts(in: range, referenceDate: referenceDate) {
@@ -224,11 +199,6 @@ struct WorkoutListView: View {
         } else {
             healthWorkouts = await HealthWorkoutCacheStore.shared.load(range: range, referenceDate: referenceDate)
         }
-        let refreshedHevy = await freshHevy
-        if let refreshedHevy {
-            await HevyFitnessCacheStore.shared.save(refreshedHevy)
-        }
-        hevySummary = refreshedHevy ?? cachedHevy
         localWorkouts = await LocalWorkoutStore.shared.loadSummaries()
         rebuildItems(allTimeHealth: await HealthWorkoutCacheStore.shared.loadAllTime())
         isLoading = false
@@ -259,12 +229,8 @@ struct WorkoutListView: View {
         let completeHealth = sourceHealth.filter {
             !hiddenHealthWorkoutIDs.contains($0.uuid.uuidString)
         }
-        let completeHevy = (hevySummary?.recentWorkouts ?? [])
-            .filter { !hiddenHevyWorkoutIDs.contains($0.id) }
         allTimeItems = UnifiedWorkoutBuilder.build(health: completeHealth,
-                                                   hevy: completeHevy,
-                                                   local: localWorkouts,
-                                                   ignoredLinks: ignoredLinks)
+                                                   local: localWorkouts)
         filterItemsForSelectedRange()
     }
 
@@ -297,11 +263,6 @@ struct WorkoutListView: View {
             hiddenHealthWorkoutIDsRaw = ids.sorted().joined(separator: ",")
             _ = try? await BridgeSyncService.shared.deleteImportedWorkout(id: health.uuid)
         }
-        if let hevy = item.hevy {
-            var ids = hiddenHevyWorkoutIDs
-            ids.insert(hevy.id)
-            hiddenHevyWorkoutIDsRaw = ids.sorted().joined(separator: ",")
-        }
         localWorkouts = await LocalWorkoutStore.shared.loadSummaries()
         rebuildItems()
     }
@@ -314,22 +275,11 @@ struct WorkoutListView: View {
         if item.health != nil {
             parts.append("Apple-Health-Daten werden in dieser App ausgeblendet; Apple Health selbst bleibt unverändert.")
         }
-        if item.hevy != nil {
-            parts.append("Hevy-Daten werden in dieser App ausgeblendet; Hevy selbst bleibt unverändert.")
-        }
         return parts.joined(separator: " ")
-    }
-
-    private var ignoredLinks: Set<String> {
-        Set(ignoredLinksRaw.split(separator: ",").map(String.init))
     }
 
     private var hiddenHealthWorkoutIDs: Set<String> {
         Set(hiddenHealthWorkoutIDsRaw.split(separator: ",").map(String.init))
-    }
-
-    private var hiddenHevyWorkoutIDs: Set<String> {
-        Set(hiddenHevyWorkoutIDsRaw.split(separator: ",").map(String.init))
     }
 
 }
@@ -337,38 +287,26 @@ struct WorkoutListView: View {
 struct UnifiedWorkout: Identifiable {
     let id: String
     let health: WorkoutSummary?
-    let hevy: HevyWorkoutSummary?
     let local: LocalWorkout?
     let startDate: Date
 
     nonisolated init(id: String,
                      health: WorkoutSummary?,
-                     hevy: HevyWorkoutSummary?,
-                     local: LocalWorkout?,
-                     hevyStartDate: Date? = nil) {
+                     local: LocalWorkout?) {
         self.id = id
         self.health = health
-        self.hevy = hevy
         self.local = local
-        startDate = hevyStartDate
-            ?? hevy.flatMap { parseHevyDate($0.startTime) }
-            ?? local?.start
+        startDate = local?.start
             ?? health?.start
             ?? .distantPast
     }
 
-    nonisolated var hevyDate: Date? {
-        hevy == nil ? nil : startDate
-    }
-
     nonisolated var title: String {
-        if hevy != nil { return L10n.string("Krafttraining") }
         if let local { return L10n.string(local.sport) }
         return health?.activityName ?? L10n.string("Workout")
     }
 
     nonisolated var symbol: String {
-        if hevy != nil { return "figure.strengthtraining.traditional" }
         if let local {
             switch local.sport.lowercased() {
             case "bouldern": return "figure.climbing"
@@ -379,7 +317,7 @@ struct UnifiedWorkout: Identifiable {
         return health?.symbol ?? "figure.run"
     }
 
-    nonisolated var isMerged: Bool { [health != nil, hevy != nil, local != nil].filter { $0 }.count > 1 }
+    nonisolated var isMerged: Bool { health != nil && local != nil }
 
     nonisolated var sportName: String { title }
 
@@ -388,9 +326,6 @@ struct UnifiedWorkout: Identifiable {
         if let health {
             sources.append(health.sourceName.map { "Apple Health · \($0)" } ?? "Apple Health")
         }
-        if hevy != nil {
-            sources.append("Hevy")
-        }
         if let local {
             sources.append(local.source.displayName)
         }
@@ -398,7 +333,7 @@ struct UnifiedWorkout: Identifiable {
     }
 
     nonisolated var duration: TimeInterval {
-        local?.duration ?? health?.duration ?? hevyDuration ?? 0
+        local?.duration ?? health?.duration ?? 0
     }
 
     nonisolated var distanceKm: Double? {
@@ -422,7 +357,6 @@ struct UnifiedWorkout: Identifiable {
     }
 
     nonisolated var volumeKg: Double? {
-        if let hevy { return hevy.volumeKg }
         let volume = strengthExercises
             .flatMap(\.sets)
             .map(\.volumeKg)
@@ -431,31 +365,14 @@ struct UnifiedWorkout: Identifiable {
     }
 
     nonisolated var setCount: Int? {
-        if let hevy { return hevy.setCount }
         let count = strengthExercises.flatMap(\.sets).count
         return count > 0 ? count : nil
     }
 
     nonisolated var strengthExercises: [UnifiedStrengthExercise] {
-        if let hevy {
-            return hevy.exercises.map(UnifiedStrengthExercise.init)
-        }
-        return (local?.exercises ?? []).map(UnifiedStrengthExercise.init)
+        (local?.exercises ?? []).map(UnifiedStrengthExercise.init)
     }
 
-    nonisolated var linkID: String? {
-        guard let health, let hevy else { return nil }
-        return "\(health.uuid.uuidString)|\(hevy.id)"
-    }
-
-    private nonisolated var hevyDuration: TimeInterval? {
-        guard let hevy else { return nil }
-        let seconds = hevy.exercises
-            .flatMap(\.sets)
-            .compactMap(\.durationSeconds)
-            .reduce(0, +)
-        return seconds > 0 ? seconds : nil
-    }
 }
 
 struct UnifiedStrengthExercise: Identifiable, Hashable {
@@ -468,18 +385,6 @@ struct UnifiedStrengthExercise: Identifiable, Hashable {
     let notes: String
     let settings: [String: String]
     let sets: [UnifiedStrengthSet]
-
-    nonisolated init(_ exercise: HevyWorkoutExercise) {
-        id = exercise.id
-        name = exercise.title
-        category = "Krafttraining"
-        start = nil
-        end = nil
-        durationSeconds = nil
-        notes = ""
-        settings = [:]
-        sets = exercise.sets.map(UnifiedStrengthSet.init)
-    }
 
     nonisolated init(_ exercise: LocalStrengthExercise) {
         let catalogID = exercise.catalogID.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -523,17 +428,6 @@ struct UnifiedStrengthSet: Identifiable, Hashable {
     let volumeKg: Double
     let isPersonalRecord: Bool
 
-    nonisolated init(_ set: HevySetSummary) {
-        id = "hevy-\(set.setIndex)"
-        index = set.setIndex
-        type = set.setType ?? "Satz"
-        reps = set.reps
-        weightKg = set.weightKg
-        rpe = set.rpe
-        volumeKg = (set.weightKg ?? 0) * (set.reps ?? 0)
-        isPersonalRecord = false
-    }
-
     nonisolated init(_ set: LocalStrengthSet) {
         id = set.id
         index = set.index
@@ -548,9 +442,7 @@ struct UnifiedStrengthSet: Identifiable, Hashable {
 
 enum UnifiedWorkoutBuilder {
     nonisolated static func build(health: [WorkoutSummary],
-                                  hevy: [HevyWorkoutSummary],
-                                  local: [LocalWorkout],
-                                  ignoredLinks: Set<String>) -> [UnifiedWorkout] {
+                                  local: [LocalWorkout]) -> [UnifiedWorkout] {
         let health = deduplicatedHealth(health)
         let local = local.sorted { $0.start < $1.start }
         let healthByDay = Dictionary(grouping: health, by: { dayIndex(for: $0.start) })
@@ -562,40 +454,6 @@ enum UnifiedWorkoutBuilder {
         var usedLocal = Set<UUID>()
         var out: [UnifiedWorkout] = []
 
-        for hevyWorkout in hevy {
-            let hevyDate = parseHevyDate(hevyWorkout.startTime)
-            let candidates = hevyDate.map { healthCandidates(around: $0, groupedByDay: healthByDay) } ?? []
-            let match = candidates
-                .filter { !usedHealth.contains($0.uuid) }
-                .filter { candidate in
-                    let linkID = "\(candidate.uuid.uuidString)|\(hevyWorkout.id)"
-                    return !ignoredLinks.contains(linkID)
-                }
-                .min { lhs, rhs in
-                    abs(lhs.start.timeIntervalSince(hevyDate ?? lhs.start))
-                    < abs(rhs.start.timeIntervalSince(hevyDate ?? rhs.start))
-                }
-
-            if let match, let hevyDate, isClose(match, hevyDate: hevyDate) {
-                usedHealth.insert(match.uuid)
-                let localMatch = closestLocal(to: hevyDate, in: local, used: usedLocal)
-                if let localMatch { usedLocal.insert(localMatch.id) }
-                out.append(UnifiedWorkout(id: "merged-\(match.uuid)-\(hevyWorkout.id)",
-                                          health: match,
-                                          hevy: hevyWorkout,
-                                          local: localMatch,
-                                          hevyStartDate: hevyDate))
-            } else {
-                let localMatch = hevyDate.flatMap { closestLocal(to: $0, in: local, used: usedLocal) }
-                if let localMatch { usedLocal.insert(localMatch.id) }
-                out.append(UnifiedWorkout(id: "hevy-\(hevyWorkout.id)",
-                                          health: nil,
-                                          hevy: hevyWorkout,
-                                          local: localMatch,
-                                          hevyStartDate: hevyDate))
-            }
-        }
-
         for workout in health where !usedHealth.contains(workout.uuid) {
             let exactLocal = workout.externalWorkoutUUID.flatMap { gympitLocalByID[$0] }
             let localMatch = if let exactLocal, !usedLocal.contains(exactLocal.id) {
@@ -606,7 +464,6 @@ enum UnifiedWorkoutBuilder {
             if let localMatch { usedLocal.insert(localMatch.id) }
             out.append(UnifiedWorkout(id: "health-\(workout.uuid)",
                                       health: workout,
-                                      hevy: nil,
                                       local: localMatch))
         }
 
@@ -619,7 +476,6 @@ enum UnifiedWorkoutBuilder {
             let id = group.map { $0.id.uuidString }.sorted().joined(separator: "-")
             out.append(UnifiedWorkout(id: "local-\(id)",
                                       health: nil,
-                                      hevy: nil,
                                       local: best))
         }
 
@@ -654,14 +510,6 @@ enum UnifiedWorkoutBuilder {
             }
         }
         return Array(byKey.values)
-    }
-
-    private nonisolated static func isClose(_ health: WorkoutSummary, hevyDate: Date) -> Bool {
-        let distance = abs(health.start.timeIntervalSince(hevyDate))
-        let sameDay = Calendar.current.isDate(health.start, inSameDayAs: hevyDate)
-        let isStrength = health.activityName.localizedCaseInsensitiveContains("kraft")
-            || health.activityName.localizedCaseInsensitiveContains("strength")
-        return distance <= 90 * 60 || (sameDay && isStrength)
     }
 
     private nonisolated static func closestLocal(to date: Date,
@@ -751,7 +599,7 @@ struct UnifiedWorkoutRow: View {
         HStack(spacing: 14) {
             Image(systemName: item.symbol)
                 .font(.title2)
-                .foregroundStyle(item.hevy != nil ? .green : HealthCategory.workouts.tint)
+                .foregroundStyle(HealthCategory.workouts.tint)
                 .frame(width: 36)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
@@ -803,24 +651,22 @@ struct UnifiedWorkoutRow: View {
     }
 
     private var primaryValue: String {
-        if let hevy = item.hevy { return L10n.format("%lld Sätze", Int64(hevy.setCount)) }
         if let local = item.local { return formatWorkoutDuration(local.duration) }
         guard let health = item.health else { return "" }
         return formatWorkoutDuration(health.duration)
     }
 
     private var secondaryValue: String {
-        if let hevy = item.hevy { return formatKg(hevy.volumeKg) }
         if let local = item.local {
             var parts: [String] = []
-            if let km = local.distanceKm { parts.append(String(format: "%.2f km", km)) }
+            if let km = local.distanceKm { parts.append(WorkoutUnits.distance(km: km, fractionDigits: 2)) }
             if let kcal = local.energyKcal { parts.append("\(Int(kcal.rounded())) kcal") }
             if let hr = local.averageHeartRate { parts.append("Ø \(Int(hr)) bpm") }
             return parts.joined(separator: " · ")
         }
         guard let health = item.health else { return "" }
         var parts: [String] = []
-        if let km = health.distanceKm, km > 0 { parts.append(String(format: "%.2f km", km)) }
+        if let km = health.distanceKm, km > 0 { parts.append(WorkoutUnits.distance(km: km, fractionDigits: 2)) }
         if let kcal = health.energyKcal, kcal > 0 { parts.append("\(Int(kcal)) kcal") }
         return parts.joined(separator: " · ")
     }
@@ -828,97 +674,11 @@ struct UnifiedWorkoutRow: View {
 
 struct UnifiedWorkoutDetailView: View {
     let item: UnifiedWorkout
-    let hevySummary: HevyFitnessSummary?
     var records: [WorkoutRecord] = []
     @State private var healthDetail: WorkoutDetail?
 
     var body: some View {
-        if let hevy = item.hevy {
-            List {
-                Section {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(item.title)
-                            .font(.headline)
-                        Text(item.startDate, format: .dateTime.weekday(.abbreviated).day().month().year().hour().minute())
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.vertical, 4)
-
-                    HStack(spacing: 12) {
-                        stat("Übungen", "\(hevy.exerciseCount)")
-                        stat("Sätze", "\(hevy.setCount)")
-                        stat("Volumen", formatKg(hevy.volumeKg))
-                    }
-                    if let local = item.local {
-                        NavigationLink {
-                            LocalWorkoutDetailLoaderView(summary: local)
-                        } label: {
-                            Label("Importierte Trainingsdaten", systemImage: "doc.text")
-                        }
-                    }
-                }
-
-                if !mergedHealthStats.isEmpty {
-                    Section("Weitere Trainingswerte") {
-                        ForEach(mergedHealthStats) { stat in
-                            Label {
-                                HStack {
-                                    Text(stat.localizedLabel)
-                                    Spacer()
-                                    Text(stat.value).foregroundStyle(.secondary)
-                                }
-                            } icon: {
-                                Image(systemName: stat.systemImage)
-                            }
-                        }
-                    }
-                }
-
-                if !records.isEmpty {
-                    Section("Rekorde") {
-                        ForEach(records) { record in
-                            Label {
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(record.localizedTitle).font(.subheadline.bold())
-                                        Text(record.localizedSubtitle).font(.caption).foregroundStyle(.secondary)
-                                    }
-                                    Spacer()
-                                    Text(record.localizedValue).font(.subheadline.bold())
-                                }
-                            } icon: {
-                                Image(systemName: "trophy.fill").foregroundStyle(.orange)
-                            }
-                        }
-                    }
-                }
-
-                Section("Übungen") {
-                    ForEach(item.strengthExercises) { exercise in
-                        NavigationLink {
-                            StrengthExerciseDetailView(exercise: StrengthExerciseAnalyzer.row(for: exercise,
-                                                                                              in: [item]))
-                        } label: {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text(exercise.name).font(.headline)
-                                Text("\(exercise.setCount) Sätze · Best \(exercise.bestWeightKg.map(formatKg) ?? "-")")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            .padding(.vertical, 4)
-                        }
-                    }
-                }
-            }
-            .navigationTitle("Krafttraining")
-            .navigationBarTitleDisplayMode(.inline)
-            .task {
-                if let health = item.health {
-                    healthDetail = try? await HealthKitManager.shared.workoutDetail(for: health.uuid)
-                }
-            }
-        } else if let health = item.health {
+        if let health = item.health {
             if let local = item.local {
                 LocalWorkoutDetailLoaderView(summary: local, records: records, healthWorkout: health)
             } else {
@@ -980,10 +740,9 @@ struct UnifiedWorkoutDetailView: View {
     private func tempoText(_ workout: LocalWorkout) -> String? {
         guard let km = workout.distanceKm, km > 0, workout.duration > 0 else { return nil }
         if isCycling(workout) {
-            return String(format: "%.1f km/h", km / (workout.duration / 3600))
+            return WorkoutUnits.speed(kmh: km / (workout.duration / 3600))
         }
-        let total = Int((workout.duration / km).rounded())
-        return "\(total / 60):" + String(format: "%02d /km", total % 60)
+        return WorkoutUnits.pace(secondsPerKilometer: Int((workout.duration / km).rounded()))
     }
 
     private func isCycling(_ workout: LocalWorkout) -> Bool {
@@ -1077,7 +836,7 @@ struct StrengthExerciseDetailView: View {
                         VStack(alignment: .leading, spacing: 3) {
                             Text(point.date, format: .dateTime.day().month().year())
                                 .font(.subheadline.bold())
-                            Text("\(point.setCount) Sätze · \(formatKg(point.volumeKg)) Volumen")
+                            Text(L10n.format("%lld Sätze · %@ Volumen", Int64(point.setCount), formatKg(point.volumeKg)))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -1137,30 +896,6 @@ enum StrengthExerciseAnalyzer {
         aggregate(points(items).filter { $0.id == exercise.id })
     }
 
-    nonisolated static func row(for exercise: HevyWorkoutExercise, global: HevyExerciseSummary?) -> StrengthExerciseAggregate {
-        let trendPoints = (global?.trend ?? []).compactMap { point -> StrengthExercisePoint? in
-            guard let date = parseTrendDate(point.day) else { return nil }
-            return StrengthExercisePoint(id: "\(exercise.id)-\(point.day)",
-                                         date: date,
-                                         setCount: point.sets,
-                                         volumeKg: point.volumeKg,
-                                         weightKg: point.weightKg)
-        }
-        let fallbackPoint = StrengthExercisePoint(id: "\(exercise.id)-current",
-                                                  date: Date(),
-                                                  setCount: exercise.setCount,
-                                                  volumeKg: exercise.volumeKg,
-                                                  weightKg: exercise.bestWeightKg)
-        let points = trendPoints.isEmpty ? [fallbackPoint] : trendPoints
-        return StrengthExerciseAggregate(id: exercise.id,
-                                         name: exercise.title,
-                                         workoutCount: global?.workoutCount ?? 1,
-                                         setCount: global?.setCount ?? exercise.setCount,
-                                         volumeKg: global?.totalVolumeKg ?? exercise.volumeKg,
-                                         bestWeightKg: global?.bestWeightKg ?? exercise.bestWeightKg,
-                                         points: points)
-    }
-
     nonisolated static func row(for exercise: LocalStrengthExercise, workout: LocalWorkout) -> StrengthExerciseAggregate {
         let unified = UnifiedStrengthExercise(exercise)
         let point = StrengthExercisePoint(id: "\(exercise.id)-\(workout.start.timeIntervalSince1970)",
@@ -1217,60 +952,6 @@ enum StrengthExerciseAnalyzer {
         let volumeKg: Double
         let weightKg: Double?
     }
-}
-
-struct WorkoutLinkManagerView: View {
-    let items: [UnifiedWorkout]
-    @Binding var ignoredLinksRaw: String
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        List {
-            Section("Verknüpfte Workouts") {
-                let linked = items.filter(\.isMerged)
-                if linked.isEmpty {
-                    Text("Keine automatischen Verknüpfungen.")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(linked) { item in
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(item.startDate, format: .dateTime.day().month().year().hour().minute())
-                                    .font(.headline)
-                                Text("Apple Health + Hevy")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            Button("Trennen") {
-                                ignore(item)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        .navigationTitle("Verknüpfen")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button("Fertig") { dismiss() }
-            }
-        }
-    }
-
-    private func ignore(_ item: UnifiedWorkout) {
-        guard let linkID = item.linkID else { return }
-        var values = Set(ignoredLinksRaw.split(separator: ",").map(String.init))
-        values.insert(linkID)
-        ignoredLinksRaw = values.sorted().joined(separator: ",")
-    }
-}
-
-nonisolated func parseHevyDate(_ text: String) -> Date? {
-    let fractional = ISO8601DateFormatter()
-    fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-    return fractional.date(from: text) ?? ISO8601DateFormatter().date(from: text)
 }
 
 nonisolated func normalizeStrengthSport(_ value: String) -> String {

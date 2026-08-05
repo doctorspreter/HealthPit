@@ -66,7 +66,7 @@ struct WorkoutSummary: Identifiable, Hashable, Codable, Sendable {
     nonisolated var isBridgeManagedAppleHealthSource: Bool {
         guard let sourceName else { return false }
         let normalized = sourceName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        return normalized.contains("gympit") || normalized.contains("garmin")
+        return normalized.contains("gympit")
     }
 
     nonisolated var isEligibleForLocalHealthCache: Bool {

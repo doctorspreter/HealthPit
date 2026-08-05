@@ -189,7 +189,7 @@ struct CategoryCard: View {
 
     /// Bezeichnung + Einheit, ohne Dopplung wenn beide gleich sind (z. B. "Schritte").
     private func wideLabel(for metric: HealthMetric) -> String {
-        let unit = metric.unitSymbol
+        let unit = metric.displaySymbol
         if unit.isEmpty || unit == metric.title { return metric.title }
         return "\(metric.title) (\(unit))"
     }
@@ -326,7 +326,7 @@ struct WorkoutCard: View {
                                       label: "Dauer",
                                       valueFont: prominent ? .title3.bold() : .callout.bold())
                 if let distance = workout.distanceKm, distance > 0 {
-                    DashboardMetricColumn(value: String(format: "%.2f km", distance),
+                    DashboardMetricColumn(value: WorkoutUnits.distance(km: distance, fractionDigits: 2),
                                           label: "Distanz")
                 } else if let kcal = workout.energyKcal, kcal > 0 {
                     DashboardMetricColumn(value: "\(Int(kcal.rounded())) kcal",
@@ -542,8 +542,8 @@ struct RecordsCard: View {
             detail = L10n.format("%@: %@", record.localizedSport, record.localizedTitle)
             return
         }
-        title = "Noch keine"
-        detail = "Trainingsdaten fehlen"
+        title = L10n.string("Noch keine")
+        detail = L10n.string("Trainingsdaten fehlen")
     }
 
     private func recordValueBlock(value: String, detail: String?) -> some View {
@@ -576,5 +576,91 @@ struct RecordsCard: View {
                 .lineLimit(2)
                 .minimumScaleFactor(0.75)
         }
+    }
+}
+
+// MARK: - Zyklus-Kachel
+
+struct CycleCard: View {
+    var size: DashboardWidgetSize = .medium
+
+    @State private var overview = CycleOverview()
+    @State private var loaded = false
+
+    var body: some View {
+        CardContainer(tint: HealthCategory.cycle.tint, size: size) {
+            VStack(alignment: .leading, spacing: size.isCompact ? 8 : 12) {
+                DashboardCardHeader(title: HealthCategory.cycle.title,
+                                    systemImage: HealthCategory.cycle.systemImage,
+                                    tint: HealthCategory.cycle.tint,
+                                    size: size)
+
+                if overview.hasData {
+                    switch size {
+                    case .small:
+                        mainBlock(showLabel: false)
+                    case .medium:
+                        mainBlock(showLabel: true)
+                        secondaryLine
+                    case .wide:
+                        HStack(alignment: .top, spacing: 14) {
+                            mainBlock(showLabel: true)
+                            VStack(alignment: .leading, spacing: 6) {
+                                if let average = overview.averageCycleLength {
+                                    DashboardMetricColumn(value: L10n.format("%lld Tage", average),
+                                                          label: "Ø Zyklus")
+                                }
+                                if let period = overview.averagePeriodLength {
+                                    DashboardMetricColumn(value: L10n.format("%lld Tage", period),
+                                                          label: "Ø Periode")
+                                }
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                } else {
+                    Text(loaded ? "–" : "…")
+                        .font(size == .small ? .callout.bold() : .title3.bold())
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer(minLength: 0)
+            }
+        }
+        .task { await load() }
+    }
+
+    private func mainBlock(showLabel: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(mainValue)
+                .font(size == .small ? .callout.bold() : .title3.bold())
+                .lineLimit(size == .small ? 2 : 1)
+                .minimumScaleFactor(size == .small ? 0.8 : 0.65)
+                .fixedSize(horizontal: false, vertical: true)
+            if showLabel {
+                Text("aktueller Zyklustag")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var secondaryLine: some View {
+        if let start = overview.currentCycle?.start {
+            Text(L10n.string("Letzte Periode:") + " " + start.formatted(.dateTime.day().month()))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var mainValue: String {
+        guard let day = overview.currentCycleDay else { return "–" }
+        return L10n.format("Tag %lld", day)
+    }
+
+    private func load() async {
+        overview = (try? await HealthKitManager.shared.fetchCycleOverview()) ?? CycleOverview()
+        loaded = true
     }
 }

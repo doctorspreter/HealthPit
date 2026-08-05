@@ -36,12 +36,16 @@ struct WorkoutInjury: Hashable, Codable, Sendable {
 }
 
 struct LocalWorkout: Identifiable, Codable, Sendable {
+    /// Woher ein Workout kam.
+    ///
+    /// Garmin ist hier bewusst nicht mehr aufgefuehrt: Garmin wurde von der
+    /// Bridge abgeholt, und die gibt es nicht mehr. Was ueber Apple Health von
+    /// einer Garmin-Uhr hereinkommt, zaehlt als `appleHealth`.
     enum Source: String, Codable, Sendable {
         case manual
         case appleHealth = "apple_health"
         case gpx
         case tcx
-        case garmin
         case gympit
 
         nonisolated var displayName: String {
@@ -50,9 +54,16 @@ struct LocalWorkout: Identifiable, Codable, Sendable {
             case .appleHealth: return L10n.string("Apple Health")
             case .gpx: return "GPX"
             case .tcx: return "TCX"
-            case .garmin: return "Garmin"
-            case .gympit: return "Gympit"
+            case .gympit: return "GymPit"
             }
+        }
+
+        /// Unbekannte Herkunft wird zu `manual` statt die Dekodierung zu
+        /// sprengen. Eine alte Sicherungsdatei kann noch „garmin“ enthalten;
+        /// daran soll nicht der ganze Import scheitern.
+        nonisolated init(from decoder: Decoder) throws {
+            let raw = try decoder.singleValueContainer().decode(String.self)
+            self = Source(rawValue: raw) ?? .manual
         }
     }
 

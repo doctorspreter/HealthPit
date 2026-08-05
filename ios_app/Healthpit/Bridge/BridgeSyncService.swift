@@ -5,8 +5,8 @@
 //  Schickt die aktuellen HealthKit-Werte an die Docker-Bridge.
 //
 
-import CryptoKit
 import Foundation
+import CryptoKit
 import HealthKit
 
 struct BridgeMetricPayload: Encodable {
@@ -261,27 +261,18 @@ struct BridgeSessionResponse: Decodable {
         nodeRole = try container.decodeIfPresent(String.self, forKey: .nodeRole) ?? "slave"
         serverRole = try container.decodeIfPresent(String.self, forKey: .serverRole) ?? "master"
     }
-}
 
-private struct BridgeSessionCreatePayload: Encodable {
-    let username: String
-    let apiToken: String
-    let otpCode: String
-    let deviceName: String
-    let scope: String
-    let clientApp: String
-    let nodeRole: String
-    let expiresDays: Int
-
-    enum CodingKeys: String, CodingKey {
-        case username
-        case apiToken = "api_token"
-        case otpCode = "otp_code"
-        case deviceName = "device_name"
-        case scope
-        case clientApp = "client_app"
-        case nodeRole = "node_role"
-        case expiresDays = "expires_days"
+    /// Im Webhook-Modus stellt Home Assistant keine Sitzung aus — der
+    /// Long-Lived Token ist die Anmeldung. Die Oberfläche zeigt trotzdem
+    /// dieselbe Rückmeldung, deshalb wird hier eine gebaut.
+    init(homeAssistantToken: String, username: String) {
+        sessionToken = homeAssistantToken
+        tokenType = "bearer"
+        expiresAt = ""
+        deviceName = "Healthpit (iPhone)"
+        self.username = username
+        nodeRole = "slave"
+        serverRole = "master"
     }
 }
 
@@ -290,6 +281,11 @@ private struct BridgeCredentials {
     let username: String
     let token: String
     let deviceID: String
+
+    /// Pfad inklusive des Präfixes der Integration.
+    func apiPath(_ path: String) -> String {
+        HealthpitAPI.path(path)
+    }
 }
 
 enum BridgeSyncError: LocalizedError {
@@ -298,6 +294,8 @@ enum BridgeSyncError: LocalizedError {
     case invalidURL
     case serverRejected(Int)
     case serverMessage(String)
+    /// Meldung für den Anwender plus technischer Rest für die Detailzeile.
+    case detailed(message: String, detail: String)
 
     var errorDescription: String? {
         switch self {
@@ -307,6 +305,17 @@ enum BridgeSyncError: LocalizedError {
         case .serverRejected(let code):
             return L10n.format("Bridge hat die Synchronisierung abgelehnt (%lld).", Int64(code))
         case .serverMessage(let message): return message
+        case .detailed(let message, _): return message
+        }
+    }
+
+    /// Technischer Zusatz – nur für die aufklappbare Detailzeile, nie für die
+    /// Hauptmeldung.
+    var technicalDetail: String? {
+        switch self {
+        case .detailed(_, let detail): return detail
+        case .serverRejected(let code): return "HTTP \(code)"
+        case .missingURL, .missingToken, .invalidURL, .serverMessage: return nil
         }
     }
 }
@@ -338,15 +347,10 @@ final class BridgeSyncService {
         if defaults.string(forKey: BridgeSettings.usernameKey)?.isEmpty != false {
             defaults.set("healthpit", forKey: BridgeSettings.usernameKey)
         }
-        KeychainStore.set("", for: BridgeSettings.otpCodeKey)
     }
 
     var hasSession: Bool {
-        !Self.trimmedKeychainValue(for: BridgeSettings.sessionTokenKey).isEmpty
-    }
-
-    var sessionExpiresAtText: String {
-        defaults.string(forKey: BridgeSettings.sessionExpiresAtKey) ?? ""
+        !Self.trimmedKeychainValue(for: BridgeSettings.homeAssistantTokenKey).isEmpty
     }
 
     /// The bridge the stored session was issued by, empty when there is none.
@@ -364,83 +368,85 @@ final class BridgeSyncService {
         }
     }
 
+    /// Verbindet mit Home Assistant.
+    ///
+    /// Es gibt keinen Sitzungsaustausch mehr: der Long-Lived Token *ist* die
+    /// Anmeldung, und Home Assistant erkennt an ihm, welchem Benutzer die Daten
+    /// gehoeren. Geprueft wird er einmal gegen den Statusendpunkt.
     @discardableResult
-    func connect(otpCode: String) async throws -> BridgeSessionResponse {
-        let apiToken = Self.trimmedKeychainValue(for: BridgeSettings.apiTokenKey)
-        let username = defaults.string(forKey: BridgeSettings.usernameKey)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "healthpit"
-        guard !username.isEmpty else { throw BridgeSyncError.serverMessage("Bridge-Benutzername fehlt.") }
-        guard !apiToken.isEmpty else { throw BridgeSyncError.missingToken }
+    func connect() async throws -> BridgeSessionResponse {
+        let token = Self.trimmedKeychainValue(for: BridgeSettings.homeAssistantTokenKey)
+        guard !token.isEmpty else { throw BridgeSyncError.missingToken }
 
         let baseURL = try await Self.configuredBaseURL(defaults: defaults)
         var endpoint = baseURL
-        endpoint.append(path: "v1/auth/session")
-
-        let payload = BridgeSessionCreatePayload(
-            username: username,
-            apiToken: apiToken,
-            otpCode: Self.normalizedOTPCode(otpCode),
-            deviceName: "Healthpit (iPhone)",
-            scope: "home_assistant",
-            clientApp: "healthpit",
-            nodeRole: "slave",
-            expiresDays: 1825
-        )
+        endpoint.append(path: HealthpitAPI.probePath)
 
         var request = URLRequest(url: endpoint)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try encoder.encode(payload)
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
 
         let (data, response) = try await URLSession.shared.data(for: request)
         let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200..<300).contains(statusCode) else {
-            if let message = Self.bridgeErrorMessage(from: data, statusCode: statusCode) {
-                throw BridgeSyncError.serverMessage(message)
-            }
-            throw BridgeSyncError.serverRejected(statusCode)
+            throw Self.homeAssistantError(from: data, statusCode: statusCode)
         }
 
-        let session: BridgeSessionResponse
-        do {
-            session = try decoder.decode(BridgeSessionResponse.self, from: data)
-        } catch {
-            // Foundation only says "the data is missing". Show what actually
-            // came back, otherwise this is impossible to diagnose from the app.
-            let body = String(data: data.prefix(300), encoding: .utf8) ?? "-"
-            throw BridgeSyncError.serverMessage(
-                L10n.string("Die Bridge unter")
-                + " \(endpoint.absoluteString) "
-                + L10n.string("hat mit HTTP")
-                + " \(statusCode) "
-                + L10n.string("geantwortet, aber nicht im erwarteten Format.")
-                + " " + L10n.string("Antwort:") + " \(body)"
-            )
-        }
-        guard session.nodeRole == "slave", session.serverRole == "master" else {
-            throw BridgeSyncError.serverMessage(
-                "Verbindung abgelehnt: Die Gegenstelle ist keine Healthpit-Bridge im Master-Betrieb."
-            )
-        }
-        KeychainStore.set(session.sessionToken, for: BridgeSettings.sessionTokenKey)
-        KeychainStore.set("", for: BridgeSettings.otpCodeKey)
-        defaults.set(session.expiresAt, forKey: BridgeSettings.sessionExpiresAtKey)
+        let status = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
         defaults.set(baseURL.absoluteString, forKey: BridgeSettings.sessionEndpointKey)
-        return session
+
+        // Nach dem Verbinden gleich einmal senden. Sonst steht in Home Assistant
+        // bis zum naechsten Hintergrundlauf nichts, und der Anwender haelt die
+        // Verbindung fuer kaputt.
+        if defaults.object(forKey: BridgeSettings.lastSyncDateKey) == nil {
+            Task { try? await self.syncNow() }
+        }
+
+        return BridgeSessionResponse(
+            homeAssistantToken: token,
+            username: status?["user"] as? String ?? ""
+        )
+    }
+
+    /// Uebersetzt die Antwortcodes, die beim Verbinden wirklich vorkommen.
+    private static func homeAssistantError(from data: Data, statusCode: Int) -> BridgeSyncError {
+        switch statusCode {
+        case 401, 403:
+            return .serverMessage(
+                L10n.string("Home Assistant hat den Token abgelehnt. Bitte einen neuen Long-Lived Access Token anlegen.")
+            )
+        case 404:
+            return .serverMessage(
+                L10n.string("Home Assistant antwortet, aber die Healthpit-Integration ist dort nicht eingerichtet.")
+            )
+        default:
+            return bridgeError(from: data, statusCode: statusCode)
+        }
     }
 
     func disconnect() {
-        KeychainStore.set("", for: BridgeSettings.sessionTokenKey)
-        KeychainStore.set("", for: BridgeSettings.otpCodeKey)
-        defaults.removeObject(forKey: BridgeSettings.sessionExpiresAtKey)
+        KeychainStore.set("", for: BridgeSettings.homeAssistantTokenKey)
         defaults.removeObject(forKey: BridgeSettings.sessionEndpointKey)
     }
 
     @discardableResult
     func syncNow() async throws -> Int {
+        await SyncActivity.shared.begin()
+        do {
+            let total = try await runSync()
+            await SyncActivity.shared.succeed(count: total)
+            return total
+        } catch {
+            await SyncActivity.shared.fail(BridgeErrorText.message(for: error))
+            throw error
+        }
+    }
+
+    private func runSync() async throws -> Int {
         let credentials = try await bridgeCredentials()
 
+        await SyncActivity.shared.enter(.metrics)
         var endpoint = credentials.baseURL
-        endpoint.append(path: "v1/health/batch")
+        endpoint.append(path: credentials.apiPath("health/batch"))
 
         let metrics = await collectMetrics()
         let payload = BridgeBatchPayload(deviceID: credentials.deviceID, metrics: metrics)
@@ -452,16 +458,21 @@ final class BridgeSyncService {
         let (data, response) = try await URLSession.shared.data(for: request)
         let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200..<300).contains(statusCode) else {
-            if let message = Self.bridgeErrorMessage(from: data, statusCode: statusCode) {
-                throw BridgeSyncError.serverMessage(message)
-            }
-            throw BridgeSyncError.serverRejected(statusCode)
+            throw Self.bridgeError(from: data, statusCode: statusCode)
         }
+
+        await SyncActivity.shared.enter(.uploadWorkouts)
         let uploadedAppleHealthWorkouts = try await uploadAppleHealthWorkoutDelta(credentials: credentials)
+
+        await SyncActivity.shared.enter(.reconcile)
         let deletedAppleHealthWorkouts = try await reconcileAppleHealthWorkouts(credentials: credentials)
         let uploadedWorkouts = try await uploadLocalWorkouts(credentials: credentials)
+
+        await SyncActivity.shared.enter(.downloadWorkouts)
         let downloadedAppleHealthWorkouts = try await downloadChangedAppleHealthWorkouts(credentials: credentials)
         let downloadedWorkouts = try await downloadImportedWorkouts(credentials: credentials)
+
+        await SyncActivity.shared.enter(.records)
         defaults.set(Date(), forKey: BridgeSettings.lastSyncDateKey)
         BackgroundSyncScheduler.schedule()
         await WorkoutRecordRefreshService.shared.refreshFromLocalCaches()
@@ -559,6 +570,38 @@ final class BridgeSyncService {
                                  measuredAt: sleepMeasuredAt))
         }
 
+        if let cycle = try? await health.fetchCycleOverview(), cycle.hasData {
+            let measuredAt = cycle.currentCycle?.start ?? now
+            if let day = cycle.currentCycleDay {
+                out.append(.count(id: "cycle_current_day",
+                                  category: .cycle,
+                                  title: "Zyklustag",
+                                  value: Double(day),
+                                  measuredAt: now))
+            }
+            if let average = cycle.averageCycleLength {
+                out.append(.count(id: "cycle_average_length",
+                                  category: .cycle,
+                                  title: "Ø Zykluslänge",
+                                  value: Double(average),
+                                  measuredAt: measuredAt))
+            }
+            if let period = cycle.averagePeriodLength {
+                out.append(.count(id: "cycle_average_period_length",
+                                  category: .cycle,
+                                  title: "Ø Periodendauer",
+                                  value: Double(period),
+                                  measuredAt: measuredAt))
+            }
+            if let current = cycle.currentCycle {
+                out.append(.count(id: "cycle_bleeding_days",
+                                  category: .cycle,
+                                  title: "Blutungstage",
+                                  value: Double(current.bleedingDays),
+                                  measuredAt: measuredAt))
+            }
+        }
+
         let workoutCount = await HealthWorkoutCacheStore.shared.countAllTime()
         out.append(BridgeMetricPayload(id: "workout_count_all_time",
                                        category: HealthCategory.workouts.rawValue,
@@ -574,10 +617,12 @@ final class BridgeSyncService {
     }
 
     static func bridgeErrorMessage(from data: Data, statusCode: Int) -> String? {
-        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let detail = object["detail"] as? String else {
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             return nil
         }
+        // Die Bridge nannte den Grund "detail", die Integration "error".
+        // Beides lesen, sonst bleibt vom Fehler nur die nackte Statusnummer.
+        let detail = (object["detail"] as? String) ?? (object["error"] as? String) ?? ""
         guard !detail.isEmpty else {
             return nil
         }
@@ -591,35 +636,50 @@ final class BridgeSyncService {
             return L10n.string("Bridge OTP stimmt nicht. Bitte aktuellen 6-stelligen Code eingeben.")
         }
         if detail.contains("Master-to-master") {
-            return L10n.string("Zwei Master dürfen nicht verbunden werden. Die Docker-Bridge ist bereits der Master.")
+            return L10n.string("Diese Bridge ist selbst als Master eingerichtet und kann sich nicht mit einer zweiten Bridge verbinden.")
         }
-        return L10n.format("Bridge hat abgelehnt (%lld): %@", Int64(statusCode), detail)
+        // Alles Weitere ist der englische Klartext des Servers. Ihn an einen
+        // uebersetzten Satz zu kleben ergibt einen Sprachmix, deshalb bekommt
+        // der Anwender hier nur den Status – der Rest steht im Detail.
+        switch statusCode {
+        case 401, 403:
+            return L10n.string("Die Bridge hat die Anmeldung abgelehnt. Bitte Benutzernamen, API-Token und – falls aktiv – den OTP-Code prüfen.")
+        case 404:
+            return L10n.string("Die Bridge kennt diesen Endpunkt nicht. Vermutlich läuft dort eine ältere Bridge-Version.")
+        case 409:
+            return L10n.string("Die Bridge hat die Daten als Konflikt abgelehnt.")
+        case 429:
+            return L10n.string("Die Bridge hat zu viele Anfragen erhalten. Bitte später erneut versuchen.")
+        case 500...599:
+            return L10n.format("Die Bridge meldet einen internen Fehler (%lld).", Int64(statusCode))
+        default:
+            return L10n.format("Die Bridge hat die Anfrage abgelehnt (%lld).", Int64(statusCode))
+        }
+    }
+
+    /// Der Fehler zu einer abgelehnten Antwort: uebersetzter Satz fuer den
+    /// Anwender, Serverklartext fuer die Detailzeile.
+    static func bridgeError(from data: Data, statusCode: Int) -> BridgeSyncError {
+        guard let message = bridgeErrorMessage(from: data, statusCode: statusCode) else {
+            return .serverRejected(statusCode)
+        }
+        guard let detail = bridgeErrorDetail(from: data) else {
+            return .serverMessage(message)
+        }
+        return .detailed(message: message, detail: "HTTP \(statusCode): \(detail)")
+    }
+
+    /// Der englische Klartext des Servers – nur fuer die Detailzeile.
+    static func bridgeErrorDetail(from data: Data) -> String? {
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return nil
+        }
+        let detail = (object["detail"] as? String) ?? (object["error"] as? String) ?? ""
+        return detail.isEmpty ? nil : detail
     }
 
     private static func trimmedKeychainValue(for key: String) -> String {
         KeychainStore.string(for: key).trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    private static func normalizedOTPCode(_ value: String) -> String {
-        value.filter(\.isNumber)
-    }
-
-    static func otpCode(secret: String, date: Date = Date()) -> String {
-        guard let keyData = base32Decode(secret) else { return "" }
-        let step = UInt64(date.timeIntervalSince1970 / 30)
-        var counter = step.bigEndian
-        let key = SymmetricKey(data: keyData)
-        let digest = HMAC<Insecure.SHA1>.authenticationCode(
-            for: Data(bytes: &counter, count: MemoryLayout<UInt64>.size),
-            using: key
-        )
-        let bytes = Array(digest)
-        let offset = Int(bytes.last ?? 0) & 0x0f
-        let truncated = (UInt32(bytes[offset] & 0x7f) << 24)
-            | (UInt32(bytes[offset + 1]) << 16)
-            | (UInt32(bytes[offset + 2]) << 8)
-            | UInt32(bytes[offset + 3])
-        return String(format: "%06d", truncated % 1_000_000)
     }
 
     static func secret(fromOTPURI value: String) -> String? {
@@ -672,7 +732,7 @@ final class BridgeSyncService {
             let batch = workouts[start..<end].map(BridgeImportedWorkoutPayload.init)
 
             var endpoint = credentials.baseURL
-            endpoint.append(path: "v1/workouts/imports")
+            endpoint.append(path: credentials.apiPath("workouts/imports"))
 
             let payload = BridgeImportedWorkoutBatchPayload(deviceID: credentials.deviceID,
                                                             workouts: Array(batch))
@@ -683,10 +743,7 @@ final class BridgeSyncService {
             let (data, response) = try await URLSession.shared.data(for: request)
             let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
             guard (200..<300).contains(statusCode) else {
-                if let message = Self.bridgeErrorMessage(from: data, statusCode: statusCode) {
-                    throw BridgeSyncError.serverMessage(message)
-                }
-                throw BridgeSyncError.serverRejected(statusCode)
+                throw Self.bridgeError(from: data, statusCode: statusCode)
             }
             uploaded += batch.count
         }
@@ -702,7 +759,7 @@ final class BridgeSyncService {
     private func reconcileAppleHealthWorkouts(workouts: [WorkoutSummary],
                                              credentials: BridgeCredentials) async throws -> Int {
         var endpoint = credentials.baseURL
-        endpoint.append(path: "v1/workouts/imports/reconcile")
+        endpoint.append(path: credentials.apiPath("workouts/imports/reconcile"))
 
         let payload = BridgeWorkoutReconcilePayload(
             deviceID: credentials.deviceID,
@@ -716,10 +773,7 @@ final class BridgeSyncService {
         let (data, response) = try await URLSession.shared.data(for: request)
         let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200..<300).contains(statusCode) else {
-            if let message = Self.bridgeErrorMessage(from: data, statusCode: statusCode) {
-                throw BridgeSyncError.serverMessage(message)
-            }
-            throw BridgeSyncError.serverRejected(statusCode)
+            throw Self.bridgeError(from: data, statusCode: statusCode)
         }
         let body = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
         return body?["deleted"] as? Int ?? 0
@@ -758,7 +812,7 @@ final class BridgeSyncService {
 
         while true {
             var endpoint = credentials.baseURL
-            endpoint.append(path: "v1/workouts/imports")
+            endpoint.append(path: credentials.apiPath("workouts/imports"))
             var queryItems = [
                 URLQueryItem(name: "device_id", value: credentials.deviceID),
                 URLQueryItem(name: "include_apple_health", value: "true"),
@@ -775,10 +829,7 @@ final class BridgeSyncService {
             let (data, response) = try await URLSession.shared.data(for: request)
             let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
             guard (200..<300).contains(statusCode) else {
-                if let message = Self.bridgeErrorMessage(from: data, statusCode: statusCode) {
-                    throw BridgeSyncError.serverMessage(message)
-                }
-                throw BridgeSyncError.serverRejected(statusCode)
+                throw Self.bridgeError(from: data, statusCode: statusCode)
             }
             let responseBody = try decoder.decode(BridgeImportedWorkoutListResponse.self, from: data)
             out.append(contentsOf: responseBody.workouts.compactMap(WorkoutSummary.init))
@@ -827,10 +878,10 @@ final class BridgeSyncService {
 
     private func downloadImportedWorkouts(credentials: BridgeCredentials) async throws -> Int {
         var downloaded: [LocalWorkout] = []
-        let bridgeManagedSources: Set<LocalWorkout.Source> = [.garmin, .gympit]
-        for source in [LocalWorkout.Source.manual, .gpx, .tcx, .garmin, .gympit] {
+        let bridgeManagedSources: Set<LocalWorkout.Source> = [.gympit]
+        for source in [LocalWorkout.Source.manual, .gpx, .tcx, .gympit] {
             var endpoint = credentials.baseURL
-            endpoint.append(path: "v1/workouts/imports")
+            endpoint.append(path: credentials.apiPath("workouts/imports"))
             var queryItems = [
                 URLQueryItem(name: "include_apple_health", value: "false"),
                 URLQueryItem(name: "source", value: source.rawValue),
@@ -847,10 +898,7 @@ final class BridgeSyncService {
             let (data, response) = try await URLSession.shared.data(for: request)
             let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
             guard (200..<300).contains(statusCode) else {
-                if let message = Self.bridgeErrorMessage(from: data, statusCode: statusCode) {
-                    throw BridgeSyncError.serverMessage(message)
-                }
-                throw BridgeSyncError.serverRejected(statusCode)
+                throw Self.bridgeError(from: data, statusCode: statusCode)
             }
             let responseBody = try decoder.decode(BridgeImportedWorkoutListResponse.self, from: data)
             downloaded.append(contentsOf: responseBody.workouts.compactMap(LocalWorkout.init))
@@ -874,7 +922,7 @@ final class BridgeSyncService {
     /// Push a set of workouts to the bridge, keeping their own source.
     ///
     /// The bridge only rewrites the source for GymPit clients, so Healthpit may
-    /// hand back workouts that originally came from GymPit or Garmin.
+    /// hand back workouts that originally came from GymPit.
     @discardableResult
     private func uploadWorkouts(
         _ workouts: [LocalWorkout],
@@ -883,7 +931,7 @@ final class BridgeSyncService {
         guard !workouts.isEmpty else { return 0 }
 
         var endpoint = credentials.baseURL
-        endpoint.append(path: "v1/workouts/imports")
+        endpoint.append(path: credentials.apiPath("workouts/imports"))
 
         let payload = BridgeImportedWorkoutBatchPayload(
             deviceID: credentials.deviceID,
@@ -896,45 +944,39 @@ final class BridgeSyncService {
         let (data, response) = try await URLSession.shared.data(for: request)
         let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200..<300).contains(statusCode) else {
-            if let message = Self.bridgeErrorMessage(from: data, statusCode: statusCode) {
-                throw BridgeSyncError.serverMessage(message)
-            }
-            throw BridgeSyncError.serverRejected(statusCode)
+            throw Self.bridgeError(from: data, statusCode: statusCode)
         }
         return workouts.count
     }
 
     private func deleteImportedWorkout(id: UUID, credentials: BridgeCredentials) async throws {
         var endpoint = credentials.baseURL
-        endpoint.append(path: "v1/workouts/imports/\(id.uuidString)")
+        endpoint.append(path: credentials.apiPath("workouts/imports/\(id.uuidString)"))
         endpoint.append(queryItems: [URLQueryItem(name: "device_id", value: credentials.deviceID)])
 
         let request = authorizedRequest(url: endpoint, method: "DELETE", credentials: credentials)
         let (data, response) = try await URLSession.shared.data(for: request)
         let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200..<300).contains(statusCode) else {
-            if let message = Self.bridgeErrorMessage(from: data, statusCode: statusCode) {
-                throw BridgeSyncError.serverMessage(message)
-            }
-            throw BridgeSyncError.serverRejected(statusCode)
+            throw Self.bridgeError(from: data, statusCode: statusCode)
         }
     }
 
     private func bridgeCredentials() async throws -> BridgeCredentials {
-        let sessionToken = Self.trimmedKeychainValue(for: BridgeSettings.sessionTokenKey)
-        let username = defaults.string(forKey: BridgeSettings.usernameKey)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "healthpit"
+        let token = Self.trimmedKeychainValue(for: BridgeSettings.homeAssistantTokenKey)
         let deviceID = defaults.string(forKey: BridgeSettings.deviceIDKey)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "iPhone"
 
-        guard !username.isEmpty else { throw BridgeSyncError.serverMessage("Bridge-Benutzername fehlt.") }
-        guard !sessionToken.isEmpty else {
+        guard !token.isEmpty else {
             throw BridgeSyncError.serverMessage(
-                "Healthpit ist nicht verbunden. Bitte zuerst in den Einstellungen mit der Bridge verbinden."
+                L10n.string("Healthpit ist nicht verbunden. Bitte zuerst in den Einstellungen den Home-Assistant-Token eintragen.")
             )
         }
         let baseURL = try await Self.configuredBaseURL(defaults: defaults)
+        // Der Benutzername wird nicht mehr mitgeschickt: Home Assistant leitet
+        // ihn aus dem Token ab. Er dient nur noch der Anzeige.
         return BridgeCredentials(baseURL: baseURL,
-                                 username: username,
-                                 token: sessionToken,
+                                 username: defaults.string(forKey: BridgeSettings.usernameKey) ?? "",
+                                 token: token,
                                  deviceID: deviceID)
     }
 
@@ -951,7 +993,7 @@ final class BridgeSyncService {
         defaults: UserDefaults = .standard
     ) async throws -> (url: URL, isLocal: Bool) {
         let localHost = defaults.string(forKey: BridgeSettings.localHostKey)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let localPort = defaults.string(forKey: BridgeSettings.localPortKey)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "8088"
+        let localPort = defaults.string(forKey: BridgeSettings.localPortKey)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? HealthpitAPI.defaultPort
 
         if !localHost.isEmpty {
             let localURL = try localBaseURL(host: localHost, port: localPort)
@@ -961,11 +1003,10 @@ final class BridgeSyncService {
             }
             let external = defaults.string(forKey: BridgeSettings.baseURLKey)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             if external.isEmpty {
-                throw BridgeSyncError.serverMessage(
-                    L10n.string("Die lokale Bridge unter")
-                    + " \(localURL.absoluteString) "
-                    + L10n.string("antwortet nicht:")
-                    + " \(reason ?? "-")"
+                throw BridgeSyncError.detailed(
+                    message: L10n.format("Die lokale Bridge unter %@ antwortet nicht, und es ist keine externe Adresse hinterlegt.",
+                                         localURL.absoluteString),
+                    detail: reason ?? "-"
                 )
             }
         }
@@ -978,7 +1019,7 @@ final class BridgeSyncService {
         guard !baseURLText.isEmpty else { throw BridgeSyncError.missingURL }
         guard let baseURL = URL(string: baseURLText) else { throw BridgeSyncError.invalidURL }
         guard baseURL.scheme?.lowercased() == "https" else {
-            throw BridgeSyncError.serverMessage("Die externe Adresse muss mit https:// beginnen.")
+            throw BridgeSyncError.serverMessage(L10n.string("Die externe Adresse muss mit https:// beginnen."))
         }
         return baseURL
     }
@@ -986,7 +1027,7 @@ final class BridgeSyncService {
     private static func localBaseURL(host: String, port: String) throws -> URL {
         let trimmedHost = host.trimmingCharacters(in: .whitespacesAndNewlines)
         let normalizedPort = port.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            ? "8088"
+            ? HealthpitAPI.defaultPort
             : port.trimmingCharacters(in: .whitespacesAndNewlines)
 
         let localText: String
@@ -1018,33 +1059,48 @@ final class BridgeSyncService {
     /// Why a bridge could not be used, or nil when it answered properly.
     private static func bridgeUnreachableReason(at baseURL: URL) async -> String? {
         var endpoint = baseURL
-        endpoint.append(path: "health")
+        endpoint.append(path: HealthpitAPI.probePath)
 
         var request = URLRequest(url: endpoint)
         request.timeoutInterval = 4
+        // Der Statusendpunkt ist authentifiziert, ein Probelauf ohne Token
+        // waere also immer 401.
+        let token = trimmedKeychainValue(for: BridgeSettings.homeAssistantTokenKey)
+        guard !token.isEmpty else {
+            return L10n.string("Es ist kein Home-Assistant-Token hinterlegt.")
+        }
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
 
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
             let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
             guard (200..<300).contains(statusCode) else {
-                return L10n.string("HTTP") + " \(statusCode)"
+                if statusCode == 401 || statusCode == 403 {
+                    return L10n.string("Home Assistant hat den Token abgelehnt.")
+                }
+                if statusCode == 404 {
+                    return L10n.string("Die Healthpit-Integration ist dort nicht eingerichtet.")
+                }
+                return L10n.format("Sie hat mit HTTP %lld geantwortet.", Int64(statusCode))
             }
             guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-                return L10n.string("Antwort ist kein JSON")
+                return L10n.string("Unter dieser Adresse antwortet zwar etwas, aber keine Healthpit-Bridge.")
             }
             let healthy = object["status"] as? String == "ok"
                 || object["ok"] as? Bool == true
             guard healthy else {
-                return L10n.string("Bridge meldet sich nicht als betriebsbereit")
+                return L10n.string("Die Bridge ist erreichbar, meldet sich aber nicht als betriebsbereit.")
             }
             // An older bridge does not report a role at all. Only a role that
             // is present and wrong disqualifies it.
             if let role = object["node_role"] as? String, role != "master" {
-                return L10n.string("Gegenstelle meldet die Rolle") + " \(role)"
+                return L10n.format("Unter dieser Adresse läuft eine Bridge in der Rolle „%@“ statt als Master.", role)
             }
             return nil
+        } catch let urlError as URLError {
+            return BridgeErrorText.transportFailure(urlError)
         } catch {
-            return error.localizedDescription
+            return L10n.string("Die Bridge ist nicht erreichbar.")
         }
     }
 
@@ -1055,33 +1111,10 @@ final class BridgeSyncService {
     private func authorizedRequest(url: URL, method: String, credentials: BridgeCredentials) -> URLRequest {
         var request = URLRequest(url: url)
         request.httpMethod = method
-        request.setValue(credentials.username, forHTTPHeaderField: "X-Healthpit-User")
         request.setValue("Bearer \(credentials.token)", forHTTPHeaderField: "Authorization")
         return request
     }
 
-    private static func base32Decode(_ value: String) -> Data? {
-        let alphabet = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ234567")
-        let lookup = Dictionary(uniqueKeysWithValues: alphabet.enumerated().map { ($0.element, UInt8($0.offset)) })
-        let cleaned = value
-            .uppercased()
-            .filter { $0 != "=" && !$0.isWhitespace }
-
-        var buffer = 0
-        var bitsLeft = 0
-        var output = Data()
-
-        for character in cleaned {
-            guard let decoded = lookup[character] else { return nil }
-            buffer = (buffer << 5) | Int(decoded)
-            bitsLeft += 5
-            if bitsLeft >= 8 {
-                bitsLeft -= 8
-                output.append(UInt8((buffer >> bitsLeft) & 0xff))
-            }
-        }
-        return output
-    }
 }
 
 private extension HealthMetric {
@@ -1121,6 +1154,7 @@ private extension HealthMetric {
         case .body: return "mdi:human"
         case .nutrition: return "mdi:food-apple"
         case .vitals: return "mdi:lungs"
+        case .cycle: return "mdi:water"
         }
     }
 }
@@ -1156,6 +1190,24 @@ private extension BridgeMetricPayload {
                             measuredAt: measuredAt,
                             aggregation: "average",
                             icon: "mdi:sleep",
+                            deviceClass: nil,
+                            stateClass: "measurement")
+    }
+
+    /// Ganze Tage o. Ae. – einheitenlose Zaehlwerte.
+    static func count(id: String,
+                      category: HealthCategory,
+                      title: String,
+                      value: Double,
+                      measuredAt: Date) -> BridgeMetricPayload {
+        BridgeMetricPayload(id: id,
+                            category: category.rawValue,
+                            title: title,
+                            value: value,
+                            unit: L10n.string("Tage"),
+                            measuredAt: measuredAt,
+                            aggregation: "latest",
+                            icon: "mdi:water",
                             deviceClass: nil,
                             stateClass: "measurement")
     }

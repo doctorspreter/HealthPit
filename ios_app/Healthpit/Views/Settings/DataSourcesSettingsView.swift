@@ -70,7 +70,7 @@ struct DataSourcesSettingsView: View {
                     LocalDataSourcesSettingsView()
                 } label: {
                     DataSourceRow(title: "Lokale Daten & Bridge",
-                                  subtitle: "Manuell, GPX/TCX, Garmin und Gympit",
+                                  subtitle: "Manuell, GPX/TCX und GymPit",
                                   systemImage: "internaldrive.fill",
                                   tint: .orange)
                 }
@@ -129,8 +129,6 @@ struct DataSourcesSettingsView: View {
         await HealthWorkoutCacheStore.shared.clear()
         let defaults = UserDefaults.standard
         defaults.removeObject(forKey: BridgeSettings.hiddenHealthWorkoutIDsKey)
-        defaults.removeObject(forKey: "hiddenHevyWorkoutIDs")
-        defaults.removeObject(forKey: "ignoredHevyWorkoutLinks")
         actionMessage = L10n.string("Die lokalen App-Daten wurden gelöscht.")
     }
 }
@@ -346,7 +344,10 @@ private struct LocalDataSourcesSettingsView: View {
     @State private var sourcePendingDeletion: LocalWorkout.Source?
     @State private var message: String?
 
-    private let sources: [LocalWorkout.Source] = [.manual, .gpx, .tcx, .garmin, .gympit, .appleHealth]
+    // Garmin fehlt hier absichtlich: es holt nichts mehr ab, seit die Bridge
+    // weg ist. Der Enum-Fall bleibt, damit frueher importierte Workouts
+    // weiterhin dekodierbar sind und ihre Herkunft behalten.
+    private let sources: [LocalWorkout.Source] = [.manual, .gpx, .tcx, .gympit, .appleHealth]
 
     var body: some View {
         List {

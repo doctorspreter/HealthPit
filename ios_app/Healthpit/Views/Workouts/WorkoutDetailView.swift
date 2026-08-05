@@ -120,12 +120,13 @@ struct WorkoutDetailView: View {
                                            heartRate: detail?.heartRate,
                                            isCycling: isCycling)
 
-            DisclosureGroup("Kilometer anzeigen", isExpanded: $showingSplitTable) {
+            DisclosureGroup(WorkoutUnits.isImperial ? L10n.string("Meilen anzeigen") : L10n.string("Kilometer anzeigen"),
+                            isExpanded: $showingSplitTable) {
                 VStack(spacing: 0) {
                     ForEach(splits) { split in
                         HStack {
                             VStack(alignment: .leading, spacing: 3) {
-                                Text("km \(split.id)")
+                                Text("\(WorkoutUnits.distanceSymbol) \(split.id)")
                                     .font(.subheadline.bold())
                                 Text(splitDurationText(split.duration))
                                     .font(.caption)
@@ -236,12 +237,11 @@ struct WorkoutDetailView: View {
     }
 
     private func paceText(_ secondsPerKm: TimeInterval) -> String {
-        let total = Int(secondsPerKm.rounded())
-        return "\(total / 60):" + String(format: "%02d /km", total % 60)
+        WorkoutUnits.pace(secondsPerKilometer: Int(secondsPerKm.rounded()))
     }
 
     private func speedText(_ value: Double) -> String {
-        String(format: "%.1f km/h", value)
+        WorkoutUnits.speed(kmh: value)
     }
 
     private func splitDurationText(_ duration: TimeInterval) -> String {

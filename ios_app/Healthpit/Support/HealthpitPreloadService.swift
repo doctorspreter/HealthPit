@@ -27,7 +27,6 @@ actor HealthpitPreloadService {
         async let sleepDay = try? health.fetchSleep(in: .day)
         async let sleepWeek = try? health.fetchSleep(in: .week)
         async let sleepMonth = try? health.fetchSleep(in: .month)
-        async let hevy = try? BridgeFitnessService.shared.fetchHevySummary()
         async let imports: Int? = try? BridgeSyncService.shared.downloadImportedWorkouts()
         async let localSummaries: [LocalWorkout] = LocalWorkoutStore.shared.loadSummaries()
 
@@ -39,9 +38,6 @@ actor HealthpitPreloadService {
         }
         if let sessions = await sleepMonth {
             await SleepCacheStore.shared.save(sessions, range: .month)
-        }
-        if let summary = await hevy {
-            await HevyFitnessCacheStore.shared.save(summary)
         }
         _ = await dashboardMetrics
         _ = await imports

@@ -57,9 +57,16 @@ struct HealthMetric: Identifiable, Hashable, Sendable {
     /// Einheit, in der gespeicherte Werte gelesen werden.
     let unit: HKUnit
 
-    /// Kurzes Einheitenkürzel für die Anzeige (z. B. "kcal", "bpm", "kg").
-    private let unitSymbolKey: String
-    var unitSymbol: String { L10n.string(unitSymbolKey) }
+    /// Einheitenkürzel der gespeicherten Einheit, unübersetzt (z. B. "kcal",
+    /// "bpm", "kg").
+    ///
+    /// Stabiler Schlüssel: Umrechnung und Nachkommastellen dürfen nur hierauf
+    /// schalten, niemals auf `unitSymbol` – das ist bereits übersetzt und
+    /// ändert sich mit der Sprachauswahl.
+    let canonicalUnitSymbol: String
+
+    /// Kurzes Einheitenkürzel der gespeicherten Einheit, übersetzt.
+    var unitSymbol: String { L10n.string(canonicalUnitSymbol) }
 
     /// Summieren oder Mitteln über den Zeitraum.
     let aggregation: AggregationStyle
@@ -76,7 +83,7 @@ struct HealthMetric: Identifiable, Hashable, Sendable {
         self.systemImage = systemImage
         self.quantityTypeIdentifier = quantityTypeIdentifier
         self.unit = unit
-        self.unitSymbolKey = unitSymbol
+        self.canonicalUnitSymbol = unitSymbol
         self.aggregation = aggregation
     }
 
@@ -126,7 +133,8 @@ extension HealthMetric {
         case .body:      ids = [.bodyMass, .bodyMassIndex, .bodyFatPercentage, .leanBodyMass]
         case .nutrition: ids = [.dietaryEnergyConsumed, .dietaryWater, .dietaryCarbohydrates, .dietaryProtein]
         case .vitals:    ids = [.oxygenSaturation, .respiratoryRate, .bodyTemperature, .bloodGlucose]
-        case .workouts, .sleep: ids = []
+        // Zyklus besteht aus Kategorie-Samples, nicht aus Mengen-Metriken.
+        case .workouts, .sleep, .cycle: ids = []
         }
         return ids.compactMap { metric($0) }
     }

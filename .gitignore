@@ -23,3 +23,6 @@ ios_app/**/*.xcworkspace/xcuserdata/
 # Legacy paths recreated by Finder/Xcode; canonical sources live above.
 Xcode/
 homeassistant_apps/
+
+# Beiseitegestellte Daten der alten Bridge (enthaelt Zugangsdaten und Workouts)
+legacy_bridge_data/

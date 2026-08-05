@@ -120,7 +120,7 @@ actor LocalWorkoutStore {
         switch workout.source {
         case .appleHealth:
             return "\(workout.source.rawValue)|\(workout.id.uuidString)"
-        case .manual, .gpx, .tcx, .garmin, .gympit:
+        case .manual, .gpx, .tcx, .gympit:
             return [
                 workout.source.rawValue,
                 normalized(workout.sport),

@@ -1,4 +1,4 @@
 "CFBundleTypeName" = "Fichier d’entraînement";
 "NSCameraUsageDescription" = "Cette app scanne le code QR OTP du pont.";
 "NSHealthShareUsageDescription" = "Cette app lit vos données de santé afin de les présenter clairement.";
-"NSHealthUpdateUsageDescription" = "Cette app peut enregistrer dans Apple Santé les entraînements saisis manuellement avec leur durée, leurs calories et leur distance.";
+"NSHealthUpdateUsageDescription" = "Cette app peut enregistrer dans Apple Santé les entraînements saisis manuellement avec durée, calories et distance, ainsi que les entrées de cycle que vous ajoutez.";

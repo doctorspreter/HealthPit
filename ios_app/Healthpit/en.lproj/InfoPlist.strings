@@ -1,4 +1,4 @@
 "CFBundleTypeName" = "Workout file";
 "NSCameraUsageDescription" = "This app scans the bridge OTP QR code.";
 "NSHealthShareUsageDescription" = "This app reads your health data to present it clearly.";
-"NSHealthUpdateUsageDescription" = "This app can save manually recorded workouts with duration, calories, and distance to Apple Health.";
+"NSHealthUpdateUsageDescription" = "This app can save manually recorded workouts with duration, calories, and distance, as well as cycle entries you add yourself, to Apple Health.";
