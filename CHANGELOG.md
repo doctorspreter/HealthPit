@@ -68,14 +68,6 @@
 - Die iOS-Freigabe für das lokale Netzwerk wurde nie angefragt, wodurch die
   lokale Verbindung ohne erkennbaren Grund scheiterte.
 
-### Entfernt
-
-- Hevy und Garmin. Beide wurden von der Bridge abgeholt, die es nicht mehr gibt.
-  Was über Apple Health von einer Garmin-Uhr hereinkommt, bleibt unverändert.
-- Docker-Container und Home-Assistant-App.
-- Die 2FA-QR-Bildentität, der API-Token und das OTP-Verfahren — die Anmeldung
-  übernimmt Home Assistant.
-
 ### Zum Umstieg
 
 Die Integration heißt jetzt `healthpit`, die Entitäts-IDs ändern sich also einmal.
