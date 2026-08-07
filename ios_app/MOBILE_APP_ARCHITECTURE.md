@@ -49,7 +49,7 @@ The SwiftUI app is divided into these layers:
   in the current architecture.
 
 The central cache is implemented in
-`Healthpit/Support/HealthpitDatabase.swift`. Its SQLite database is stored at
+`Healthpit/Support/HealthPitDatabase.swift`. Its SQLite database is stored at
 `Application Support/Database/healthpit.sqlite3`, using a `cache_entries`
 table with generic JSON payloads keyed by cache key.
 
@@ -138,7 +138,7 @@ URL selection:
 The app does not inspect the Wi-Fi network name; local selection is based only
 on bridge reachability.
 
-The Docker bridge is the single master for each configured user. Healthpit,
+The Docker bridge is the single master for each configured user. HealthPit,
 GymPit, and Home Assistant always request a `slave` session. The session
 handshake succeeds only when the bridge responds with `server_role = master`
 and the assigned client role is `slave`. A client requesting `master` is
@@ -155,7 +155,7 @@ File: `Healthpit/Views/Dashboard/DashboardView.swift`
 - Trailing toolbar: sync through `BridgeSyncService.syncNow()` and a gear that
   opens `BridgeSettingsView`
 - Pull-to-refresh:
-  `HealthpitPreloadService.refreshLocalAppleHealthCaches()`
+  `HealthPitPreloadService.refreshLocalAppleHealthCaches()`
 
 Dashboard destinations:
 
@@ -507,7 +507,7 @@ Current rules:
   sensor attributes.
 - Apply `device_class`, `state_class`, unit, and icon when supplied by the
   bridge.
-- Attach all metric sensors to the configured Healthpit user device.
+- Attach all metric sensors to the configured HealthPit user device.
 - Create missing sensors automatically when a later sync introduces a metric.
 - Do not poll bridge management state, routes, separate Hevy summaries, or
   workout links for unused UI models.

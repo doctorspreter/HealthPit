@@ -269,7 +269,7 @@ struct BridgeSessionResponse: Decodable {
         sessionToken = homeAssistantToken
         tokenType = "bearer"
         expiresAt = ""
-        deviceName = "Healthpit (iPhone)"
+        deviceName = "HealthPit (iPhone)"
         self.username = username
         nodeRole = "slave"
         serverRole = "master"
@@ -416,7 +416,7 @@ final class BridgeSyncService {
             )
         case 404:
             return .serverMessage(
-                L10n.string("Home Assistant antwortet, aber die Healthpit-Integration ist dort nicht eingerichtet.")
+                L10n.string("Home Assistant antwortet, aber die HealthPit-Integration ist dort nicht eingerichtet.")
             )
         default:
             return bridgeError(from: data, statusCode: statusCode)
@@ -905,18 +905,18 @@ final class BridgeSyncService {
         }
         await LocalWorkoutStore.shared.saveMany(downloaded)
 
-        // A workout the bridge does not have is missing, not deleted. Wiping
-        // the local copy here used to empty the history as soon as the app was
-        // pointed at a fresh bridge. Instead the gap is filled from the device,
-        // so whichever side still has the data hands it to the other.
-        // Deletions the user makes in Healthpit still propagate, because those
-        // call deleteImportedWorkout explicitly.
-        let onBridge = Set(downloaded.map(\.id))
-        let missingOnBridge = await LocalWorkoutStore.shared.load().filter {
-            bridgeManagedSources.contains($0.source) && !onBridge.contains($0.id)
-        }
-        let restored = try await uploadWorkouts(missingOnBridge, credentials: credentials)
-        return downloaded.count + restored
+        // Frueher wurde hier alles wieder hochgeladen, was lokal lag, aber nicht
+        // zurueckkam: gegenueber der Bridge war eine Luecke ein Verlust, den nur
+        // dieses Geraet noch fuellen konnte.
+        //
+        // Mit der direkten Verbindung gehoeren GymPit-Trainings GymPit. Die App
+        // hat sie nur zur Anzeige. Ihre Kopien tragen die IDs aus der
+        // Bridge-Zeit, GymPit sendet dieselben Einheiten unter seinen eigenen
+        // Session-IDs — die treffen sich nie, also galt jede Einheit als
+        // fehlend und wurde bei jedem Sync erneut hochgeladen. Das Ergebnis
+        // waren zwei Eintraege je Training, die Home Assistant nicht
+        // zusammenfuehren kann, weil beide dieselbe Quelle nennen.
+        return downloaded.count
     }
 
     /// Push a set of workouts to the bridge, keeping their own source.
@@ -962,13 +962,71 @@ final class BridgeSyncService {
         }
     }
 
+    // MARK: - Duplikate
+
+    /// Vorschlaege und bereits getroffene Entscheidungen abholen.
+    func loadDuplicates() async throws -> WorkoutDuplicateReport {
+        let credentials = try await bridgeCredentials()
+        var endpoint = credentials.baseURL
+        endpoint.append(path: credentials.apiPath("duplicates"))
+
+        let request = authorizedRequest(url: endpoint, method: "GET", credentials: credentials)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200..<300).contains(statusCode) else {
+            if statusCode == 404 {
+                throw BridgeSyncError.serverMessage(
+                    L10n.string("Diese Home-Assistant-Integration kennt noch keine Duplikate. Bitte die Integration in HACS aktualisieren.")
+                )
+            }
+            throw Self.bridgeError(from: data, statusCode: statusCode)
+        }
+        return try decoder.decode(WorkoutDuplicateReport.self, from: data)
+    }
+
+    /// Festhalten, dass zwei Aufzeichnungen dieselbe Einheit sind — oder eben nicht.
+    func decideDuplicate(
+        primary: String,
+        linked: String,
+        action: WorkoutDuplicateAction
+    ) async throws {
+        try await sendDuplicateDecision(
+            method: "POST",
+            body: ["primary": primary, "linked": linked, "action": action.rawValue]
+        )
+    }
+
+    /// Eine Entscheidung zuruecknehmen; das Paar wird danach wieder vorgeschlagen.
+    func undoDuplicateDecision(primary: String, linked: String) async throws {
+        try await sendDuplicateDecision(
+            method: "DELETE",
+            body: ["primary": primary, "linked": linked]
+        )
+    }
+
+    private func sendDuplicateDecision(method: String, body: [String: String]) async throws {
+        let credentials = try await bridgeCredentials()
+        var endpoint = credentials.baseURL
+        endpoint.append(path: credentials.apiPath("duplicates/decision"))
+
+        var request = authorizedRequest(url: endpoint, method: method, credentials: credentials)
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200..<300).contains(statusCode) else {
+            throw Self.bridgeError(from: data, statusCode: statusCode)
+        }
+    }
+
     private func bridgeCredentials() async throws -> BridgeCredentials {
         let token = Self.trimmedKeychainValue(for: BridgeSettings.homeAssistantTokenKey)
         let deviceID = defaults.string(forKey: BridgeSettings.deviceIDKey)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "iPhone"
 
         guard !token.isEmpty else {
             throw BridgeSyncError.serverMessage(
-                L10n.string("Healthpit ist nicht verbunden. Bitte zuerst in den Einstellungen den Home-Assistant-Token eintragen.")
+                L10n.string("HealthPit ist nicht verbunden. Bitte zuerst in den Einstellungen den Home-Assistant-Token eintragen.")
             )
         }
         let baseURL = try await Self.configuredBaseURL(defaults: defaults)
@@ -1079,12 +1137,12 @@ final class BridgeSyncService {
                     return L10n.string("Home Assistant hat den Token abgelehnt.")
                 }
                 if statusCode == 404 {
-                    return L10n.string("Die Healthpit-Integration ist dort nicht eingerichtet.")
+                    return L10n.string("Die HealthPit-Integration ist dort nicht eingerichtet.")
                 }
                 return L10n.format("Sie hat mit HTTP %lld geantwortet.", Int64(statusCode))
             }
             guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-                return L10n.string("Unter dieser Adresse antwortet zwar etwas, aber keine Healthpit-Bridge.")
+                return L10n.string("Unter dieser Adresse antwortet zwar etwas, aber keine HealthPit-Bridge.")
             }
             let healthy = object["status"] as? String == "ok"
                 || object["ok"] as? Bool == true

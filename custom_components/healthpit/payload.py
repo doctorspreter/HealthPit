@@ -39,6 +39,9 @@ _SOURCE_ALIASES = {
     "healthpit_(iphone)": "apple_health",
 }
 
+# What a person can decide about a proposed duplicate.
+LINK_ACTIONS = {"merge", "separate"}
+
 MAX_METRICS_PER_BATCH = 500
 MAX_WORKOUTS_PER_BATCH = 1000
 MAX_EXERCISES_PER_WORKOUT = 500
@@ -431,6 +434,27 @@ def normalize_workout_batch(raw: Any) -> tuple[str, list[dict[str, Any]]]:
     return device_id, [
         normalize_workout(item, device_id=device_id) for item in workouts
     ]
+
+
+def normalize_link(raw: Any, *, require_action: bool) -> tuple[str, str, str]:
+    """Validate a duplicate decision and return (primary, linked, action).
+
+    ``primary`` and ``linked`` are ``source:workout_id`` keys as handed out by
+    the duplicates endpoint. They are opaque here on purpose: the merge decides
+    what they mean, and a decision must survive a workout being re-imported.
+    """
+    if not isinstance(raw, dict):
+        raise PayloadError("The payload must be an object")
+    primary = _required_text(raw.get("primary"), field="primary", max_length=200)
+    linked = _required_text(raw.get("linked"), field="linked", max_length=200)
+    if primary == linked:
+        raise PayloadError("primary and linked must be two different workouts")
+    if not require_action:
+        return primary, linked, ""
+    action = str(raw.get("action") or "").strip().lower()
+    if action not in LINK_ACTIONS:
+        raise PayloadError(f"action must be one of {sorted(LINK_ACTIONS)}")
+    return primary, linked, action
 
 
 def normalize_reconcile(raw: Any) -> tuple[str, str, list[str]]:

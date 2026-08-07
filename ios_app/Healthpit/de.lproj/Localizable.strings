@@ -20,7 +20,7 @@
 "%lld Trainingstage im Monat" = "%lld Trainingstage im Monat";
 "%lld Werte synchronisiert." = "%lld Werte synchronisiert.";
 "%lld von 10" = "%lld von 10";
-"%lld von Healthpit geschriebene Objekte wurden gelöscht." = "%lld von Healthpit geschriebene Objekte wurden gelöscht.";
+"%lld von HealthPit geschriebene Objekte wurden gelöscht." = "%lld von HealthPit geschriebene Objekte wurden gelöscht.";
 "1 Stunde" = "1 Stunde";
 "3 Stunden" = "3 Stunden";
 "3-Monats-Normalwert: %@" = "3-Monats-Normalwert: %@";
@@ -108,7 +108,7 @@
 "Erkannte Apple-Health-Quellen" = "Erkannte Apple-Health-Quellen";
 "Ernährung" = "Ernährung";
 "Es sind noch keine Workouts vorhanden." = "Es sind noch keine Workouts vorhanden.";
-"Es werden nur Daten gelöscht, die Healthpit selbst in Apple Health gespeichert hat. Daten von Huawei, Apple Watch oder anderen Apps bleiben erhalten." = "Es werden nur Daten gelöscht, die Healthpit selbst in Apple Health gespeichert hat. Daten von Huawei, Apple Watch oder anderen Apps bleiben erhalten.";
+"Es werden nur Daten gelöscht, die HealthPit selbst in Apple Health gespeichert hat. Daten von Huawei, Apple Watch oder anderen Apps bleiben erhalten." = "Es werden nur Daten gelöscht, die HealthPit selbst in Apple Health gespeichert hat. Daten von Huawei, Apple Watch oder anderen Apps bleiben erhalten.";
 "Etagen" = "Etagen";
 "Externe Verbindung (optional)" = "Externe Verbindung (optional)";
 "FTP (Rad)" = "FTP (Rad)";
@@ -141,8 +141,8 @@
 "Handgelenk" = "Handgelenk";
 "Handgelenk-Temp (Schlaf)" = "Handgelenk-Temp (Schlaf)";
 "Health-App-Berechtigungen öffnen" = "Health-App-Berechtigungen öffnen";
-"Healthpit darf schreiben" = "Healthpit darf schreiben";
-"Healthpit-Daten aus Apple Health löschen?" = "Healthpit-Daten aus Apple Health löschen?";
+"HealthPit darf schreiben" = "HealthPit darf schreiben";
+"HealthPit-Daten aus Apple Health löschen?" = "HealthPit-Daten aus Apple Health löschen?";
 "Herz" = "Herz";
 "Herzfrequenz" = "Herzfrequenz";
 "Heute" = "Heute";
@@ -192,7 +192,7 @@
 "Laufen" = "Laufen";
 "Laufleistung" = "Laufleistung";
 "Lauftempo" = "Lauftempo";
-"Leserechte verwaltet iOS in der Health-App. Healthpit kann sie aus Datenschutzgründen nicht selbst anzeigen oder erweitern." = "Leserechte verwaltet iOS in der Health-App. Healthpit kann sie aus Datenschutzgründen nicht selbst anzeigen oder erweitern.";
+"Leserechte verwaltet iOS in der Health-App. HealthPit kann sie aus Datenschutzgründen nicht selbst anzeigen oder erweitern." = "Leserechte verwaltet iOS in der Health-App. HealthPit kann sie aus Datenschutzgründen nicht selbst anzeigen oder erweitern.";
 "Letzte 7 Tage" = "Letzte 7 Tage";
 "Letzte Nacht" = "Letzte Nacht";
 "Letzter Sync" = "Letzter Sync";
@@ -329,7 +329,7 @@
 "Vitamin D" = "Vitamin D";
 "Volumen" = "Volumen";
 "Volumen (kg)" = "Volumen (kg)";
-"Von Healthpit geschriebene Daten löschen" = "Von Healthpit geschriebene Daten löschen";
+"Von HealthPit geschriebene Daten löschen" = "Von HealthPit geschriebene Daten löschen";
 "Wach" = "Wach";
 "Wandern" = "Wandern";
 "Wasser" = "Wasser";
@@ -381,7 +381,7 @@
 "Nieselregen" = "Nieselregen";
 "Schauer" = "Schauer";
 "Gewitter" = "Gewitter";
-"Lesen, schreiben und Healthpit-Daten löschen" = "Lesen, schreiben und Healthpit-Daten löschen";
+"Lesen, schreiben und HealthPit-Daten löschen" = "Lesen, schreiben und HealthPit-Daten löschen";
 "Trainings verwalten" = "Trainings verwalten";
 "Einzelne Trainings ansehen oder entfernen" = "Einzelne Trainings ansehen oder entfernen";
 "Lokale Daten & Bridge" = "Lokale Daten & Bridge";
@@ -410,7 +410,7 @@
 "Die Bridge unter %@ hat nicht rechtzeitig geantwortet." = "Die Bridge unter %@ hat nicht rechtzeitig geantwortet.";
 "Die Bridge-Adresse ist im Netzwerk nicht auffindbar." = "Die Bridge-Adresse ist im Netzwerk nicht auffindbar.";
 "Die Adresse %@ ist im Netzwerk nicht auffindbar. Bitte Hostnamen oder IP-Adresse prüfen." = "Die Adresse %@ ist im Netzwerk nicht auffindbar. Bitte Hostnamen oder IP-Adresse prüfen.";
-"Unter %@ nimmt niemand Verbindungen an. Bitte prüfen, ob die Bridge läuft, ob der Port stimmt und ob Healthpit in den iOS-Einstellungen unter „Datenschutz & Sicherheit“ auf das lokale Netzwerk zugreifen darf." = "Unter %@ nimmt niemand Verbindungen an. Bitte prüfen, ob die Bridge läuft, ob der Port stimmt und ob Healthpit in den iOS-Einstellungen unter „Datenschutz & Sicherheit“ auf das lokale Netzwerk zugreifen darf.";
+"Unter %@ nimmt niemand Verbindungen an. Bitte prüfen, ob die Bridge läuft, ob der Port stimmt und ob HealthPit in den iOS-Einstellungen unter „Datenschutz & Sicherheit“ auf das lokale Netzwerk zugreifen darf." = "Unter %@ nimmt niemand Verbindungen an. Bitte prüfen, ob die Bridge läuft, ob der Port stimmt und ob HealthPit in den iOS-Einstellungen unter „Datenschutz & Sicherheit“ auf das lokale Netzwerk zugreifen darf.";
 "Unter der Bridge-Adresse nimmt niemand Verbindungen an." = "Unter der Bridge-Adresse nimmt niemand Verbindungen an.";
 "Unter %@ nimmt niemand Verbindungen an. Läuft die Bridge, und stimmt der Port?" = "Unter %@ nimmt niemand Verbindungen an. Läuft die Bridge, und stimmt der Port?";
 "Die Verbindung zur Bridge ist abgerissen." = "Die Verbindung zur Bridge ist abgerissen.";
@@ -426,12 +426,12 @@
 "Die Verbindung wurde abgebrochen." = "Die Verbindung wurde abgebrochen.";
 "Die Bridge ist nicht erreichbar." = "Die Bridge ist nicht erreichbar.";
 "Die Bridge unter %@ ist nicht erreichbar." = "Die Bridge unter %@ ist nicht erreichbar.";
-"Unter %@ antwortet ein Webserver, aber keine Healthpit-Bridge. Bitte Adresse und Port prüfen." = "Unter %@ antwortet ein Webserver, aber keine Healthpit-Bridge. Bitte Adresse und Port prüfen.";
+"Unter %@ antwortet ein Webserver, aber keine HealthPit-Bridge. Bitte Adresse und Port prüfen." = "Unter %@ antwortet ein Webserver, aber keine HealthPit-Bridge. Bitte Adresse und Port prüfen.";
 "Die Bridge unter %@ hat eine leere Antwort geschickt (HTTP %lld)." = "Die Bridge unter %@ hat eine leere Antwort geschickt (HTTP %lld).";
 "Die Bridge unter %@ hat eine unerwartete Antwort geschickt (HTTP %lld)." = "Die Bridge unter %@ hat eine unerwartete Antwort geschickt (HTTP %lld).";
-"Unter dieser Adresse antwortet keine Healthpit-Bridge, die Daten entgegennehmen kann." = "Unter dieser Adresse antwortet keine Healthpit-Bridge, die Daten entgegennehmen kann.";
+"Unter dieser Adresse antwortet keine HealthPit-Bridge, die Daten entgegennehmen kann." = "Unter dieser Adresse antwortet keine HealthPit-Bridge, die Daten entgegennehmen kann.";
 "Bridge-Benutzername fehlt." = "Bridge-Benutzername fehlt.";
-"Healthpit ist nicht verbunden. Bitte zuerst in den Einstellungen mit der Bridge verbinden." = "Healthpit ist nicht verbunden. Bitte zuerst in den Einstellungen mit der Bridge verbinden.";
+"HealthPit ist nicht verbunden. Bitte zuerst in den Einstellungen mit der Bridge verbinden." = "HealthPit ist nicht verbunden. Bitte zuerst in den Einstellungen mit der Bridge verbinden.";
 "Die externe Adresse muss mit https:// beginnen." = "Die externe Adresse muss mit https:// beginnen.";
 "Die lokale Bridge unter %@ antwortet nicht, und es ist keine externe Adresse hinterlegt." = "Die lokale Bridge unter %@ antwortet nicht, und es ist keine externe Adresse hinterlegt.";
 "Diese Bridge ist selbst als Master eingerichtet und kann sich nicht mit einer zweiten Bridge verbinden." = "Diese Bridge ist selbst als Master eingerichtet und kann sich nicht mit einer zweiten Bridge verbinden.";
@@ -442,7 +442,7 @@
 "Die Bridge meldet einen internen Fehler (%lld)." = "Die Bridge meldet einen internen Fehler (%lld).";
 "Die Bridge hat die Anfrage abgelehnt (%lld)." = "Die Bridge hat die Anfrage abgelehnt (%lld).";
 "Sie hat mit HTTP %lld geantwortet." = "Sie hat mit HTTP %lld geantwortet.";
-"Unter dieser Adresse antwortet zwar etwas, aber keine Healthpit-Bridge." = "Unter dieser Adresse antwortet zwar etwas, aber keine Healthpit-Bridge.";
+"Unter dieser Adresse antwortet zwar etwas, aber keine HealthPit-Bridge." = "Unter dieser Adresse antwortet zwar etwas, aber keine HealthPit-Bridge.";
 "Die Bridge ist erreichbar, meldet sich aber nicht als betriebsbereit." = "Die Bridge ist erreichbar, meldet sich aber nicht als betriebsbereit.";
 "Unter dieser Adresse läuft eine Bridge in der Rolle „%@“ statt als Master." = "Unter dieser Adresse läuft eine Bridge in der Rolle „%@“ statt als Master.";
 "Technische Details" = "Technische Details";
@@ -456,7 +456,7 @@
 "Verbunden mit der externen Bridge unter %@, gültig bis %@." = "Verbunden mit der externen Bridge unter %@, gültig bis %@.";
 "Sicherung gespeichert als %@." = "Sicherung gespeichert als %@.";
 "Die Sicherung konnte nicht gespeichert werden." = "Die Sicherung konnte nicht gespeichert werden.";
-"Die Datei konnte nicht gelesen werden. Ist es eine Healthpit-Sicherung?" = "Die Datei konnte nicht gelesen werden. Ist es eine Healthpit-Sicherung?";
+"Die Datei konnte nicht gelesen werden. Ist es eine HealthPit-Sicherung?" = "Die Datei konnte nicht gelesen werden. Ist es eine HealthPit-Sicherung?";
 "Es wurde keine Datei ausgewählt." = "Es wurde keine Datei ausgewählt.";
 "Der Zugriff auf Apple Health wurde nicht erteilt. Bitte in den iOS-Einstellungen unter Datenschutz › Health prüfen." = "Der Zugriff auf Apple Health wurde nicht erteilt. Bitte in den iOS-Einstellungen unter Datenschutz › Health prüfen.";
 "Die Daten konnten nicht aus Apple Health gelesen werden." = "Die Daten konnten nicht aus Apple Health gelesen werden.";
@@ -504,15 +504,15 @@
 "läuft" = "läuft";
 "Eintrag hinzufügen" = "Eintrag hinzufügen";
 "Noch keine Zyklusdaten" = "Noch keine Zyklusdaten";
-"Healthpit zeigt hier, was in Apple Health steht. Über „+“ lassen sich eigene Einträge anlegen; sie werden nach Apple Health zurückgeschrieben." = "Healthpit zeigt hier, was in Apple Health steht. Über „+“ lassen sich eigene Einträge anlegen; sie werden nach Apple Health zurückgeschrieben.";
+"HealthPit zeigt hier, was in Apple Health steht. Über „+“ lassen sich eigene Einträge anlegen; sie werden nach Apple Health zurückgeschrieben." = "HealthPit zeigt hier, was in Apple Health steht. Über „+“ lassen sich eigene Einträge anlegen; sie werden nach Apple Health zurückgeschrieben.";
 "Zyklus-Eintrag" = "Zyklus-Eintrag";
 "Blutung" = "Blutung";
 "Erster Tag des Zyklus" = "Erster Tag des Zyklus";
-"„Keine Blutung“ entfernt einen zuvor in Healthpit angelegten Eintrag für diesen Tag." = "„Keine Blutung“ entfernt einen zuvor in Healthpit angelegten Eintrag für diesen Tag.";
+"„Keine Blutung“ entfernt einen zuvor in HealthPit angelegten Eintrag für diesen Tag." = "„Keine Blutung“ entfernt einen zuvor in HealthPit angelegten Eintrag für diesen Tag.";
 "Weitere Einträge" = "Weitere Einträge";
 "Kein Test" = "Kein Test";
 "Diese beiden Einträge werden ergänzt, nicht ersetzt – ein bereits gespeicherter Eintrag bleibt bestehen." = "Diese beiden Einträge werden ergänzt, nicht ersetzt – ein bereits gespeicherter Eintrag bleibt bestehen.";
-"Der vorhandene Eintrag stammt aus einer anderen App. Healthpit ändert ihn nicht, sondern legt einen eigenen Eintrag daneben an." = "Der vorhandene Eintrag stammt aus einer anderen App. Healthpit ändert ihn nicht, sondern legt einen eigenen Eintrag daneben an.";
+"Der vorhandene Eintrag stammt aus einer anderen App. HealthPit ändert ihn nicht, sondern legt einen eigenen Eintrag daneben an." = "Der vorhandene Eintrag stammt aus einer anderen App. HealthPit ändert ihn nicht, sondern legt einen eigenen Eintrag daneben an.";
 "Zyklustag" = "Zyklustag";
 "Ø Zykluslänge" = "Ø Zykluslänge";
 "Ø Periodendauer" = "Ø Periodendauer";

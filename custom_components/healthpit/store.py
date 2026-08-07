@@ -257,6 +257,11 @@ class HealthpitStore:
     # Manual links between workouts
     # ------------------------------------------------------------------
 
+    def links(self, user_id: str) -> list[dict[str, str]]:
+        """Every decision this user made about proposed duplicates."""
+        bucket = self._users.get(user_id)
+        return list(bucket["links"]) if bucket else []
+
     def save_link(self, user_id: str, primary: str, linked: str, action: str) -> None:
         bucket = self._bucket(user_id, "")
         bucket["links"] = [

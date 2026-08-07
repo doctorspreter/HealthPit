@@ -67,7 +67,7 @@ enum BridgeErrorText {
             // Bei einer Adresse im Heimnetz ist die häufigste Ursache nicht der
             // falsche Port, sondern die verweigerte Freigabe für das lokale Netzwerk.
             if isLocalNetworkHost(host) {
-                return L10n.format("Unter %@ nimmt niemand Verbindungen an. Bitte prüfen, ob die Bridge läuft, ob der Port stimmt und ob Healthpit in den iOS-Einstellungen unter „Datenschutz & Sicherheit“ auf das lokale Netzwerk zugreifen darf.", host)
+                return L10n.format("Unter %@ nimmt niemand Verbindungen an. Bitte prüfen, ob die Bridge läuft, ob der Port stimmt und ob HealthPit in den iOS-Einstellungen unter „Datenschutz & Sicherheit“ auf das lokale Netzwerk zugreifen darf.", host)
             }
             return host.isEmpty
                 ? L10n.string("Unter der Bridge-Adresse nimmt niemand Verbindungen an.")
@@ -135,7 +135,7 @@ enum BridgeErrorText {
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
         if text.hasPrefix("<") {
-            return L10n.format("Unter %@ antwortet ein Webserver, aber keine Healthpit-Bridge. Bitte Adresse und Port prüfen.", host)
+            return L10n.format("Unter %@ antwortet ein Webserver, aber keine HealthPit-Bridge. Bitte Adresse und Port prüfen.", host)
         }
         if text.isEmpty {
             return L10n.format("Die Bridge unter %@ hat eine leere Antwort geschickt (HTTP %lld).", host, Int64(statusCode))

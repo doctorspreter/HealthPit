@@ -2,12 +2,12 @@
   "config": {
     "step": {
       "user": {
-        "title": "Healthpit",
+        "title": "HealthPit",
         "description": "App 会把数据发送到 {api_path}。这里无需填写任何内容。\n\n每个人都需要在自己的 Home Assistant 个人资料中创建长期访问令牌，并会获得独立的设备和独立的实体。"
       }
     },
     "abort": {
-      "single_instance_allowed": "Healthpit 已设置。一个条目适用于所有用户。"
+      "single_instance_allowed": "HealthPit 已设置。一个条目适用于所有用户。"
     }
   },
   "entity": {

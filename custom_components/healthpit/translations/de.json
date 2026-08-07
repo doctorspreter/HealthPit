@@ -2,12 +2,12 @@
   "config": {
     "step": {
       "user": {
-        "title": "Healthpit",
+        "title": "HealthPit",
         "description": "Die App sendet ihre Daten an {api_path}. Hier ist nichts einzutragen.\n\nJede Person braucht einen eigenen Long-Lived Access Token aus ihrem Home-Assistant-Profil und bekommt ein eigenes Gerät mit eigenen Entitäten."
       }
     },
     "abort": {
-      "single_instance_allowed": "Healthpit ist bereits eingerichtet. Ein Eintrag gilt für alle Benutzer."
+      "single_instance_allowed": "HealthPit ist bereits eingerichtet. Ein Eintrag gilt für alle Benutzer."
     }
   },
   "entity": {

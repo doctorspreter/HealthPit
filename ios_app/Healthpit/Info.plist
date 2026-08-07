@@ -32,7 +32,7 @@
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Healthpit</string>
+	<string>HealthPit</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -46,7 +46,7 @@
 	<key>NSCameraUsageDescription</key>
 	<string>Diese App scannt den OTP-QR-Code der Bridge.</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Healthpit verbindet sich mit deiner Bridge im Heimnetz.</string>
+	<string>HealthPit verbindet sich mit deiner Bridge im Heimnetz.</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Diese App liest deine Gesundheitsdaten, um sie übersichtlich darzustellen.</string>
 	<key>NSHealthUpdateUsageDescription</key>

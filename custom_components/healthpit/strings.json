@@ -2,12 +2,12 @@
   "config": {
     "step": {
       "user": {
-        "title": "Healthpit",
+        "title": "HealthPit",
         "description": "The app sends its data to {api_path}. Nothing to enter here.\n\nEach person needs their own long-lived access token from their Home Assistant profile, and gets their own device with their own entities."
       }
     },
     "abort": {
-      "single_instance_allowed": "Healthpit is already set up. One entry covers every user."
+      "single_instance_allowed": "HealthPit is already set up. One entry covers every user."
     }
   },
   "entity": {

@@ -18,10 +18,12 @@ from homeassistant.core import HomeAssistant
 
 from .const import API_BASE, DOMAIN
 from .coordinator import HealthpitCoordinator
+from .duplicates import find_candidates
 from .route import as_geojson, as_gpx, as_svg, route_points
 from .payload import (
     PayloadError,
     normalize_health_batch,
+    normalize_link,
     normalize_reconcile,
     normalize_workout_batch,
     normalize_workout_source,
@@ -239,6 +241,68 @@ class HealthpitRouteView(HomeAssistantView):
         raise web.HTTPNotFound(reason="Unknown format; use gpx, geojson or svg")
 
 
+class HealthpitDuplicatesView(HomeAssistantView):
+    """Workouts that look like one session recorded twice, and past decisions."""
+
+    url = f"{API_BASE}/duplicates"
+    name = f"api:{DOMAIN}:duplicates"
+    requires_auth = True
+
+    async def get(self, request: web.Request) -> web.Response:
+        coordinator = _coordinator(request)
+        user_id, _ = _user(request)
+        store = coordinator.store
+        limit = _positive_int(request.query.get("limit"), default=200)
+        links = store.links(user_id)
+        return web.json_response(
+            {
+                "candidates": find_candidates(
+                    store.unified_workouts(user_id), links, limit=limit
+                ),
+                "decisions": links,
+            }
+        )
+
+
+class HealthpitDuplicateDecisionView(HomeAssistantView):
+    """Record or withdraw a decision about a proposed duplicate."""
+
+    url = f"{API_BASE}/duplicates/decision"
+    name = f"api:{DOMAIN}:duplicate_decision"
+    requires_auth = True
+
+    async def post(self, request: web.Request) -> web.Response:
+        coordinator = _coordinator(request)
+        user_id, _ = _user(request)
+        try:
+            primary, linked, action = normalize_link(
+                await _json_body(request), require_action=True
+            )
+        except PayloadError as err:
+            return _bad_request(err)
+
+        coordinator.store.save_link(user_id, primary, linked, action)
+        # The decision changes how the workouts fold together, so the entities
+        # have to be rebuilt right away rather than at the next push.
+        coordinator.async_handle_push()
+        return web.json_response({"primary": primary, "linked": linked, "action": action})
+
+    async def delete(self, request: web.Request) -> web.Response:
+        coordinator = _coordinator(request)
+        user_id, _ = _user(request)
+        try:
+            primary, linked, _action = normalize_link(
+                await _json_body(request), require_action=False
+            )
+        except PayloadError as err:
+            return _bad_request(err)
+
+        removed = coordinator.store.delete_link(user_id, primary, linked)
+        if removed:
+            coordinator.async_handle_push()
+        return web.json_response({"removed": removed})
+
+
 class HealthpitStatusView(HomeAssistantView):
     """What the app shows after connecting, and what a curl test needs."""
 
@@ -267,6 +331,8 @@ VIEWS = (
     HealthpitWorkoutReconcileView,
     HealthpitWorkoutItemView,
     HealthpitRouteView,
+    HealthpitDuplicateDecisionView,
+    HealthpitDuplicatesView,
     HealthpitStatusView,
 )
 

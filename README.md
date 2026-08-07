@@ -1,6 +1,6 @@
-# Healthpit
+# HealthPit
 
-Healthpit is an open-source, local-first health data platform for iPhone and
+HealthPit is an open-source, local-first health data platform for iPhone and
 Home Assistant.
 
 The iPhone app reads Apple Health locally and pushes what you select straight
@@ -26,16 +26,16 @@ The app never claims an identity — the token decides.
 | Path | Purpose | Installation |
 | --- | --- | --- |
 | `custom_components/healthpit` | Home Assistant integration | HACS |
-| `ios_app` | Healthpit iPhone app | Xcode |
+| `ios_app` | HealthPit iPhone app | Xcode |
 | `tests` | Tests for the payload and merge logic | pytest |
 
 ## Setup
 
-1. Add `https://github.com/doctorspreter/healthpit` to HACS as a custom
-   **Integration** repository, install **Healthpit**, and restart Home
+1. Add `https://github.com/doctorspreter/HealthPit` to HACS as a custom
+   **Integration** repository, install **HealthPit**, and restart Home
    Assistant. Alternatively copy `custom_components/healthpit` into your
    configuration folder.
-2. **Settings > Devices & Services > Add Integration > Healthpit**, then
+2. **Settings > Devices & Services > Add Integration > HealthPit**, then
    confirm. There is nothing to enter.
 3. In your Home Assistant profile, scroll to **Long-lived access tokens** and
    create one.

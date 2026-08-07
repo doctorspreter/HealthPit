@@ -55,6 +55,11 @@ struct BridgeSettingsView: View {
                         Label("Datenquellen", systemImage: "point.3.connected.trianglepath.dotted")
                     }
                     NavigationLink {
+                        DuplicateSettingsView()
+                    } label: {
+                        Label("Duplikate", systemImage: "square.on.square.dashed")
+                    }
+                    NavigationLink {
                         backupScreen
                     } label: {
                         Label("Datensicherung", systemImage: "externaldrive")
@@ -416,7 +421,7 @@ struct BridgeSettingsView: View {
                 let count = await HealthpitBackupService.restore(backup)
                 backupStatus = L10n.format("%lld Workouts aus der Sicherung übernommen.", count)
             } catch {
-                backupStatus = L10n.string("Die Datei konnte nicht gelesen werden. Ist es eine Healthpit-Sicherung?")
+                backupStatus = L10n.string("Die Datei konnte nicht gelesen werden. Ist es eine HealthPit-Sicherung?")
             }
         case .failure:
             backupStatus = L10n.string("Es wurde keine Datei ausgewählt.")

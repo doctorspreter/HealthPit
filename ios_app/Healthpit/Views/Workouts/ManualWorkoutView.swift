@@ -143,7 +143,7 @@ struct ManualWorkoutView: View {
     private var repeatSummary: String {
         let count = repeatDates.count
         if count >= WorkoutRepeatRule.maximumOccurrences {
-            return L10n.format("%lld Trainings — mehr legt Healthpit auf einmal nicht an.", Int64(count))
+            return L10n.format("%lld Trainings — mehr legt HealthPit auf einmal nicht an.", Int64(count))
         }
         return count == 1
             ? L10n.string("1 Training")

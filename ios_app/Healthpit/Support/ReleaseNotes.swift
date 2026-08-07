@@ -37,8 +37,8 @@ enum ReleaseNotes {
     static var warningParagraphs: [(bold: String, rest: String)] {
         [
             (
-                L10n.string("Die neue Integration „Healthpit“ muss über HACS installiert werden."),
-                L10n.string("Sie ersetzt die bisherige „Healthpit Bridge“.")
+                L10n.string("Die neue Integration „HealthPit“ muss über HACS installiert werden."),
+                L10n.string("Sie ersetzt die bisherige „HealthPit Bridge“.")
             ),
             (
                 L10n.string("Der Docker-Container und die Home-Assistant-App werden nicht mehr benötigt"),
@@ -49,9 +49,9 @@ enum ReleaseNotes {
 
     static var warningSteps: [String] {
         [
-            L10n.string("In HACS die Integration Healthpit installieren, Home Assistant neu starten und sie unter Geräte & Dienste hinzufügen."),
+            L10n.string("In HACS die Integration HealthPit installieren, Home Assistant neu starten und sie unter Geräte & Dienste hinzufügen."),
             L10n.string("Im Home-Assistant-Profil einen Long-Lived Access Token anlegen und in der App unter Einstellungen ▸ Verbindung eintragen."),
-            L10n.string("Alte „Healthpit Bridge“-Integration, Docker-Container und Add-on entfernen."),
+            L10n.string("Alte „HealthPit Bridge“-Integration, Docker-Container und Add-on entfernen."),
         ]
     }
 

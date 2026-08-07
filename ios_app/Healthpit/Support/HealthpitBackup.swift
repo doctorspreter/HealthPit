@@ -61,7 +61,7 @@ nonisolated enum HealthpitBackupError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .unreadable:
-            return L10n.string("Die Datei ist keine gültige Healthpit-Sicherung.")
+            return L10n.string("Die Datei ist keine gültige HealthPit-Sicherung.")
         case let .unsupportedVersion(version):
             return L10n.string("Sicherungsformat")
                 + " \(version) "

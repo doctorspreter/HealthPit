@@ -51,8 +51,8 @@ final class HealthKitManager: @unchecked Sendable {
     /// schreibt und loescht ueber denselben Store.
     let healthStore = HKHealthStore()
 
-    /// Logger – Ausgaben erscheinen in der Xcode-Konsole (Subsystem "Healthpit").
-    private let log = Logger(subsystem: "Healthpit", category: "HealthKit")
+    /// Logger – Ausgaben erscheinen in der Xcode-Konsole (Subsystem "HealthPit").
+    private let log = Logger(subsystem: "HealthPit", category: "HealthKit")
     private let authorizationCoordinator = HealthAuthorizationCoordinator()
 
     private init() {}
@@ -202,7 +202,7 @@ final class HealthKitManager: @unchecked Sendable {
         guard isHealthDataAvailable else { throw HealthError.healthDataUnavailable }
         guard HealthDataSourceSettings.isWritingEnabled(forKey: HealthDataSourceSettings.writeWorkoutsKey) else {
             throw HealthError.queryFailed(underlying: NSError(
-                domain: "Healthpit",
+                domain: "HealthPit",
                 code: 20,
                 userInfo: [NSLocalizedDescriptionKey: "Das Schreiben von Trainings nach Apple Health ist in den Datenquellen-Einstellungen deaktiviert."]
             ))
@@ -225,7 +225,7 @@ final class HealthKitManager: @unchecked Sendable {
                     continuation.resume()
                 } else {
                     continuation.resume(throwing: HealthError.queryFailed(underlying: NSError(
-                        domain: "Healthpit",
+                        domain: "HealthPit",
                         code: 1,
                         userInfo: [NSLocalizedDescriptionKey: "Apple Health hat das Workout nicht gespeichert."]
                     )))
@@ -259,7 +259,7 @@ final class HealthKitManager: @unchecked Sendable {
                         continuation.resume()
                     } else {
                         continuation.resume(throwing: HealthError.queryFailed(underlying: NSError(
-                            domain: "Healthpit",
+                            domain: "HealthPit",
                             code: 2,
                             userInfo: [NSLocalizedDescriptionKey: "Apple Health hat die Workout-Werte nicht gespeichert."]
                         )))
@@ -276,7 +276,7 @@ final class HealthKitManager: @unchecked Sendable {
                     continuation.resume()
                 } else {
                     continuation.resume(throwing: HealthError.queryFailed(underlying: NSError(
-                        domain: "Healthpit",
+                        domain: "HealthPit",
                         code: 3,
                         userInfo: [NSLocalizedDescriptionKey: "Apple Health hat das Workout nicht abgeschlossen."]
                     )))
@@ -292,7 +292,7 @@ final class HealthKitManager: @unchecked Sendable {
                     continuation.resume(returning: sample)
                 } else {
                     continuation.resume(throwing: HealthError.queryFailed(underlying: NSError(
-                        domain: "Healthpit",
+                        domain: "HealthPit",
                         code: 4,
                         userInfo: [NSLocalizedDescriptionKey: "Apple Health hat kein Workout zurueckgegeben."]
                     )))

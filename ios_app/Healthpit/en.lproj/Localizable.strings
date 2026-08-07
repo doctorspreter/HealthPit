@@ -66,7 +66,7 @@
 "Entfernen" = "Remove";
 "Erkannte Apple-Health-Quellen" = "Detected Apple Health sources";
 "Es sind noch keine Workouts vorhanden." = "There are no workouts yet.";
-"Es werden nur Daten gelöscht, die Healthpit selbst in Apple Health gespeichert hat. Daten von Huawei, Apple Watch oder anderen Apps bleiben erhalten." = "Only data saved to Apple Health by Healthpit will be deleted. Data from Huawei, Apple Watch, or other apps remains untouched.";
+"Es werden nur Daten gelöscht, die HealthPit selbst in Apple Health gespeichert hat. Daten von Huawei, Apple Watch oder anderen Apps bleiben erhalten." = "Only data saved to Apple Health by HealthPit will be deleted. Data from Huawei, Apple Watch, or other apps remains untouched.";
 "Externe Verbindung (optional)" = "External connection (optional)";
 "Fertig" = "Done";
 "Für die letzte Nacht liegen keine Schlafdaten vor." = "No sleep data is available for last night.";
@@ -79,8 +79,8 @@
 "Graue Balken zeigen deinen 3-Monats-Normalwert. Trends erscheinen nur bei relevanten Änderungen." = "Gray bars show your 3-month baseline. Trends appear only for relevant changes.";
 "Größe" = "Size";
 "Health-App-Berechtigungen öffnen" = "Open Health app permissions";
-"Healthpit darf schreiben" = "Healthpit can write";
-"Healthpit-Daten aus Apple Health löschen?" = "Delete Healthpit data from Apple Health?";
+"HealthPit darf schreiben" = "HealthPit can write";
+"HealthPit-Daten aus Apple Health löschen?" = "Delete HealthPit data from Apple Health?";
 "Heute" = "Today";
 "Heute & auffällige Trends" = "Today & notable trends";
 "Highlights" = "Highlights";
@@ -104,7 +104,7 @@
 "Kilometer anzeigen" = "Show kilometers";
 "Krafttraining" = "Strength training";
 "Lade …" = "Loading…";
-"Leserechte verwaltet iOS in der Health-App. Healthpit kann sie aus Datenschutzgründen nicht selbst anzeigen oder erweitern." = "iOS manages read permissions in the Health app. For privacy reasons, Healthpit cannot display or extend them itself.";
+"Leserechte verwaltet iOS in der Health-App. HealthPit kann sie aus Datenschutzgründen nicht selbst anzeigen oder erweitern." = "iOS manages read permissions in the Health app. For privacy reasons, HealthPit cannot display or extend them itself.";
 "Letzte 7 Tage" = "Last 7 days";
 "Letzte Nacht" = "Last night";
 "Letzter Sync" = "Last sync";
@@ -176,7 +176,7 @@
 "Version" = "Version";
 "Volumen" = "Volume";
 "Volumen (kg)" = "Volume (kg)";
-"Von Healthpit geschriebene Daten löschen" = "Delete data written by Healthpit";
+"Von HealthPit geschriebene Daten löschen" = "Delete data written by HealthPit";
 "Weitere Trainingswerte" = "More workout metrics";
 "Weitere anzeigen" = "Show more";
 "Wenn die Quelle deaktiviert ist, werden ihre Werte auf dem Dashboard, in Diagrammen und bei der Bridge-Synchronisierung nicht berücksichtigt." = "When the source is disabled, its values are excluded from the dashboard, charts, and bridge synchronization.";
@@ -342,7 +342,7 @@
 "Datentyp" = "data type";
 "Datentypen" = "data types";
 "Die lokalen App-Daten wurden gelöscht." = "The local app data was deleted.";
-"%lld von Healthpit geschriebene Objekte wurden gelöscht." = "%lld items written by Healthpit were deleted.";
+"%lld von HealthPit geschriebene Objekte wurden gelöscht." = "%lld items written by HealthPit were deleted.";
 "Lokale Trainings wurden gelöscht:" = "Local workouts deleted:";
 "Knie links" = "Left knee";
 "Knie rechts" = "Right knee";
@@ -382,7 +382,7 @@
 "Nieselregen" = "Drizzle";
 "Schauer" = "Showers";
 "Gewitter" = "Thunderstorms";
-"Lesen, schreiben und Healthpit-Daten löschen" = "Read, write, and delete Healthpit data";
+"Lesen, schreiben und HealthPit-Daten löschen" = "Read, write, and delete HealthPit data";
 "Trainings verwalten" = "Manage workouts";
 "Einzelne Trainings ansehen oder entfernen" = "View or remove individual workouts";
 "Lokale Daten & Bridge" = "Local data & bridge";
@@ -411,7 +411,7 @@
 "Die Bridge unter %@ hat nicht rechtzeitig geantwortet." = "The bridge at %@ did not respond in time.";
 "Die Bridge-Adresse ist im Netzwerk nicht auffindbar." = "The bridge address cannot be found on the network.";
 "Die Adresse %@ ist im Netzwerk nicht auffindbar. Bitte Hostnamen oder IP-Adresse prüfen." = "The address %@ cannot be found on the network. Please check the host name or IP address.";
-"Unter %@ nimmt niemand Verbindungen an. Bitte prüfen, ob die Bridge läuft, ob der Port stimmt und ob Healthpit in den iOS-Einstellungen unter „Datenschutz & Sicherheit“ auf das lokale Netzwerk zugreifen darf." = "Nothing is accepting connections at %@. Check that the bridge is running, that the port is correct, and that Healthpit is allowed to access the local network under Privacy & Security in the iOS settings.";
+"Unter %@ nimmt niemand Verbindungen an. Bitte prüfen, ob die Bridge läuft, ob der Port stimmt und ob HealthPit in den iOS-Einstellungen unter „Datenschutz & Sicherheit“ auf das lokale Netzwerk zugreifen darf." = "Nothing is accepting connections at %@. Check that the bridge is running, that the port is correct, and that HealthPit is allowed to access the local network under Privacy & Security in the iOS settings.";
 "Unter der Bridge-Adresse nimmt niemand Verbindungen an." = "Nothing is accepting connections at the bridge address.";
 "Unter %@ nimmt niemand Verbindungen an. Läuft die Bridge, und stimmt der Port?" = "Nothing is accepting connections at %@. Is the bridge running, and is the port correct?";
 "Die Verbindung zur Bridge ist abgerissen." = "The connection to the bridge was lost.";
@@ -427,12 +427,12 @@
 "Die Verbindung wurde abgebrochen." = "The connection was cancelled.";
 "Die Bridge ist nicht erreichbar." = "The bridge cannot be reached.";
 "Die Bridge unter %@ ist nicht erreichbar." = "The bridge at %@ cannot be reached.";
-"Unter %@ antwortet ein Webserver, aber keine Healthpit-Bridge. Bitte Adresse und Port prüfen." = "A web server is answering at %@, but not a Healthpit bridge. Please check the address and port.";
+"Unter %@ antwortet ein Webserver, aber keine HealthPit-Bridge. Bitte Adresse und Port prüfen." = "A web server is answering at %@, but not a HealthPit bridge. Please check the address and port.";
 "Die Bridge unter %@ hat eine leere Antwort geschickt (HTTP %lld)." = "The bridge at %@ sent an empty response (HTTP %lld).";
 "Die Bridge unter %@ hat eine unerwartete Antwort geschickt (HTTP %lld)." = "The bridge at %@ sent an unexpected response (HTTP %lld).";
-"Unter dieser Adresse antwortet keine Healthpit-Bridge, die Daten entgegennehmen kann." = "No Healthpit bridge that can accept data is answering at this address.";
+"Unter dieser Adresse antwortet keine HealthPit-Bridge, die Daten entgegennehmen kann." = "No HealthPit bridge that can accept data is answering at this address.";
 "Bridge-Benutzername fehlt." = "The bridge user name is missing.";
-"Healthpit ist nicht verbunden. Bitte zuerst in den Einstellungen mit der Bridge verbinden." = "Healthpit is not connected. Please connect to the bridge in Settings first.";
+"HealthPit ist nicht verbunden. Bitte zuerst in den Einstellungen mit der Bridge verbinden." = "HealthPit is not connected. Please connect to the bridge in Settings first.";
 "Die externe Adresse muss mit https:// beginnen." = "The external address must start with https://.";
 "Die lokale Bridge unter %@ antwortet nicht, und es ist keine externe Adresse hinterlegt." = "The local bridge at %@ is not responding, and no external address is configured.";
 "Diese Bridge ist selbst als Master eingerichtet und kann sich nicht mit einer zweiten Bridge verbinden." = "This bridge is itself set up as the master and cannot connect to a second bridge.";
@@ -443,7 +443,7 @@
 "Die Bridge meldet einen internen Fehler (%lld)." = "The bridge reports an internal error (%lld).";
 "Die Bridge hat die Anfrage abgelehnt (%lld)." = "The bridge rejected the request (%lld).";
 "Sie hat mit HTTP %lld geantwortet." = "It responded with HTTP %lld.";
-"Unter dieser Adresse antwortet zwar etwas, aber keine Healthpit-Bridge." = "Something is answering at this address, but it is not a Healthpit bridge.";
+"Unter dieser Adresse antwortet zwar etwas, aber keine HealthPit-Bridge." = "Something is answering at this address, but it is not a HealthPit bridge.";
 "Die Bridge ist erreichbar, meldet sich aber nicht als betriebsbereit." = "The bridge can be reached but does not report itself as ready.";
 "Unter dieser Adresse läuft eine Bridge in der Rolle „%@“ statt als Master." = "A bridge in the role “%@” is running at this address instead of a master.";
 "Technische Details" = "Technical details";
@@ -457,7 +457,7 @@
 "Verbunden mit der externen Bridge unter %@, gültig bis %@." = "Connected to the external bridge at %@, valid until %@.";
 "Sicherung gespeichert als %@." = "Backup saved as %@.";
 "Die Sicherung konnte nicht gespeichert werden." = "The backup could not be saved.";
-"Die Datei konnte nicht gelesen werden. Ist es eine Healthpit-Sicherung?" = "The file could not be read. Is it a Healthpit backup?";
+"Die Datei konnte nicht gelesen werden. Ist es eine HealthPit-Sicherung?" = "The file could not be read. Is it a HealthPit backup?";
 "Es wurde keine Datei ausgewählt." = "No file was selected.";
 "Der Zugriff auf Apple Health wurde nicht erteilt. Bitte in den iOS-Einstellungen unter Datenschutz › Health prüfen." = "Access to Apple Health was not granted. Please check under Privacy › Health in the iOS settings.";
 "Die Daten konnten nicht aus Apple Health gelesen werden." = "The data could not be read from Apple Health.";
@@ -505,15 +505,15 @@
 "läuft" = "ongoing";
 "Eintrag hinzufügen" = "Add entry";
 "Noch keine Zyklusdaten" = "No cycle data yet";
-"Healthpit zeigt hier, was in Apple Health steht. Über „+“ lassen sich eigene Einträge anlegen; sie werden nach Apple Health zurückgeschrieben." = "Healthpit shows what is stored in Apple Health here. Use “+” to add your own entries; they are written back to Apple Health.";
+"HealthPit zeigt hier, was in Apple Health steht. Über „+“ lassen sich eigene Einträge anlegen; sie werden nach Apple Health zurückgeschrieben." = "HealthPit shows what is stored in Apple Health here. Use “+” to add your own entries; they are written back to Apple Health.";
 "Zyklus-Eintrag" = "Cycle entry";
 "Blutung" = "Bleeding";
 "Erster Tag des Zyklus" = "First day of the cycle";
-"„Keine Blutung“ entfernt einen zuvor in Healthpit angelegten Eintrag für diesen Tag." = "“No bleeding” removes an entry previously created in Healthpit for this day.";
+"„Keine Blutung“ entfernt einen zuvor in HealthPit angelegten Eintrag für diesen Tag." = "“No bleeding” removes an entry previously created in HealthPit for this day.";
 "Weitere Einträge" = "Additional entries";
 "Kein Test" = "No test";
 "Diese beiden Einträge werden ergänzt, nicht ersetzt – ein bereits gespeicherter Eintrag bleibt bestehen." = "These two entries are added, not replaced — an entry that is already stored remains.";
-"Der vorhandene Eintrag stammt aus einer anderen App. Healthpit ändert ihn nicht, sondern legt einen eigenen Eintrag daneben an." = "The existing entry comes from another app. Healthpit does not change it but adds its own entry alongside.";
+"Der vorhandene Eintrag stammt aus einer anderen App. HealthPit ändert ihn nicht, sondern legt einen eigenen Eintrag daneben an." = "The existing entry comes from another app. HealthPit does not change it but adds its own entry alongside.";
 "Zyklustag" = "Cycle day";
 "Ø Zykluslänge" = "Avg. cycle length";
 "Ø Periodendauer" = "Avg. period length";
@@ -525,18 +525,18 @@
 "Sicherung wird erstellt …" = "Creating backup …";
 "Es sind keine lokalen Workouts vorhanden." = "There are no local workouts.";
 "%lld Workouts aus der Sicherung übernommen." = "Restored %lld workouts from the backup.";
-"Die Datei ist keine gültige Healthpit-Sicherung." = "The file is not a valid Healthpit backup.";
+"Die Datei ist keine gültige HealthPit-Sicherung." = "The file is not a valid HealthPit backup.";
 "wird von dieser App-Version nicht unterstützt." = "is not supported by this app version.";
 "Home Assistant Webhook" = "Home Assistant Webhook";
 "Home Assistant App" = "Home Assistant app";
 "Home Assistant Docker" = "Home Assistant Docker";
 "Verbindung" = "Connection";
 "Long-Lived Access Token" = "Long-lived access token";
-"Healthpit ist nicht verbunden. Bitte zuerst in den Einstellungen den Home-Assistant-Token eintragen." = "Healthpit is not connected. Enter the Home Assistant token in the settings first.";
+"HealthPit ist nicht verbunden. Bitte zuerst in den Einstellungen den Home-Assistant-Token eintragen." = "HealthPit is not connected. Enter the Home Assistant token in the settings first.";
 "Home Assistant hat den Token abgelehnt. Bitte einen neuen Long-Lived Access Token anlegen." = "Home Assistant rejected the token. Create a new long-lived access token.";
-"Home Assistant antwortet, aber die Healthpit-Integration ist dort nicht im Webhook-Modus eingerichtet." = "Home Assistant answers, but the Healthpit integration is not set up in webhook mode there.";
+"Home Assistant antwortet, aber die HealthPit-Integration ist dort nicht im Webhook-Modus eingerichtet." = "Home Assistant answers, but the HealthPit integration is not set up in webhook mode there.";
 "Home Assistant hat den Token abgelehnt." = "Home Assistant rejected the token.";
-"Die Healthpit-Integration ist dort nicht im Webhook-Modus eingerichtet." = "The Healthpit integration is not set up in webhook mode there.";
+"Die HealthPit-Integration ist dort nicht im Webhook-Modus eingerichtet." = "The HealthPit integration is not set up in webhook mode there.";
 "Es ist kein Home-Assistant-Token hinterlegt." = "No Home Assistant token has been entered.";
 "Der Hevy-Import braucht die Home-Assistant-App oder den Docker-Container." = "The Hevy import needs the Home Assistant app or the Docker container.";
 "1 Nacht im Zeitraum" = "1 night in this period";
@@ -547,7 +547,7 @@
 
 /* Startseite: Sichtbarkeit und Health-Freigabe */
 "Freigabe in der Health-App unter „Datenzugriff und Geräte“ erteilen." = "Grant access in the Health app under “Data Access & Devices”.";
-"Healthpit braucht die Freigabe, um deine Werte zu lesen." = "Healthpit needs permission to read your data.";
+"HealthPit braucht die Freigabe, um deine Werte zu lesen." = "HealthPit needs permission to read your data.";
 "Zugriff erlauben" = "Allow access";
 "Ausgeblendete Kacheln" = "Hidden tiles";
 "Kachel ausblenden" = "Hide tile";
@@ -564,7 +564,7 @@
 "Monatlich" = "Monthly";
 "1 Training" = "1 workout";
 "%lld Trainings" = "%lld workouts";
-"%lld Trainings — mehr legt Healthpit auf einmal nicht an." = "%lld workouts — Healthpit will not create more at once.";
+"%lld Trainings — mehr legt HealthPit auf einmal nicht an." = "%lld workouts — HealthPit will not create more at once.";
 "Lokal gespeichert, %lld Apple-Health-Exporte fehlgeschlagen:" = "Saved locally, %lld Apple Health exports failed:";
 
 /* Einstellungs-Untermenues */
@@ -573,8 +573,8 @@
 
 /* Direktverbindung zu Home Assistant */
 "Der Token wurde für %@ geprüft, aktiv ist jetzt aber %@. Bitte neu verbinden." = "The token was checked against %@, but %@ is active now. Please reconnect.";
-"Die Healthpit-Integration ist dort nicht eingerichtet." = "The Healthpit integration is not set up there.";
-"Home Assistant antwortet, aber die Healthpit-Integration ist dort nicht eingerichtet." = "Home Assistant answers, but the Healthpit integration is not set up there.";
+"Die HealthPit-Integration ist dort nicht eingerichtet." = "The HealthPit integration is not set up there.";
+"Home Assistant antwortet, aber die HealthPit-Integration ist dort nicht eingerichtet." = "Home Assistant answers, but the HealthPit integration is not set up there.";
 "Home Assistant ist unter %@ erreichbar, aber noch nicht verbunden." = "Home Assistant is reachable at %@ but not connected yet.";
 "Mehr Workouts oder importierte Trainings benötigt." = "More workouts or imported sessions are needed.";
 "Verbunden mit Home Assistant unter %@ (extern)." = "Connected to Home Assistant at %@ (external).";
@@ -598,13 +598,13 @@
 
 /* Hinweisfenster zur neuen Fassung */
 "Wichtig: Diese Fassung braucht eine neue Installation" = "Important: this version needs a new installation";
-"Die neue Integration „Healthpit“ muss über HACS installiert werden." = "The new “Healthpit” integration has to be installed through HACS.";
-"Sie ersetzt die bisherige „Healthpit Bridge“." = "It replaces the previous “Healthpit Bridge”.";
+"Die neue Integration „HealthPit“ muss über HACS installiert werden." = "The new “HealthPit” integration has to be installed through HACS.";
+"Sie ersetzt die bisherige „HealthPit Bridge“." = "It replaces the previous “HealthPit Bridge”.";
 "Der Docker-Container und die Home-Assistant-App werden nicht mehr benötigt" = "The Docker container and the Home Assistant add-on are no longer needed";
 "und können nach der Umstellung entfernt werden. Die App sendet ihre Daten direkt an Home Assistant." = "and can be removed after switching over. The app sends its data straight to Home Assistant.";
-"In HACS die Integration Healthpit installieren, Home Assistant neu starten und sie unter Geräte & Dienste hinzufügen." = "Install the Healthpit integration in HACS, restart Home Assistant and add it under Devices & Services.";
+"In HACS die Integration HealthPit installieren, Home Assistant neu starten und sie unter Geräte & Dienste hinzufügen." = "Install the HealthPit integration in HACS, restart Home Assistant and add it under Devices & Services.";
 "Im Home-Assistant-Profil einen Long-Lived Access Token anlegen und in der App unter Einstellungen ▸ Verbindung eintragen." = "Create a long-lived access token in your Home Assistant profile and enter it in the app under Settings ▸ Connection.";
-"Alte „Healthpit Bridge“-Integration, Docker-Container und Add-on entfernen." = "Remove the old “Healthpit Bridge” integration, the Docker container and the add-on.";
+"Alte „HealthPit Bridge“-Integration, Docker-Container und Add-on entfernen." = "Remove the old “HealthPit Bridge” integration, the Docker container and the add-on.";
 "Neu in %@" = "New in %@";
 "Verstanden" = "Got it";
 "Neu" = "New";
@@ -624,3 +624,27 @@
 "Jeder Schritt sichtbar, am Ende Ergebnis oder Grund des Fehlschlags." = "Every step visible, with the result or the reason it failed.";
 "Wiederkehrende Trainings" = "Recurring workouts";
 "Rhythmus und Enddatum beim manuellen Anlegen." = "Frequency and end date when adding one by hand.";
+
+/* Duplikate */
+"Duplikate" = "Duplicates";
+"Zwei Aufzeichnungen derselben Einheit entstehen, wenn mehrere Quellen dasselbe Training melden. Hier entscheidest du, was zusammengehört." = "Two recordings of one session appear when several sources report the same workout. Here you decide what belongs together.";
+"Wird geprüft ..." = "Checking...";
+"Keine Duplikate gefunden" = "No duplicates found";
+"Vorschläge (%@)" = "Proposals (%@)";
+"Entschieden" = "Decided";
+"Zusammenführen" = "Merge";
+"Getrennt lassen" = "Keep separate";
+"Zurücknehmen" = "Undo";
+"Wird gespeichert ..." = "Saving...";
+"Als ein Training" = "As one workout";
+"Als zwei Trainings" = "As two workouts";
+"Zweimal aus derselben Quelle" = "Twice from the same source";
+"Gleiche Startzeit" = "Same start time";
+"Gleiche Startzeit und Dauer" = "Same start time and length";
+"Gleiche Strecke" = "Same distance";
+"Fast gleiche Startzeit" = "Almost the same start time";
+"Ähnliche Einheit" = "Similar session";
+"Sicherheit %@ %%" = "Confidence %@ %%";
+"%@ Sätze" = "%@ sets";
+"%@ min" = "%@ min";
+"Diese Home-Assistant-Integration kennt noch keine Duplikate. Bitte die Integration in HACS aktualisieren." = "This Home Assistant integration does not know about duplicates yet. Please update the integration in HACS.";

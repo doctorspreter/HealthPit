@@ -53,7 +53,7 @@ struct HealthAccessCard: View {
                 .minimumScaleFactor(0.7)
 
             if size != .small {
-                Text(errorMessage ?? L10n.string("Healthpit braucht die Freigabe, um deine Werte zu lesen."))
+                Text(errorMessage ?? L10n.string("HealthPit braucht die Freigabe, um deine Werte zu lesen."))
                     .font(.caption2)
                     .foregroundStyle(errorMessage == nil ? Color.secondary : Color.red)
                     .lineLimit(3)

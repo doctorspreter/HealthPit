@@ -24,7 +24,7 @@ struct OnboardingView: View {
                 .font(.system(size: 72))
                 .foregroundStyle(.pink)
 
-            Text("Healthpit")
+            Text("HealthPit")
                 .font(.largeTitle.bold())
 
             Text("Verbinde dich mit Apple Health, um deine Gesundheitsdaten übersichtlich darzustellen. Die Daten verlassen dein Gerät nicht.")

@@ -87,7 +87,7 @@ struct CycleDetailView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Noch keine Zyklusdaten")
                         .font(.subheadline.bold())
-                    Text("Healthpit zeigt hier, was in Apple Health steht. Über „+“ lassen sich eigene Einträge anlegen; sie werden nach Apple Health zurückgeschrieben.")
+                    Text("HealthPit zeigt hier, was in Apple Health steht. Über „+“ lassen sich eigene Einträge anlegen; sie werden nach Apple Health zurückgeschrieben.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -375,7 +375,7 @@ struct CycleDayEditorView: View {
                     Toggle("Erster Tag des Zyklus", isOn: $isCycleStart)
                         .disabled(!flow.isBleeding)
 
-                    Text("„Keine Blutung“ entfernt einen zuvor in Healthpit angelegten Eintrag für diesen Tag.")
+                    Text("„Keine Blutung“ entfernt einen zuvor in HealthPit angelegten Eintrag für diesen Tag.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -394,7 +394,7 @@ struct CycleDayEditorView: View {
 
                 if let existing, !existing.isOwnEntry {
                     Section {
-                        Text("Der vorhandene Eintrag stammt aus einer anderen App. Healthpit ändert ihn nicht, sondern legt einen eigenen Eintrag daneben an.")
+                        Text("Der vorhandene Eintrag stammt aus einer anderen App. HealthPit ändert ihn nicht, sondern legt einen eigenen Eintrag daneben an.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

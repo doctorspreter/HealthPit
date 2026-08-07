@@ -64,7 +64,7 @@
 "Entfernen" = "移除";
 "Erkannte Apple-Health-Quellen" = "检测到的 Apple 健康来源";
 "Es sind noch keine Workouts vorhanden." = "暂无训练。";
-"Es werden nur Daten gelöscht, die Healthpit selbst in Apple Health gespeichert hat. Daten von Huawei, Apple Watch oder anderen Apps bleiben erhalten." = "只会删除由 Healthpit 写入 Apple 健康的数据。来自华为、Apple Watch 或其他 App 的数据会保留。";
+"Es werden nur Daten gelöscht, die HealthPit selbst in Apple Health gespeichert hat. Daten von Huawei, Apple Watch oder anderen Apps bleiben erhalten." = "只会删除由 HealthPit 写入 Apple 健康的数据。来自华为、Apple Watch 或其他 App 的数据会保留。";
 "Externe Verbindung (optional)" = "外部连接（可选）";
 "Fertig" = "完成";
 "Für die letzte Nacht liegen keine Schlafdaten vor." = "昨晚没有睡眠数据。";
@@ -77,8 +77,8 @@
 "Graue Balken zeigen deinen 3-Monats-Normalwert. Trends erscheinen nur bei relevanten Änderungen." = "灰色柱表示你的 3 个月基准。只有显著变化才会显示趋势。";
 "Größe" = "大小";
 "Health-App-Berechtigungen öffnen" = "打开“健康”App 权限";
-"Healthpit darf schreiben" = "允许 Healthpit 写入";
-"Healthpit-Daten aus Apple Health löschen?" = "从 Apple 健康中删除 Healthpit 数据？";
+"HealthPit darf schreiben" = "允许 HealthPit 写入";
+"HealthPit-Daten aus Apple Health löschen?" = "从 Apple 健康中删除 HealthPit 数据？";
 "Heute" = "今天";
 "Heute & auffällige Trends" = "今天与显著趋势";
 "Highlights" = "亮点";
@@ -102,7 +102,7 @@
 "Kilometer anzeigen" = "显示公里数";
 "Krafttraining" = "力量训练";
 "Lade …" = "正在载入…";
-"Leserechte verwaltet iOS in der Health-App. Healthpit kann sie aus Datenschutzgründen nicht selbst anzeigen oder erweitern." = "iOS 在“健康”App 中管理读取权限。出于隐私原因，Healthpit 无法自行显示或扩展这些权限。";
+"Leserechte verwaltet iOS in der Health-App. HealthPit kann sie aus Datenschutzgründen nicht selbst anzeigen oder erweitern." = "iOS 在“健康”App 中管理读取权限。出于隐私原因，HealthPit 无法自行显示或扩展这些权限。";
 "Letzte 7 Tage" = "最近 7 天";
 "Letzte Nacht" = "昨晚";
 "Letzter Sync" = "上次同步";
@@ -172,7 +172,7 @@
 "Verletzung" = "伤病";
 "Verletzung speichern" = "保存伤病";
 "Volumen" = "容量";
-"Von Healthpit geschriebene Daten löschen" = "删除 Healthpit 写入的数据";
+"Von HealthPit geschriebene Daten löschen" = "删除 HealthPit 写入的数据";
 "Weitere Trainingswerte" = "更多训练指标";
 "Weitere anzeigen" = "显示更多";
 "Wenn die Quelle deaktiviert ist, werden ihre Werte auf dem Dashboard, in Diagrammen und bei der Bridge-Synchronisierung nicht berücksichtigt." = "来源停用后，其数据不会用于仪表盘、图表或桥接同步。";
@@ -339,7 +339,7 @@
 "Datentyp" = "种数据类型";
 "Datentypen" = "种数据类型";
 "Die lokalen App-Daten wurden gelöscht." = "本地 App 数据已删除。";
-"%lld von Healthpit geschriebene Objekte wurden gelöscht." = "已删除 %lld 个由 Healthpit 写入的项目。";
+"%lld von HealthPit geschriebene Objekte wurden gelöscht." = "已删除 %lld 个由 HealthPit 写入的项目。";
 "Lokale Trainings wurden gelöscht:" = "已删除本地训练：";
 "Knie links" = "左膝";
 "Knie rechts" = "右膝";
@@ -382,7 +382,7 @@
 "Nieselregen" = "毛毛雨";
 "Schauer" = "阵雨";
 "Gewitter" = "雷暴";
-"Lesen, schreiben und Healthpit-Daten löschen" = "读取、写入和删除 Healthpit 数据";
+"Lesen, schreiben und HealthPit-Daten löschen" = "读取、写入和删除 HealthPit 数据";
 "Trainings verwalten" = "管理训练";
 "Einzelne Trainings ansehen oder entfernen" = "查看或移除单次训练";
 "Lokale Daten & Bridge" = "本地数据与桥接";
@@ -411,7 +411,7 @@
 "Die Bridge unter %@ hat nicht rechtzeitig geantwortet." = "位于 %@ 的桥接未及时响应。";
 "Die Bridge-Adresse ist im Netzwerk nicht auffindbar." = "在网络中找不到桥接地址。";
 "Die Adresse %@ ist im Netzwerk nicht auffindbar. Bitte Hostnamen oder IP-Adresse prüfen." = "在网络中找不到地址 %@。请检查主机名或 IP 地址。";
-"Unter %@ nimmt niemand Verbindungen an. Bitte prüfen, ob die Bridge läuft, ob der Port stimmt und ob Healthpit in den iOS-Einstellungen unter „Datenschutz & Sicherheit“ auf das lokale Netzwerk zugreifen darf." = "%@ 上没有服务接受连接。请检查桥接是否在运行、端口是否正确，以及 Healthpit 是否已在 iOS 设置的“隐私与安全性”中获准访问本地网络。";
+"Unter %@ nimmt niemand Verbindungen an. Bitte prüfen, ob die Bridge läuft, ob der Port stimmt und ob HealthPit in den iOS-Einstellungen unter „Datenschutz & Sicherheit“ auf das lokale Netzwerk zugreifen darf." = "%@ 上没有服务接受连接。请检查桥接是否在运行、端口是否正确，以及 HealthPit 是否已在 iOS 设置的“隐私与安全性”中获准访问本地网络。";
 "Unter der Bridge-Adresse nimmt niemand Verbindungen an." = "桥接地址上没有服务接受连接。";
 "Unter %@ nimmt niemand Verbindungen an. Läuft die Bridge, und stimmt der Port?" = "%@ 上没有服务接受连接。桥接是否在运行？端口是否正确？";
 "Die Verbindung zur Bridge ist abgerissen." = "与桥接的连接已断开。";
@@ -427,12 +427,12 @@
 "Die Verbindung wurde abgebrochen." = "连接已取消。";
 "Die Bridge ist nicht erreichbar." = "无法访问桥接。";
 "Die Bridge unter %@ ist nicht erreichbar." = "无法访问位于 %@ 的桥接。";
-"Unter %@ antwortet ein Webserver, aber keine Healthpit-Bridge. Bitte Adresse und Port prüfen." = "%@ 上响应的是一台 Web 服务器，而不是 Healthpit 桥接。请检查地址和端口。";
+"Unter %@ antwortet ein Webserver, aber keine HealthPit-Bridge. Bitte Adresse und Port prüfen." = "%@ 上响应的是一台 Web 服务器，而不是 HealthPit 桥接。请检查地址和端口。";
 "Die Bridge unter %@ hat eine leere Antwort geschickt (HTTP %lld)." = "位于 %@ 的桥接返回了空响应（HTTP %lld）。";
 "Die Bridge unter %@ hat eine unerwartete Antwort geschickt (HTTP %lld)." = "位于 %@ 的桥接返回了意外的响应（HTTP %lld）。";
-"Unter dieser Adresse antwortet keine Healthpit-Bridge, die Daten entgegennehmen kann." = "此地址上没有可接收数据的 Healthpit 桥接响应。";
+"Unter dieser Adresse antwortet keine HealthPit-Bridge, die Daten entgegennehmen kann." = "此地址上没有可接收数据的 HealthPit 桥接响应。";
 "Bridge-Benutzername fehlt." = "缺少桥接用户名。";
-"Healthpit ist nicht verbunden. Bitte zuerst in den Einstellungen mit der Bridge verbinden." = "Healthpit 尚未连接。请先在设置中连接桥接。";
+"HealthPit ist nicht verbunden. Bitte zuerst in den Einstellungen mit der Bridge verbinden." = "HealthPit 尚未连接。请先在设置中连接桥接。";
 "Die externe Adresse muss mit https:// beginnen." = "外部地址必须以 https:// 开头。";
 "Die lokale Bridge unter %@ antwortet nicht, und es ist keine externe Adresse hinterlegt." = "位于 %@ 的本地桥接没有响应，且未配置外部地址。";
 "Diese Bridge ist selbst als Master eingerichtet und kann sich nicht mit einer zweiten Bridge verbinden." = "此桥接本身配置为主节点，无法连接到第二个桥接。";
@@ -443,7 +443,7 @@
 "Die Bridge meldet einen internen Fehler (%lld)." = "桥接报告内部错误（%lld）。";
 "Die Bridge hat die Anfrage abgelehnt (%lld)." = "桥接拒绝了该请求（%lld）。";
 "Sie hat mit HTTP %lld geantwortet." = "它返回了 HTTP %lld。";
-"Unter dieser Adresse antwortet zwar etwas, aber keine Healthpit-Bridge." = "此地址上有响应，但不是 Healthpit 桥接。";
+"Unter dieser Adresse antwortet zwar etwas, aber keine HealthPit-Bridge." = "此地址上有响应，但不是 HealthPit 桥接。";
 "Die Bridge ist erreichbar, meldet sich aber nicht als betriebsbereit." = "可以访问桥接，但它未报告为就绪状态。";
 "Unter dieser Adresse läuft eine Bridge in der Rolle „%@“ statt als Master." = "此地址上运行的桥接角色为“%@”，而非主节点。";
 "Technische Details" = "技术详情";
@@ -457,7 +457,7 @@
 "Verbunden mit der externen Bridge unter %@, gültig bis %@." = "已连接到位于 %@ 的外部桥接，有效期至 %@。";
 "Sicherung gespeichert als %@." = "备份已保存为 %@。";
 "Die Sicherung konnte nicht gespeichert werden." = "无法保存备份。";
-"Die Datei konnte nicht gelesen werden. Ist es eine Healthpit-Sicherung?" = "无法读取该文件。它是 Healthpit 备份吗？";
+"Die Datei konnte nicht gelesen werden. Ist es eine HealthPit-Sicherung?" = "无法读取该文件。它是 HealthPit 备份吗？";
 "Es wurde keine Datei ausgewählt." = "未选择任何文件。";
 "Der Zugriff auf Apple Health wurde nicht erteilt. Bitte in den iOS-Einstellungen unter Datenschutz › Health prüfen." = "未授予对 Apple 健康的访问权限。请在 iOS 设置的“隐私”›“健康”中检查。";
 "Die Daten konnten nicht aus Apple Health gelesen werden." = "无法从 Apple 健康读取数据。";
@@ -505,15 +505,15 @@
 "läuft" = "进行中";
 "Eintrag hinzufügen" = "添加记录";
 "Noch keine Zyklusdaten" = "暂无周期数据";
-"Healthpit zeigt hier, was in Apple Health steht. Über „+“ lassen sich eigene Einträge anlegen; sie werden nach Apple Health zurückgeschrieben." = "Healthpit 在此显示 Apple 健康中的数据。通过“+”可添加自己的记录，它们会写回 Apple 健康。";
+"HealthPit zeigt hier, was in Apple Health steht. Über „+“ lassen sich eigene Einträge anlegen; sie werden nach Apple Health zurückgeschrieben." = "HealthPit 在此显示 Apple 健康中的数据。通过“+”可添加自己的记录，它们会写回 Apple 健康。";
 "Zyklus-Eintrag" = "周期记录";
 "Blutung" = "出血";
 "Erster Tag des Zyklus" = "周期第一天";
-"„Keine Blutung“ entfernt einen zuvor in Healthpit angelegten Eintrag für diesen Tag." = "“无出血”会删除此前在 Healthpit 中为该日创建的记录。";
+"„Keine Blutung“ entfernt einen zuvor in HealthPit angelegten Eintrag für diesen Tag." = "“无出血”会删除此前在 HealthPit 中为该日创建的记录。";
 "Weitere Einträge" = "其他记录";
 "Kein Test" = "未测试";
 "Diese beiden Einträge werden ergänzt, nicht ersetzt – ein bereits gespeicherter Eintrag bleibt bestehen." = "这两项记录为新增而非替换——已保存的记录会保留。";
-"Der vorhandene Eintrag stammt aus einer anderen App. Healthpit ändert ihn nicht, sondern legt einen eigenen Eintrag daneben an." = "现有记录来自其他 App。Healthpit 不会修改它，而是在旁边新增自己的记录。";
+"Der vorhandene Eintrag stammt aus einer anderen App. HealthPit ändert ihn nicht, sondern legt einen eigenen Eintrag daneben an." = "现有记录来自其他 App。HealthPit 不会修改它，而是在旁边新增自己的记录。";
 "Zyklustag" = "周期天数";
 "Ø Zykluslänge" = "平均周期长度";
 "Ø Periodendauer" = "平均经期长度";
@@ -525,18 +525,18 @@
 "Sicherung wird erstellt …" = "正在创建备份 …";
 "Es sind keine lokalen Workouts vorhanden." = "没有本地训练。";
 "%lld Workouts aus der Sicherung übernommen." = "已从备份恢复 %lld 项训练。";
-"Die Datei ist keine gültige Healthpit-Sicherung." = "该文件不是有效的 Healthpit 备份。";
+"Die Datei ist keine gültige HealthPit-Sicherung." = "该文件不是有效的 HealthPit 备份。";
 "wird von dieser App-Version nicht unterstützt." = "此应用版本不支持。";
 "Home Assistant Webhook" = "Home Assistant Webhook";
 "Home Assistant App" = "Home Assistant 应用";
 "Home Assistant Docker" = "Home Assistant Docker";
 "Verbindung" = "连接方式";
 "Long-Lived Access Token" = "长期访问令牌";
-"Healthpit ist nicht verbunden. Bitte zuerst in den Einstellungen den Home-Assistant-Token eintragen." = "Healthpit 尚未连接。请先在设置中填入 Home Assistant 令牌。";
+"HealthPit ist nicht verbunden. Bitte zuerst in den Einstellungen den Home-Assistant-Token eintragen." = "HealthPit 尚未连接。请先在设置中填入 Home Assistant 令牌。";
 "Home Assistant hat den Token abgelehnt. Bitte einen neuen Long-Lived Access Token anlegen." = "Home Assistant 拒绝了该令牌。请新建一个长期访问令牌。";
-"Home Assistant antwortet, aber die Healthpit-Integration ist dort nicht im Webhook-Modus eingerichtet." = "Home Assistant 有响应，但其中的 Healthpit 集成未设置为 Webhook 模式。";
+"Home Assistant antwortet, aber die HealthPit-Integration ist dort nicht im Webhook-Modus eingerichtet." = "Home Assistant 有响应，但其中的 HealthPit 集成未设置为 Webhook 模式。";
 "Home Assistant hat den Token abgelehnt." = "Home Assistant 拒绝了该令牌。";
-"Die Healthpit-Integration ist dort nicht im Webhook-Modus eingerichtet." = "其中的 Healthpit 集成未设置为 Webhook 模式。";
+"Die HealthPit-Integration ist dort nicht im Webhook-Modus eingerichtet." = "其中的 HealthPit 集成未设置为 Webhook 模式。";
 "Es ist kein Home-Assistant-Token hinterlegt." = "尚未填写 Home Assistant 令牌。";
 "Der Hevy-Import braucht die Home-Assistant-App oder den Docker-Container." = "Hevy 导入需要 Home Assistant 应用或 Docker 容器。";
 "1 Nacht im Zeitraum" = "此时间段内 1 晚";
@@ -547,7 +547,7 @@
 
 /* Startseite: Sichtbarkeit und Health-Freigabe */
 "Freigabe in der Health-App unter „Datenzugriff und Geräte“ erteilen." = "请在“健康”App 的“数据访问与设备”中授予访问权限。";
-"Healthpit braucht die Freigabe, um deine Werte zu lesen." = "Healthpit 需要授权才能读取你的数据。";
+"HealthPit braucht die Freigabe, um deine Werte zu lesen." = "HealthPit 需要授权才能读取你的数据。";
 "Zugriff erlauben" = "允许访问";
 "Ausgeblendete Kacheln" = "已隐藏的卡片";
 "Kachel ausblenden" = "隐藏卡片";
@@ -564,7 +564,7 @@
 "Monatlich" = "每月";
 "1 Training" = "1 次训练";
 "%lld Trainings" = "%lld 次训练";
-"%lld Trainings — mehr legt Healthpit auf einmal nicht an." = "%lld 次训练 —— Healthpit 一次最多创建这么多。";
+"%lld Trainings — mehr legt HealthPit auf einmal nicht an." = "%lld 次训练 —— HealthPit 一次最多创建这么多。";
 "Lokal gespeichert, %lld Apple-Health-Exporte fehlgeschlagen:" = "已本地保存，%lld 项“健康”导出失败：";
 
 /* Einstellungs-Untermenues */
@@ -573,8 +573,8 @@
 
 /* Direktverbindung zu Home Assistant */
 "Der Token wurde für %@ geprüft, aktiv ist jetzt aber %@. Bitte neu verbinden." = "令牌是针对 %@ 校验的，当前生效的却是 %@。请重新连接。";
-"Die Healthpit-Integration ist dort nicht eingerichtet." = "其中未设置 Healthpit 集成。";
-"Home Assistant antwortet, aber die Healthpit-Integration ist dort nicht eingerichtet." = "Home Assistant 有响应，但其中未设置 Healthpit 集成。";
+"Die HealthPit-Integration ist dort nicht eingerichtet." = "其中未设置 HealthPit 集成。";
+"Home Assistant antwortet, aber die HealthPit-Integration ist dort nicht eingerichtet." = "Home Assistant 有响应，但其中未设置 HealthPit 集成。";
 "Home Assistant ist unter %@ erreichbar, aber noch nicht verbunden." = "可以访问 %@ 上的 Home Assistant，但尚未连接。";
 "Mehr Workouts oder importierte Trainings benötigt." = "需要更多训练或导入的记录。";
 "Verbunden mit Home Assistant unter %@ (extern)." = "已连接到 %@ 上的 Home Assistant（外部）。";
@@ -598,13 +598,13 @@
 
 /* Hinweisfenster zur neuen Fassung */
 "Wichtig: Diese Fassung braucht eine neue Installation" = "重要：此版本需要重新安装";
-"Die neue Integration „Healthpit“ muss über HACS installiert werden." = "必须通过 HACS 安装新的“Healthpit”集成。";
-"Sie ersetzt die bisherige „Healthpit Bridge“." = "它取代此前的“Healthpit Bridge”。";
+"Die neue Integration „HealthPit“ muss über HACS installiert werden." = "必须通过 HACS 安装新的“HealthPit”集成。";
+"Sie ersetzt die bisherige „HealthPit Bridge“." = "它取代此前的“HealthPit Bridge”。";
 "Der Docker-Container und die Home-Assistant-App werden nicht mehr benötigt" = "不再需要 Docker 容器和 Home Assistant 加载项";
 "und können nach der Umstellung entfernt werden. Die App sendet ihre Daten direkt an Home Assistant." = "，切换完成后即可删除。App 会把数据直接发送到 Home Assistant。";
-"In HACS die Integration Healthpit installieren, Home Assistant neu starten und sie unter Geräte & Dienste hinzufügen." = "在 HACS 中安装 Healthpit 集成，重启 Home Assistant，然后在“设备与服务”中添加。";
+"In HACS die Integration HealthPit installieren, Home Assistant neu starten und sie unter Geräte & Dienste hinzufügen." = "在 HACS 中安装 HealthPit 集成，重启 Home Assistant，然后在“设备与服务”中添加。";
 "Im Home-Assistant-Profil einen Long-Lived Access Token anlegen und in der App unter Einstellungen ▸ Verbindung eintragen." = "在 Home Assistant 个人资料中创建长期访问令牌，并在 App 的“设置 ▸ 连接”中填入。";
-"Alte „Healthpit Bridge“-Integration, Docker-Container und Add-on entfernen." = "删除旧的“Healthpit Bridge”集成、Docker 容器和加载项。";
+"Alte „HealthPit Bridge“-Integration, Docker-Container und Add-on entfernen." = "删除旧的“HealthPit Bridge”集成、Docker 容器和加载项。";
 "Neu in %@" = "%@ 的新增内容";
 "Verstanden" = "知道了";
 "Neu" = "新增";
@@ -624,3 +624,27 @@
 "Jeder Schritt sichtbar, am Ende Ergebnis oder Grund des Fehlschlags." = "每个步骤可见，最后显示结果或失败原因。";
 "Wiederkehrende Trainings" = "重复训练";
 "Rhythmus und Enddatum beim manuellen Anlegen." = "手动添加时可设置频率和结束日期。";
+
+/* Duplikate */
+"Duplikate" = "重复项";
+"Zwei Aufzeichnungen derselben Einheit entstehen, wenn mehrere Quellen dasselbe Training melden. Hier entscheidest du, was zusammengehört." = "当多个来源报告同一次训练时，同一节课会出现两条记录。在这里由你决定哪些属于一体。";
+"Wird geprüft ..." = "正在检查...";
+"Keine Duplikate gefunden" = "未发现重复项";
+"Vorschläge (%@)" = "建议 (%@)";
+"Entschieden" = "已决定";
+"Zusammenführen" = "合并";
+"Getrennt lassen" = "保持分开";
+"Zurücknehmen" = "撤销";
+"Wird gespeichert ..." = "正在保存...";
+"Als ein Training" = "作为一次训练";
+"Als zwei Trainings" = "作为两次训练";
+"Zweimal aus derselben Quelle" = "来自同一来源两次";
+"Gleiche Startzeit" = "开始时间相同";
+"Gleiche Startzeit und Dauer" = "开始时间与时长相同";
+"Gleiche Strecke" = "距离相同";
+"Fast gleiche Startzeit" = "开始时间几乎相同";
+"Ähnliche Einheit" = "相似的训练";
+"Sicherheit %@ %%" = "可信度 %@ %%";
+"%@ Sätze" = "%@ 组";
+"%@ min" = "%@ 分钟";
+"Diese Home-Assistant-Integration kennt noch keine Duplikate. Bitte die Integration in HACS aktualisieren." = "此 Home Assistant 集成尚不支持重复项。请在 HACS 中更新该集成。";

@@ -1,21 +1,37 @@
 # Änderungsprotokoll
 
+## 26.08.1
+
+### Neu
+
+- **Duplikate.** Melden mehrere Quellen dasselbe Training, schlägt die
+  Integration die Paare vor; unter **Einstellungen ▸ Duplikate** wird
+  entschieden, was zusammengehört. Entscheidungen lassen sich zurücknehmen.
+  Vorgeschlagen wird nur, nie automatisch zusammengeführt: zwei Einheiten kurz
+  hintereinander sind genauso echt wie eine doppelt gemeldete.
+
+### Behoben
+
+- Die App lud GymPit-Trainings erneut hoch, die GymPit selbst schon gesendet
+  hatte. Jedes Training lag dadurch zweimal in Home Assistant.
+- Schreibweise überall **HealthPit** und **GymPit**.
+
 ## 26.08
 
 > ## ⚠️ Wichtig: Diese Fassung braucht eine neue Installation
 >
-> **Die neue Integration „Healthpit“ muss über HACS installiert werden.**
-> Sie ersetzt die bisherige „Healthpit Bridge“.
+> **Die neue Integration „HealthPit“ muss über HACS installiert werden.**
+> Sie ersetzt die bisherige „HealthPit Bridge“.
 >
 > **Der Docker-Container und die Home-Assistant-App werden nicht mehr
 > benötigt** und können nach der Umstellung entfernt werden. Die App sendet ihre
 > Daten direkt an Home Assistant.
 >
-> 1. In HACS die Integration **Healthpit** installieren, Home Assistant neu
+> 1. In HACS die Integration **HealthPit** installieren, Home Assistant neu
 >    starten und sie unter **Geräte & Dienste** hinzufügen.
 > 2. Im Home-Assistant-Profil einen **Long-Lived Access Token** anlegen und in
 >    der App unter **Einstellungen ▸ Verbindung** eintragen.
-> 3. Alte „Healthpit Bridge“-Integration, Docker-Container und Add-on entfernen.
+> 3. Alte „HealthPit Bridge“-Integration, Docker-Container und Add-on entfernen.
 
 ### Neu
 

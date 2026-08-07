@@ -21,7 +21,7 @@ struct DataSourcesSettingsView: View {
                     AppleHealthWriteSettingsView()
                 } label: {
                     DataSourceRow(title: "Apple Health",
-                                  subtitle: "Lesen, schreiben und Healthpit-Daten löschen",
+                                  subtitle: "Lesen, schreiben und HealthPit-Daten löschen",
                                   systemImage: "heart.fill",
                                   tint: .red)
                 }
@@ -280,7 +280,7 @@ private struct AppleHealthWriteSettingsView: View {
                 Toggle("Raddistanz", isOn: $writeCyclingDistance)
                     .disabled(!writeWorkouts)
             } header: {
-                Text("Healthpit darf schreiben")
+                Text("HealthPit darf schreiben")
             } footer: {
                 Text("Diese Schalter gelten für neue Exporte. Bereits vorhandene Daten bleiben unverändert.")
             }
@@ -292,23 +292,23 @@ private struct AppleHealthWriteSettingsView: View {
                     }
                 }
             } footer: {
-                Text("Leserechte verwaltet iOS in der Health-App. Healthpit kann sie aus Datenschutzgründen nicht selbst anzeigen oder erweitern.")
+                Text("Leserechte verwaltet iOS in der Health-App. HealthPit kann sie aus Datenschutzgründen nicht selbst anzeigen oder erweitern.")
             }
 
             Section {
-                Button("Von Healthpit geschriebene Daten löschen", role: .destructive) {
+                Button("Von HealthPit geschriebene Daten löschen", role: .destructive) {
                     showingDeleteConfirmation = true
                 }
                 .disabled(isDeleting)
 
                 if isDeleting { ProgressView() }
             } footer: {
-                Text("Es werden nur Daten gelöscht, die Healthpit selbst in Apple Health gespeichert hat. Daten von Huawei, Apple Watch oder anderen Apps bleiben erhalten.")
+                Text("Es werden nur Daten gelöscht, die HealthPit selbst in Apple Health gespeichert hat. Daten von Huawei, Apple Watch oder anderen Apps bleiben erhalten.")
             }
         }
         .navigationTitle("Apple Health")
         .navigationBarTitleDisplayMode(.inline)
-        .confirmationDialog("Healthpit-Daten aus Apple Health löschen?",
+        .confirmationDialog("HealthPit-Daten aus Apple Health löschen?",
                             isPresented: $showingDeleteConfirmation,
                             titleVisibility: .visible) {
             Button("Aus Apple Health löschen", role: .destructive) {
@@ -333,7 +333,7 @@ private struct AppleHealthWriteSettingsView: View {
         do {
             let count = try await HealthKitManager.shared.deleteDataWrittenByHealthpit()
             await HealthWorkoutCacheStore.shared.clear()
-            message = L10n.format("%lld von Healthpit geschriebene Objekte wurden gelöscht.", count)
+            message = L10n.format("%lld von HealthPit geschriebene Objekte wurden gelöscht.", count)
         } catch {
             message = error.localizedDescription
         }
