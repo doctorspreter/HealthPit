@@ -11,8 +11,8 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import API_BASE, DOMAIN
-from .coordinator import HealthpitCoordinator
-from .entity import HealthpitUserEntity
+from .coordinator import HealthPitCoordinator
+from .entity import HealthPitUserEntity
 
 
 async def async_setup_entry(
@@ -21,7 +21,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Create an entity for every value received, for every user."""
-    coordinator: HealthpitCoordinator = hass.data[DOMAIN]
+    coordinator: HealthPitCoordinator = hass.data[DOMAIN]
     known: set[str] = set()
 
     def _new_entities() -> list[SensorEntity]:
@@ -32,7 +32,7 @@ async def async_setup_entry(
             route_key = f"{user_id}:route"
             if route_key not in known:
                 known.add(route_key)
-                entities.append(HealthpitRouteSensor(coordinator, user_id))
+                entities.append(HealthPitRouteSensor(coordinator, user_id))
         return entities
 
     async_add_entities(_new_entities())
@@ -47,7 +47,7 @@ async def async_setup_entry(
 
 
 def _new_metric_sensors(
-    coordinator: HealthpitCoordinator,
+    coordinator: HealthPitCoordinator,
     user_id: str,
     known: set[str],
 ) -> list[SensorEntity]:
@@ -61,7 +61,7 @@ def _new_metric_sensors(
             if metric_id and key not in known:
                 known.add(key)
                 entities.append(
-                    HealthpitMetricSensor(
+                    HealthPitMetricSensor(
                         coordinator, user_id, metric_id, category, device_id
                     )
                 )
@@ -69,7 +69,7 @@ def _new_metric_sensors(
 
 
 def _new_workout_sensors(
-    coordinator: HealthpitCoordinator,
+    coordinator: HealthPitCoordinator,
     user_id: str,
     known: set[str],
 ) -> list[SensorEntity]:
@@ -81,17 +81,17 @@ def _new_workout_sensors(
         if descriptor_key and key not in known:
             known.add(key)
             entities.append(
-                HealthpitWorkoutSensor(coordinator, user_id, descriptor_key)
+                HealthPitWorkoutSensor(coordinator, user_id, descriptor_key)
             )
     return entities
 
 
-class HealthpitMetricSensor(HealthpitUserEntity, SensorEntity):
+class HealthPitMetricSensor(HealthPitUserEntity, SensorEntity):
     """A single Apple Health metric exposed as a Home Assistant sensor."""
 
     def __init__(
         self,
-        coordinator: HealthpitCoordinator,
+        coordinator: HealthPitCoordinator,
         user_id: str,
         metric_id: str,
         category: str,
@@ -154,12 +154,12 @@ class HealthpitMetricSensor(HealthpitUserEntity, SensorEntity):
         }
 
 
-class HealthpitWorkoutSensor(HealthpitUserEntity, SensorEntity):
+class HealthPitWorkoutSensor(HealthPitUserEntity, SensorEntity):
     """A stable latest/aggregate workout or exercise value."""
 
     def __init__(
         self,
-        coordinator: HealthpitCoordinator,
+        coordinator: HealthPitCoordinator,
         user_id: str,
         descriptor_key: str,
     ) -> None:
@@ -216,7 +216,7 @@ class HealthpitWorkoutSensor(HealthpitUserEntity, SensorEntity):
         }
 
 
-class HealthpitRouteSensor(HealthpitUserEntity, SensorEntity):
+class HealthPitRouteSensor(HealthPitUserEntity, SensorEntity):
     """The newest recorded track, as one entity instead of thousands.
 
     Its state is the distance, so it is a number worth charting. The attributes
@@ -231,7 +231,7 @@ class HealthpitRouteSensor(HealthpitUserEntity, SensorEntity):
     _attr_native_unit_of_measurement = "km"
     _attr_device_class = SensorDeviceClass.DISTANCE
 
-    def __init__(self, coordinator: HealthpitCoordinator, user_id: str) -> None:
+    def __init__(self, coordinator: HealthPitCoordinator, user_id: str) -> None:
         super().__init__(coordinator, user_id)
         self._attr_unique_id = f"{user_id}_route"
 

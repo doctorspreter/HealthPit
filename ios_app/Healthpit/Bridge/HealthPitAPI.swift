@@ -1,5 +1,5 @@
 //
-//  HealthpitAPI.swift
+//  HealthPitAPI.swift
 //  Healthpit
 //
 //  Wohin die App sendet: direkt an Home Assistant, abgesichert ueber einen
@@ -10,7 +10,7 @@
 
 import Foundation
 
-enum HealthpitAPI {
+enum HealthPitAPI {
     /// Pfadpraefix der Integration.
     static let prefix = "api/healthpit/v1"
 

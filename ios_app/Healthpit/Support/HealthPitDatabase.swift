@@ -1,5 +1,5 @@
 //
-//  HealthpitDatabase.swift
+//  HealthPitDatabase.swift
 //  Healthpit
 //
 //  Lokaler SQLite-Cache fuer teure HealthKit-/Bridge-Abfragen.
@@ -8,8 +8,8 @@
 import Foundation
 import SQLite3
 
-actor HealthpitDatabase {
-    static let shared = HealthpitDatabase()
+actor HealthPitDatabase {
+    static let shared = HealthPitDatabase()
 
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()

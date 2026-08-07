@@ -25,7 +25,7 @@ actor HealthWorkoutCacheStore {
     }
 
     func load(range: TimeRange, referenceDate: Date = .now) async -> [WorkoutSummary] {
-        if let workouts = await HealthpitDatabase.shared.load([WorkoutSummary].self, key: dbKey(for: range, referenceDate: referenceDate)) {
+        if let workouts = await HealthPitDatabase.shared.load([WorkoutSummary].self, key: dbKey(for: range, referenceDate: referenceDate)) {
             return cacheable(workouts).sorted { $0.start > $1.start }
         }
         if let allTimeMemoryCache {
@@ -35,7 +35,7 @@ actor HealthWorkoutCacheStore {
             return filtered
         }
         if Calendar.healthApp.isDate(referenceDate, inSameDayAs: .now),
-           let workouts = await HealthpitDatabase.shared.load([WorkoutSummary].self, key: legacyDBKey(for: range)) {
+           let workouts = await HealthPitDatabase.shared.load([WorkoutSummary].self, key: legacyDBKey(for: range)) {
             return cacheable(workouts).sorted { $0.start > $1.start }
         }
         guard let data = try? Data(contentsOf: fileURL(for: range)),
@@ -43,15 +43,15 @@ actor HealthWorkoutCacheStore {
             return []
         }
         let sorted = cacheable(workouts).sorted { $0.start > $1.start }
-        await HealthpitDatabase.shared.save(sorted, key: dbKey(for: range, referenceDate: referenceDate))
+        await HealthPitDatabase.shared.save(sorted, key: dbKey(for: range, referenceDate: referenceDate))
         return sorted
     }
 
     func save(_ workouts: [WorkoutSummary], range: TimeRange, referenceDate: Date = .now) async {
         let sorted = cacheable(workouts).sorted(by: { $0.start > $1.start })
-        await HealthpitDatabase.shared.save(sorted, key: dbKey(for: range, referenceDate: referenceDate))
+        await HealthPitDatabase.shared.save(sorted, key: dbKey(for: range, referenceDate: referenceDate))
         if Calendar.healthApp.isDate(referenceDate, inSameDayAs: .now) {
-            await HealthpitDatabase.shared.save(sorted, key: legacyDBKey(for: range))
+            await HealthPitDatabase.shared.save(sorted, key: legacyDBKey(for: range))
         }
         guard let data = try? encoder.encode(sorted) else {
             return
@@ -63,7 +63,7 @@ actor HealthWorkoutCacheStore {
         if let allTimeMemoryCache {
             return allTimeMemoryCache
         }
-        let workouts = await HealthpitDatabase.shared.load([WorkoutSummary].self, key: "health_workouts.all_time") ?? []
+        let workouts = await HealthPitDatabase.shared.load([WorkoutSummary].self, key: "health_workouts.all_time") ?? []
         let sorted = cacheable(workouts).sorted { $0.start > $1.start }
         allTimeMemoryCache = sorted
         return sorted
@@ -73,7 +73,7 @@ actor HealthWorkoutCacheStore {
         if let allTimeCountMemoryCache {
             return allTimeCountMemoryCache
         }
-        if let count = await HealthpitDatabase.shared.load(Int.self, key: "health_workouts.all_time_count") {
+        if let count = await HealthPitDatabase.shared.load(Int.self, key: "health_workouts.all_time_count") {
             allTimeCountMemoryCache = count
             return count
         }
@@ -98,8 +98,8 @@ actor HealthWorkoutCacheStore {
         let sorted = cacheable(workouts).sorted { $0.start > $1.start }
         allTimeMemoryCache = sorted
         allTimeCountMemoryCache = sorted.count
-        await HealthpitDatabase.shared.save(sorted, key: "health_workouts.all_time")
-        await HealthpitDatabase.shared.save(sorted.count, key: "health_workouts.all_time_count")
+        await HealthPitDatabase.shared.save(sorted, key: "health_workouts.all_time")
+        await HealthPitDatabase.shared.save(sorted.count, key: "health_workouts.all_time_count")
         await saveCurrentRangeCaches(from: sorted)
     }
 
@@ -121,7 +121,7 @@ actor HealthWorkoutCacheStore {
         for range in TimeRange.allCases {
             try? FileManager.default.removeItem(at: fileURL(for: range))
         }
-        await HealthpitDatabase.shared.removeAll()
+        await HealthPitDatabase.shared.removeAll()
     }
 
     private func cacheable(_ workouts: [WorkoutSummary]) -> [WorkoutSummary] {

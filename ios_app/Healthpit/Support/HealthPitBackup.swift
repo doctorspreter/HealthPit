@@ -1,5 +1,5 @@
 //
-//  HealthpitBackup.swift
+//  HealthPitBackup.swift
 //  Healthpit
 //
 //  Export und Import der lokalen Daten als Sicherungsdatei.
@@ -15,7 +15,7 @@ import UniformTypeIdentifiers
 /// Files, AirDrop or a cloud folder, and an API token or TOTP secret in a
 /// plain file would travel with it. The bridge connection is re-entered after
 /// a restore.
-nonisolated struct HealthpitBackup: Codable, Sendable {
+nonisolated struct HealthPitBackup: Codable, Sendable {
     static let currentVersion = 1
 
     var version: Int
@@ -54,7 +54,7 @@ nonisolated struct HealthpitBackup: Codable, Sendable {
     }
 }
 
-nonisolated enum HealthpitBackupError: LocalizedError {
+nonisolated enum HealthPitBackupError: LocalizedError {
     case unreadable
     case unsupportedVersion(Int)
 
@@ -71,31 +71,31 @@ nonisolated enum HealthpitBackupError: LocalizedError {
 }
 
 /// Wraps a backup so SwiftUI's fileExporter can write it to Files.
-struct HealthpitBackupDocument: FileDocument {
+struct HealthPitBackupDocument: FileDocument {
     static let readableContentTypes: [UTType] = [.json]
 
-    var backup: HealthpitBackup
+    var backup: HealthPitBackup
 
-    init(backup: HealthpitBackup) {
+    init(backup: HealthPitBackup) {
         self.backup = backup
     }
 
     init(configuration: ReadConfiguration) throws {
         guard let data = configuration.file.regularFileContents else {
-            throw HealthpitBackupError.unreadable
+            throw HealthPitBackupError.unreadable
         }
-        backup = try HealthpitBackup.decoder().decode(HealthpitBackup.self, from: data)
+        backup = try HealthPitBackup.decoder().decode(HealthPitBackup.self, from: data)
     }
 
     func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
-        FileWrapper(regularFileWithContents: try HealthpitBackup.encoder().encode(backup))
+        FileWrapper(regularFileWithContents: try HealthPitBackup.encoder().encode(backup))
     }
 }
 
-enum HealthpitBackupService {
+enum HealthPitBackupService {
     /// Collect the full local workout history for export.
-    static func makeBackup(deviceID: String, username: String) async -> HealthpitBackup {
-        HealthpitBackup(
+    static func makeBackup(deviceID: String, username: String) async -> HealthPitBackup {
+        HealthPitBackup(
             deviceID: deviceID,
             username: username,
             workouts: await LocalWorkoutStore.shared.load()
@@ -103,21 +103,21 @@ enum HealthpitBackupService {
     }
 
     /// Read a backup file. The caller keeps the security-scoped access open.
-    static func readBackup(at url: URL) throws -> HealthpitBackup {
+    static func readBackup(at url: URL) throws -> HealthPitBackup {
         let needsScope = url.startAccessingSecurityScopedResource()
         defer { if needsScope { url.stopAccessingSecurityScopedResource() } }
 
         guard let data = try? Data(contentsOf: url) else {
-            throw HealthpitBackupError.unreadable
+            throw HealthPitBackupError.unreadable
         }
-        let backup: HealthpitBackup
+        let backup: HealthPitBackup
         do {
-            backup = try HealthpitBackup.decoder().decode(HealthpitBackup.self, from: data)
+            backup = try HealthPitBackup.decoder().decode(HealthPitBackup.self, from: data)
         } catch {
-            throw HealthpitBackupError.unreadable
+            throw HealthPitBackupError.unreadable
         }
-        guard backup.version <= HealthpitBackup.currentVersion else {
-            throw HealthpitBackupError.unsupportedVersion(backup.version)
+        guard backup.version <= HealthPitBackup.currentVersion else {
+            throw HealthPitBackupError.unsupportedVersion(backup.version)
         }
         return backup
     }
@@ -128,7 +128,7 @@ enum HealthpitBackupService {
     /// that happens to be older than the device must not delete newer
     /// workouts. Entries with a known id are replaced, the rest are added.
     @discardableResult
-    static func restore(_ backup: HealthpitBackup) async -> Int {
+    static func restore(_ backup: HealthPitBackup) async -> Int {
         guard !backup.workouts.isEmpty else { return 0 }
         await LocalWorkoutStore.shared.saveMany(backup.workouts)
         return backup.workouts.count

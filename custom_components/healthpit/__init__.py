@@ -24,10 +24,10 @@ from .const import (
     SERVICE_IMPORT_HISTORY,
     SERVICE_SAVE_WORKOUT_LINK,
 )
-from .coordinator import HealthpitCoordinator
+from .coordinator import HealthPitCoordinator
 from .history import async_import_history
 from .http_api import async_register_views
-from .store import HealthpitStore
+from .store import HealthPitStore
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -43,10 +43,10 @@ SERVICES = (
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Healthpit from its config entry."""
-    store = HealthpitStore(hass)
+    store = HealthPitStore(hass)
     await store.async_load()
 
-    coordinator = HealthpitCoordinator(hass, store)
+    coordinator = HealthPitCoordinator(hass, store)
     # An empty store is a valid state, not a setup failure: the first push
     # fills it. There is nothing to reach out to that could fail here.
     await coordinator.async_refresh()
@@ -62,7 +62,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload the config entry."""
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unloaded:
-        coordinator: HealthpitCoordinator | None = hass.data.pop(DOMAIN, None)
+        coordinator: HealthPitCoordinator | None = hass.data.pop(DOMAIN, None)
         if coordinator is not None:
             # A delayed save may still be pending; do not lose the last push.
             await coordinator.store.async_save_now()
@@ -73,15 +73,15 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Drop everything the apps pushed when the entry is deleted."""
-    await HealthpitStore(hass).async_remove()
+    await HealthPitStore(hass).async_remove()
 
 
 def _async_register_services(hass: HomeAssistant) -> None:
     """Register the services that make sense without a dashboard."""
 
-    def coordinator() -> HealthpitCoordinator:
+    def coordinator() -> HealthPitCoordinator:
         current = hass.data.get(DOMAIN)
-        if not isinstance(current, HealthpitCoordinator):
+        if not isinstance(current, HealthPitCoordinator):
             raise HomeAssistantError("Healthpit is not set up")
         return current
 

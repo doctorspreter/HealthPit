@@ -32,9 +32,10 @@ struct ContentView: View {
             }
         }
         .task {
-            // Einmal je Fassung. Der Hinweis auf die neue Integration darf nicht
-            // untergehen, sonst kommt in Home Assistant nichts mehr an.
-            showingReleaseNotes = ReleaseNotes.isUnseen()
+            // Bei jedem Start, bis die Verbindung zu Home Assistant steht.
+            // Der Hinweis auf die neue Integration darf nicht untergehen, sonst
+            // kommt drueben nichts mehr an.
+            showingReleaseNotes = ReleaseNotes.shouldShow()
         }
     }
 }

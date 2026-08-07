@@ -212,7 +212,7 @@ struct DashboardView: View {
     }
 
     private func refreshLocalAppleHealth() async {
-        await HealthpitPreloadService.shared.refreshLocalAppleHealthCaches()
+        await HealthPitPreloadService.shared.refreshLocalAppleHealthCaches()
         reloadToken += 1
     }
 

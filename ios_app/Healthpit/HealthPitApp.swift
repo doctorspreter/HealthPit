@@ -1,5 +1,5 @@
 //
-//  HealthpitApp.swift
+//  HealthPitApp.swift
 //  Healthpit
 //
 //  Created by Peter Weber on 19.06.26.
@@ -29,7 +29,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 }
 
 @main
-struct HealthpitApp: App {
+struct HealthPitApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @AppStorage(AppLanguage.storageKey) private var appLanguageRawValue = AppLanguage.system.rawValue
     @AppStorage(MeasurementSystemSetting.storageKey) private var measurementSystemRawValue = MeasurementSystemSetting.automatic.rawValue

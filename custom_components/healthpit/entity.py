@@ -6,10 +6,10 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
-from .coordinator import HealthpitCoordinator
+from .coordinator import HealthPitCoordinator
 
 
-def user_device_info(coordinator: HealthpitCoordinator, user_id: str) -> DeviceInfo:
+def user_device_info(coordinator: HealthPitCoordinator, user_id: str) -> DeviceInfo:
     """One device per user, so their entities carry their name and stay apart."""
     name = coordinator.store.user_name(user_id)
     return DeviceInfo(
@@ -20,7 +20,7 @@ def user_device_info(coordinator: HealthpitCoordinator, user_id: str) -> DeviceI
     )
 
 
-class HealthpitUserEntity(CoordinatorEntity[HealthpitCoordinator]):
+class HealthPitUserEntity(CoordinatorEntity[HealthPitCoordinator]):
     """Base for everything that belongs to one user.
 
     ``has_entity_name`` combined with the per-user device means Home Assistant
@@ -30,7 +30,7 @@ class HealthpitUserEntity(CoordinatorEntity[HealthpitCoordinator]):
 
     _attr_has_entity_name = True
 
-    def __init__(self, coordinator: HealthpitCoordinator, user_id: str) -> None:
+    def __init__(self, coordinator: HealthPitCoordinator, user_id: str) -> None:
         super().__init__(coordinator)
         self._user_id = user_id
         self._attr_device_info = user_device_info(coordinator, user_id)

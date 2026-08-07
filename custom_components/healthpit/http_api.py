@@ -17,7 +17,7 @@ from homeassistant.components.http import HomeAssistantView
 from homeassistant.core import HomeAssistant
 
 from .const import API_BASE, DOMAIN
-from .coordinator import HealthpitCoordinator
+from .coordinator import HealthPitCoordinator
 from .duplicates import find_candidates
 from .route import as_geojson, as_gpx, as_svg, route_points
 from .payload import (
@@ -41,9 +41,9 @@ def _hass(request: web.Request) -> HomeAssistant:
     return request.app[KEY_HASS]
 
 
-def _coordinator(request: web.Request) -> HealthpitCoordinator:
+def _coordinator(request: web.Request) -> HealthPitCoordinator:
     coordinator = _hass(request).data.get(DOMAIN)
-    if not isinstance(coordinator, HealthpitCoordinator):
+    if not isinstance(coordinator, HealthPitCoordinator):
         raise web.HTTPServiceUnavailable(reason="Healthpit is not set up")
     return coordinator
 
@@ -80,7 +80,7 @@ def _bad_request(err: PayloadError) -> web.Response:
     return web.json_response({"error": str(err), "detail": str(err)}, status=400)
 
 
-class HealthpitHealthBatchView(HomeAssistantView):
+class HealthPitHealthBatchView(HomeAssistantView):
     """Accept a batch of health metrics."""
 
     url = f"{API_BASE}/health/batch"
@@ -111,7 +111,7 @@ class HealthpitHealthBatchView(HomeAssistantView):
         return web.json_response({"accepted": accepted, "skipped": problems})
 
 
-class HealthpitWorkoutImportView(HomeAssistantView):
+class HealthPitWorkoutImportView(HomeAssistantView):
     """Accept and list imported workouts."""
 
     url = f"{API_BASE}/workouts/imports"
@@ -151,7 +151,7 @@ class HealthpitWorkoutImportView(HomeAssistantView):
         return web.json_response({"workouts": workouts})
 
 
-class HealthpitWorkoutReconcileView(HomeAssistantView):
+class HealthPitWorkoutReconcileView(HomeAssistantView):
     """Drop workouts of one source that the app no longer has."""
 
     url = f"{API_BASE}/workouts/imports/reconcile"
@@ -174,7 +174,7 @@ class HealthpitWorkoutReconcileView(HomeAssistantView):
         return web.json_response({"deleted": deleted, "kept": len(workout_ids)})
 
 
-class HealthpitWorkoutItemView(HomeAssistantView):
+class HealthPitWorkoutItemView(HomeAssistantView):
     """Delete a single workout."""
 
     url = f"{API_BASE}/workouts/imports/{{workout_id}}"
@@ -199,7 +199,7 @@ class HealthpitWorkoutItemView(HomeAssistantView):
         return web.json_response({"deleted": deleted})
 
 
-class HealthpitRouteView(HomeAssistantView):
+class HealthPitRouteView(HomeAssistantView):
     """Serve one stored track as GPX or GeoJSON.
 
     A track is only useful as a whole. GPX goes into any other tool, GeoJSON into
@@ -241,7 +241,7 @@ class HealthpitRouteView(HomeAssistantView):
         raise web.HTTPNotFound(reason="Unknown format; use gpx, geojson or svg")
 
 
-class HealthpitDuplicatesView(HomeAssistantView):
+class HealthPitDuplicatesView(HomeAssistantView):
     """Workouts that look like one session recorded twice, and past decisions."""
 
     url = f"{API_BASE}/duplicates"
@@ -264,7 +264,7 @@ class HealthpitDuplicatesView(HomeAssistantView):
         )
 
 
-class HealthpitDuplicateDecisionView(HomeAssistantView):
+class HealthPitDuplicateDecisionView(HomeAssistantView):
     """Record or withdraw a decision about a proposed duplicate."""
 
     url = f"{API_BASE}/duplicates/decision"
@@ -303,7 +303,7 @@ class HealthpitDuplicateDecisionView(HomeAssistantView):
         return web.json_response({"removed": removed})
 
 
-class HealthpitStatusView(HomeAssistantView):
+class HealthPitStatusView(HomeAssistantView):
     """What the app shows after connecting, and what a curl test needs."""
 
     url = f"{API_BASE}/status"
@@ -324,16 +324,16 @@ class HealthpitStatusView(HomeAssistantView):
 
 
 VIEWS = (
-    HealthpitHealthBatchView,
-    HealthpitWorkoutImportView,
+    HealthPitHealthBatchView,
+    HealthPitWorkoutImportView,
     # Registered before the {workout_id} route so "reconcile" is not swallowed
     # as a workout ID.
-    HealthpitWorkoutReconcileView,
-    HealthpitWorkoutItemView,
-    HealthpitRouteView,
-    HealthpitDuplicateDecisionView,
-    HealthpitDuplicatesView,
-    HealthpitStatusView,
+    HealthPitWorkoutReconcileView,
+    HealthPitWorkoutItemView,
+    HealthPitRouteView,
+    HealthPitDuplicateDecisionView,
+    HealthPitDuplicatesView,
+    HealthPitStatusView,
 )
 
 

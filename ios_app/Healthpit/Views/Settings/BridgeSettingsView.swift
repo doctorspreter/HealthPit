@@ -14,7 +14,7 @@ struct BridgeSettingsView: View {
 
     @AppStorage(BridgeSettings.baseURLKey) private var baseURL = ""
     @AppStorage(BridgeSettings.localHostKey) private var localHost = ""
-    @AppStorage(BridgeSettings.localPortKey) private var localPort = HealthpitAPI.defaultPort
+    @AppStorage(BridgeSettings.localPortKey) private var localPort = HealthPitAPI.defaultPort
     @AppStorage(BridgeSettings.usernameKey) private var username = "healthpit"
     @AppStorage(BridgeSettings.deviceIDKey) private var deviceID = UIDevice.current.name
     @AppStorage(BridgeSettings.syncEnabledKey) private var syncEnabled = true
@@ -35,7 +35,7 @@ struct BridgeSettingsView: View {
     @State private var connectionDetail: String?
     @State private var message: String?
     @State private var messageDetail: String?
-    @State private var backupDocument: HealthpitBackupDocument?
+    @State private var backupDocument: HealthPitBackupDocument?
     @State private var isExportingBackup = false
     @State private var isImportingBackup = false
     @State private var backupStatus = ""
@@ -400,7 +400,7 @@ struct BridgeSettingsView: View {
 
     private func prepareBackup() async {
         backupStatus = L10n.string("Sicherung wird erstellt …")
-        let backup = await HealthpitBackupService.makeBackup(
+        let backup = await HealthPitBackupService.makeBackup(
             deviceID: deviceID,
             username: username
         )
@@ -408,7 +408,7 @@ struct BridgeSettingsView: View {
             backupStatus = L10n.string("Es sind keine lokalen Workouts vorhanden.")
             return
         }
-        backupDocument = HealthpitBackupDocument(backup: backup)
+        backupDocument = HealthPitBackupDocument(backup: backup)
         backupStatus = L10n.format("%lld Workouts vorbereitet.", backup.workouts.count)
         isExportingBackup = true
     }
@@ -417,8 +417,8 @@ struct BridgeSettingsView: View {
         switch result {
         case let .success(url):
             do {
-                let backup = try HealthpitBackupService.readBackup(at: url)
-                let count = await HealthpitBackupService.restore(backup)
+                let backup = try HealthPitBackupService.readBackup(at: url)
+                let count = await HealthPitBackupService.restore(backup)
                 backupStatus = L10n.format("%lld Workouts aus der Sicherung übernommen.", count)
             } catch {
                 backupStatus = L10n.string("Die Datei konnte nicht gelesen werden. Ist es eine HealthPit-Sicherung?")

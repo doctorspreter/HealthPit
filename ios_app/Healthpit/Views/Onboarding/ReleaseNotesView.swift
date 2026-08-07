@@ -24,14 +24,24 @@ struct ReleaseNotesView: View {
             .navigationTitle(L10n.format("Neu in %@", ReleaseNotes.version))
             .navigationBarTitleDisplayMode(.inline)
             .safeAreaInset(edge: .bottom) {
-                Button {
-                    onClose()
-                } label: {
-                    Text("Verstanden")
-                        .frame(maxWidth: .infinity)
+                VStack(spacing: 8) {
+                    if !ReleaseNotes.hasWorkingConnection() {
+                        // Sonst wirkt das wiederkehrende Fenster wie ein Fehler.
+                        Text("Dieser Hinweis erscheint bei jedem Start, bis die Verbindung zu Home Assistant einmal erfolgreich synchronisiert hat.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Button {
+                        onClose()
+                    } label: {
+                        Text("Verstanden")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
                 .padding()
                 .background(.bar)
             }

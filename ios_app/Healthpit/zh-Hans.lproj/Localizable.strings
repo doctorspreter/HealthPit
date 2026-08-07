@@ -648,3 +648,4 @@
 "%@ Sätze" = "%@ 组";
 "%@ min" = "%@ 分钟";
 "Diese Home-Assistant-Integration kennt noch keine Duplikate. Bitte die Integration in HACS aktualisieren." = "此 Home Assistant 集成尚不支持重复项。请在 HACS 中更新该集成。";
+"Dieser Hinweis erscheint bei jedem Start, bis die Verbindung zu Home Assistant einmal erfolgreich synchronisiert hat." = "此提示会在每次启动时出现，直到与 Home Assistant 的连接成功同步一次为止。";

@@ -12,8 +12,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
-from .coordinator import HealthpitCoordinator
-from .entity import HealthpitUserEntity
+from .coordinator import HealthPitCoordinator
+from .entity import HealthPitUserEntity
 from .route import as_svg
 
 _LOGGER = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Create one route picture per user."""
-    coordinator: HealthpitCoordinator = hass.data[DOMAIN]
+    coordinator: HealthPitCoordinator = hass.data[DOMAIN]
     known: set[str] = set()
 
     def _new_entities() -> list[ImageEntity]:
@@ -34,7 +34,7 @@ async def async_setup_entry(
             if user_id in known:
                 continue
             known.add(user_id)
-            entities.append(HealthpitRouteImage(hass, coordinator, user_id))
+            entities.append(HealthPitRouteImage(hass, coordinator, user_id))
         return entities
 
     async_add_entities(_new_entities())
@@ -47,7 +47,7 @@ async def async_setup_entry(
     entry.async_on_unload(coordinator.async_add_listener(_add_new))
 
 
-class HealthpitRouteImage(HealthpitUserEntity, ImageEntity):
+class HealthPitRouteImage(HealthPitUserEntity, ImageEntity):
     """Draws the newest recorded track.
 
     SVG keeps this dependency-free and tiny: the line is generated as text, so
@@ -61,10 +61,10 @@ class HealthpitRouteImage(HealthpitUserEntity, ImageEntity):
     def __init__(
         self,
         hass: HomeAssistant,
-        coordinator: HealthpitCoordinator,
+        coordinator: HealthPitCoordinator,
         user_id: str,
     ) -> None:
-        HealthpitUserEntity.__init__(self, coordinator, user_id)
+        HealthPitUserEntity.__init__(self, coordinator, user_id)
         ImageEntity.__init__(self, hass)
         self._attr_unique_id = f"{user_id}_last_route"
         self._drawn_workout: str | None = None

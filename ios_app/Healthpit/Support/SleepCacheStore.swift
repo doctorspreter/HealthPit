@@ -13,12 +13,12 @@ actor SleepCacheStore {
     private init() {}
 
     func load(range: TimeRange, referenceDate: Date = .now) async -> [SleepSession] {
-        let sessions = await HealthpitDatabase.shared.load([SleepSession].self, key: key(for: range, referenceDate: referenceDate)) ?? []
+        let sessions = await HealthPitDatabase.shared.load([SleepSession].self, key: key(for: range, referenceDate: referenceDate)) ?? []
         return sessions.sorted { $0.end > $1.end }
     }
 
     func save(_ sessions: [SleepSession], range: TimeRange, referenceDate: Date = .now) async {
-        await HealthpitDatabase.shared.save(sessions.sorted { $0.end > $1.end }, key: key(for: range, referenceDate: referenceDate))
+        await HealthPitDatabase.shared.save(sessions.sorted { $0.end > $1.end }, key: key(for: range, referenceDate: referenceDate))
     }
 
     private func key(for range: TimeRange, referenceDate: Date) -> String {

@@ -1,5 +1,5 @@
 //
-//  HealthpitPreloadService.swift
+//  HealthPitPreloadService.swift
 //  Healthpit
 //
 //  Fuellt lokale Caches frueh, damit Detailseiten nicht erst beim Oeffnen
@@ -8,8 +8,8 @@
 
 import Foundation
 
-actor HealthpitPreloadService {
-    static let shared = HealthpitPreloadService()
+actor HealthPitPreloadService {
+    static let shared = HealthPitPreloadService()
 
     private let health = HealthKitManager.shared
     private var isRunning = false

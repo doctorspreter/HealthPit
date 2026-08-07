@@ -30,7 +30,7 @@ def _empty_user(name: str) -> dict[str, Any]:
     return {"name": name, "metrics": {}, "workouts": {}, "links": []}
 
 
-class HealthpitStore:
+class HealthPitStore:
     """Holds what every user pushed, and survives restarts."""
 
     def __init__(self, hass: HomeAssistant) -> None:

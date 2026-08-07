@@ -15,7 +15,7 @@ from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from .const import API_BASE, DOMAIN
 
 
-class HealthpitConfigFlow(ConfigFlow, domain=DOMAIN):
+class HealthPitConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle the user-initiated setup."""
 
     VERSION = 1

@@ -15,6 +15,9 @@
 - Die App lud GymPit-Trainings erneut hoch, die GymPit selbst schon gesendet
   hatte. Jedes Training lag dadurch zweimal in Home Assistant.
 - Schreibweise überall **HealthPit** und **GymPit**.
+- Der Umstellungshinweis erscheint bei jedem Start, bis die Verbindung zu Home
+  Assistant einmal erfolgreich synchronisiert hat. Vorher verschwand er nach
+  dem ersten Wegtippen, auch wenn nichts eingerichtet war.
 
 ## 26.08
 

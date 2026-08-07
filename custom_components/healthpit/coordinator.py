@@ -9,7 +9,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .route import bounds, latest_with_route, route_points
-from .store import HealthpitStore
+from .store import HealthPitStore
 from .workout_entities import build_workout_metrics
 
 _LOGGER = logging.getLogger(__name__)
@@ -76,10 +76,10 @@ def _route_summary(workouts: list[dict[str, Any]]) -> dict[str, Any] | None:
     }
 
 
-class HealthpitCoordinator(DataUpdateCoordinator[dict[str, Any]]):
+class HealthPitCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Serves what the apps pushed. Nothing is polled, so there is no interval."""
 
-    def __init__(self, hass: HomeAssistant, store: HealthpitStore) -> None:
+    def __init__(self, hass: HomeAssistant, store: HealthPitStore) -> None:
         super().__init__(
             hass,
             _LOGGER,

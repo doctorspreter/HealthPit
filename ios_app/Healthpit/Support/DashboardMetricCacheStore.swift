@@ -51,7 +51,7 @@ actor DashboardMetricCacheStore {
                                                        updatedAt: updatedAt,
                                                        measuredAt: byID[metricID]?.measuredAt)
         }
-        await HealthpitDatabase.shared.save(Array(byID.values), key: key)
+        await HealthPitDatabase.shared.save(Array(byID.values), key: key)
     }
 
     /// Speichert Werte zusammen mit ihrem Messdatum (für seltene Messwerte wie Gewicht).
@@ -64,10 +64,10 @@ actor DashboardMetricCacheStore {
                                                        updatedAt: updatedAt,
                                                        measuredAt: entry.measuredAt)
         }
-        await HealthpitDatabase.shared.save(Array(byID.values), key: key)
+        await HealthPitDatabase.shared.save(Array(byID.values), key: key)
     }
 
     private func loadEntries() async -> [DashboardMetricCacheEntry] {
-        await HealthpitDatabase.shared.load([DashboardMetricCacheEntry].self, key: key) ?? []
+        await HealthPitDatabase.shared.load([DashboardMetricCacheEntry].self, key: key) ?? []
     }
 }

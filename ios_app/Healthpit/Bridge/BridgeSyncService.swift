@@ -284,7 +284,7 @@ private struct BridgeCredentials {
 
     /// Pfad inklusive des Präfixes der Integration.
     func apiPath(_ path: String) -> String {
-        HealthpitAPI.path(path)
+        HealthPitAPI.path(path)
     }
 }
 
@@ -380,7 +380,7 @@ final class BridgeSyncService {
 
         let baseURL = try await Self.configuredBaseURL(defaults: defaults)
         var endpoint = baseURL
-        endpoint.append(path: HealthpitAPI.probePath)
+        endpoint.append(path: HealthPitAPI.probePath)
 
         var request = URLRequest(url: endpoint)
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -1051,7 +1051,7 @@ final class BridgeSyncService {
         defaults: UserDefaults = .standard
     ) async throws -> (url: URL, isLocal: Bool) {
         let localHost = defaults.string(forKey: BridgeSettings.localHostKey)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let localPort = defaults.string(forKey: BridgeSettings.localPortKey)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? HealthpitAPI.defaultPort
+        let localPort = defaults.string(forKey: BridgeSettings.localPortKey)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? HealthPitAPI.defaultPort
 
         if !localHost.isEmpty {
             let localURL = try localBaseURL(host: localHost, port: localPort)
@@ -1085,7 +1085,7 @@ final class BridgeSyncService {
     private static func localBaseURL(host: String, port: String) throws -> URL {
         let trimmedHost = host.trimmingCharacters(in: .whitespacesAndNewlines)
         let normalizedPort = port.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            ? HealthpitAPI.defaultPort
+            ? HealthPitAPI.defaultPort
             : port.trimmingCharacters(in: .whitespacesAndNewlines)
 
         let localText: String
@@ -1117,7 +1117,7 @@ final class BridgeSyncService {
     /// Why a bridge could not be used, or nil when it answered properly.
     private static func bridgeUnreachableReason(at baseURL: URL) async -> String? {
         var endpoint = baseURL
-        endpoint.append(path: HealthpitAPI.probePath)
+        endpoint.append(path: HealthPitAPI.probePath)
 
         var request = URLRequest(url: endpoint)
         request.timeoutInterval = 4

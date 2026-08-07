@@ -76,7 +76,7 @@ actor WorkoutRecordCacheStore {
     private init() {}
 
     func load() async -> [WorkoutRecord] {
-        let cached = await HealthpitDatabase.shared.load([CachedWorkoutRecord].self, key: key) ?? []
+        let cached = await HealthPitDatabase.shared.load([CachedWorkoutRecord].self, key: key) ?? []
         return cached.map(\.record).sorted {
             if $0.date == $1.date { return $0.priority < $1.priority }
             return $0.date > $1.date
@@ -84,6 +84,6 @@ actor WorkoutRecordCacheStore {
     }
 
     func save(_ records: [WorkoutRecord]) async {
-        await HealthpitDatabase.shared.save(records.map(CachedWorkoutRecord.init), key: key)
+        await HealthPitDatabase.shared.save(records.map(CachedWorkoutRecord.init), key: key)
     }
 }

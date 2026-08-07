@@ -25,7 +25,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
-from .coordinator import HealthpitCoordinator
+from .coordinator import HealthPitCoordinator
 from .workout_entities import slug, sport_name
 
 _LOGGER = logging.getLogger(__name__)
@@ -99,7 +99,7 @@ def _entity_id(
 
 async def async_import_history(
     hass: HomeAssistant,
-    coordinator: HealthpitCoordinator,
+    coordinator: HealthPitCoordinator,
     user_id: str | None = None,
 ) -> dict[str, Any]:
     """Backfill the cumulative sport statistics from stored workouts."""
@@ -149,7 +149,7 @@ async def async_import_history(
     return {"rows": imported, "skipped": len(skipped), "users": len(user_ids)}
 
 
-def earliest_workout(coordinator: HealthpitCoordinator, user_id: str) -> datetime | None:
+def earliest_workout(coordinator: HealthPitCoordinator, user_id: str) -> datetime | None:
     """When the stored history starts, for reporting back to the caller."""
     starts = [
         start
@@ -159,6 +159,6 @@ def earliest_workout(coordinator: HealthpitCoordinator, user_id: str) -> datetim
     return min(starts, default=None)
 
 
-def history_span(coordinator: HealthpitCoordinator, user_id: str) -> timedelta | None:
+def history_span(coordinator: HealthPitCoordinator, user_id: str) -> timedelta | None:
     start = earliest_workout(coordinator, user_id)
     return dt_util.utcnow() - start if start else None

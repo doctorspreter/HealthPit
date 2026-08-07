@@ -648,3 +648,4 @@
 "%@ Sätze" = "%@ sets";
 "%@ min" = "%@ min";
 "Diese Home-Assistant-Integration kennt noch keine Duplikate. Bitte die Integration in HACS aktualisieren." = "This Home Assistant integration does not know about duplicates yet. Please update the integration in HACS.";
+"Dieser Hinweis erscheint bei jedem Start, bis die Verbindung zu Home Assistant einmal erfolgreich synchronisiert hat." = "This notice appears at every start until the connection to Home Assistant has synchronised successfully once.";

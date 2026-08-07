@@ -26,6 +26,27 @@ enum ReleaseNotes {
         defaults.set(version, forKey: storageKey)
     }
 
+    /// Ob der Hinweis bei diesem Start gezeigt wird.
+    ///
+    /// Solange die Verbindung zu Home Assistant nicht nachweislich laeuft,
+    /// erscheint er jedes Mal. Der Umstieg ist die Bedingung dafuer, dass
+    /// ueberhaupt noch Daten ankommen — einmal weggetippt und vergessen waere
+    /// hier das falsche Verhalten. Steht die Verbindung, gilt wieder das
+    /// Uebliche: einmal je Fassung.
+    nonisolated static func shouldShow(in defaults: UserDefaults = .standard) -> Bool {
+        hasWorkingConnection(in: defaults) ? isUnseen(in: defaults) : true
+    }
+
+    /// Eingerichtet *und* erprobt: ein Token allein sagt nichts darueber, ob
+    /// die Gegenstelle antwortet. Erst ein gelungener Sync beweist das, und
+    /// genau dann steht ein Datum unter `lastSyncDateKey`.
+    nonisolated static func hasWorkingConnection(in defaults: UserDefaults = .standard) -> Bool {
+        let token = KeychainStore.string(for: BridgeSettings.homeAssistantTokenKey)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !token.isEmpty else { return false }
+        return defaults.object(forKey: BridgeSettings.lastSyncDateKey) as? Date != nil
+    }
+
     // MARK: Warnhinweis
 
     static var warningTitle: String {
