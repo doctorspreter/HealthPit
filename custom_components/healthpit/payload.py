@@ -10,6 +10,7 @@ three modes without knowing where the data came from.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from math import isfinite
 from typing import Any
 
 CATEGORIES = {
@@ -48,6 +49,7 @@ MAX_EXERCISES_PER_WORKOUT = 500
 MAX_SETS_PER_EXERCISE = 1000
 MAX_ROUTE_POINTS = 20000
 MAX_RECONCILE_IDS = 50000
+MAX_HISTORY_POINTS_PER_BATCH = 5000
 
 # Ein Lauf traegt einige tausend GPS-Punkte. So viele braucht niemand, um die
 # Strecke zu erkennen, und sie machen den Speicher unnoetig gross.
@@ -100,8 +102,8 @@ def _number(value: Any) -> float | None:
         number = float(value)
     except (TypeError, ValueError):
         return None
-    # NaN compares unequal to itself and would poison every later aggregation.
-    return number if number == number else None
+    # NaN and infinities would poison later aggregations and JSON storage.
+    return number if isfinite(number) else None
 
 
 def _required_number(value: Any, *, field: str) -> float:
@@ -158,6 +160,15 @@ def normalize_metric(raw: Any) -> dict[str, Any]:
     if state_class is not None and state_class not in STATE_CLASSES:
         raise PayloadError(f"state_class must be one of {sorted(STATE_CLASSES)}")
 
+    display_precision = raw.get("display_precision", raw.get("displayPrecision"))
+    if display_precision is not None:
+        if (
+            isinstance(display_precision, bool)
+            or not isinstance(display_precision, int)
+            or not 0 <= display_precision <= 6
+        ):
+            raise PayloadError("display_precision must be an integer from 0 to 6")
+
     return {
         "metric_id": _required_text(raw.get("id"), field="id", max_length=120),
         "category": category,
@@ -171,6 +182,7 @@ def normalize_metric(raw: Any) -> dict[str, Any]:
         "icon": raw.get("icon") or None,
         "device_class": raw.get("device_class") or None,
         "state_class": state_class,
+        "display_precision": display_precision,
     }
 
 
@@ -206,6 +218,67 @@ def normalize_health_batch(
     if not out:
         raise PayloadError("; ".join(problems) or "No usable metric in the batch")
     return device_id, out, problems
+
+
+def normalize_metric_history_batch(
+    raw: Any,
+) -> tuple[str, str, str, list[dict[str, Any]]]:
+    """Validate one chunk of hourly long-term statistics.
+
+    Metric metadata is deliberately not accepted from this endpoint. The
+    corresponding current metric must have been pushed first, and its stored
+    metadata decides the unit and whether this is a mean or a cumulative
+    series. That prevents a client from changing an existing statistic's type
+    halfway through its history.
+    """
+    if not isinstance(raw, dict):
+        raise PayloadError("The payload must be an object")
+
+    device_id = _required_text(
+        _first(raw, "device_id", "deviceId"), field="device_id", max_length=80
+    )
+    category = _required_text(raw.get("category"), field="category", max_length=40)
+    if category not in CATEGORIES:
+        raise PayloadError(f"category must be one of {sorted(CATEGORIES)}")
+    metric_id = _required_text(
+        _first(raw, "metric_id", "metricId"), field="metric_id", max_length=120
+    )
+
+    raw_points = raw.get("points")
+    if not isinstance(raw_points, list) or not raw_points:
+        raise PayloadError("points must be a non-empty list")
+    if len(raw_points) > MAX_HISTORY_POINTS_PER_BATCH:
+        raise PayloadError(
+            f"points holds more than {MAX_HISTORY_POINTS_PER_BATCH} entries"
+        )
+
+    points: list[dict[str, Any]] = []
+    previous_timestamp: float | None = None
+    for item in raw_points:
+        if not isinstance(item, dict):
+            raise PayloadError("Each history point must be an object")
+        start = _datetime_text(item.get("start"), field="start")
+        assert start is not None
+        timestamp = _timestamp(start)
+        if timestamp is None:
+            raise PayloadError("start is not a valid timestamp")
+        if previous_timestamp is not None and timestamp <= previous_timestamp:
+            raise PayloadError("history points must be strictly ordered by start")
+        previous_timestamp = timestamp
+
+        point = {"start": start}
+        for field in ("state", "sum", "mean", "min", "max"):
+            if field not in item or item[field] is None:
+                continue
+            value = _number(item[field])
+            if value is None:
+                raise PayloadError(f"{field} must be a finite number")
+            point[field] = value
+        if len(point) == 1:
+            raise PayloadError("Each history point needs statistic values")
+        points.append(point)
+
+    return device_id, category, metric_id, points
 
 
 def _normalize_set(raw: Any, *, index: int) -> dict[str, Any]:

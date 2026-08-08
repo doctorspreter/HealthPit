@@ -84,12 +84,11 @@ Its long-term statistics *can* be backdated, and for sensors carrying a
 `state_class` that is what long-range graphs are drawn from. The
 `healthpit.import_history` service walks the stored workouts and writes the
 cumulative sport values (count, total duration, total distance) into the
-statistics, so those graphs cover the past instead of starting on setup day.
-Run it again whenever you have imported older workouts; existing rows are
-overwritten rather than duplicated.
-
-Metric history is a different matter: the app sends only the current value per
-metric, so past step counts or weights cannot be reconstructed.
+statistics. The iPhone app's **Send all historical data to Home Assistant**
+action additionally reads the complete permitted HealthKit history, aggregates
+quantity, sleep and numeric cycle metrics by hour, uploads all workouts and
+backfills their existing Home Assistant sensor statistics. Repeating either
+import updates the same hourly rows rather than creating duplicates.
 
 ## Security
 

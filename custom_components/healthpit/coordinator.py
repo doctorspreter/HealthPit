@@ -35,6 +35,7 @@ def build_user_data(
                 "icon": metric.get("icon"),
                 "measured_at": metric.get("measured_at"),
                 "state_class": metric.get("state_class"),
+                "display_precision": metric.get("display_precision"),
             }
         )
     for items in by_category.values():

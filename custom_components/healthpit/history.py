@@ -18,14 +18,23 @@ from datetime import datetime, timedelta
 import logging
 from typing import Any
 
-from homeassistant.components.recorder.models import StatisticData, StatisticMetaData
-from homeassistant.components.recorder.statistics import async_import_statistics
+from homeassistant.components.recorder.models import (
+    StatisticData,
+    StatisticMeanType,
+    StatisticMetaData,
+)
+from homeassistant.components.recorder.statistics import (
+    STATISTIC_UNIT_TO_UNIT_CONVERTER,
+    async_import_statistics,
+)
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
 from .coordinator import HealthPitCoordinator
+from .precision import rounded_value, suggested_precision
 from .workout_entities import slug, sport_name
 
 _LOGGER = logging.getLogger(__name__)
@@ -97,6 +106,135 @@ def _entity_id(
     )
 
 
+def _metadata(
+    *,
+    entity_id: str,
+    unit: str | None,
+    has_sum: bool,
+) -> StatisticMetaData:
+    """Build recorder metadata using the current statistics API."""
+    converter = STATISTIC_UNIT_TO_UNIT_CONVERTER.get(unit)
+    return StatisticMetaData(
+        # Kept while older supported Home Assistant versions still read it.
+        has_mean=not has_sum,
+        mean_type=(
+            StatisticMeanType.NONE if has_sum else StatisticMeanType.ARITHMETIC
+        ),
+        has_sum=has_sum,
+        name=None,
+        source="recorder",
+        statistic_id=entity_id,
+        # Match the metadata the recorder itself creates for this entity.
+        unit_class=converter.UNIT_CLASS if converter else None,
+        unit_of_measurement=unit,
+    )
+
+
+def _metric_entity_id(
+    registry: er.EntityRegistry,
+    user_id: str,
+    device_id: str,
+    category: str,
+    metric_id: str,
+) -> str | None:
+    return registry.async_get_entity_id(
+        "sensor", DOMAIN, f"{user_id}_{device_id}_{category}_{metric_id}"
+    )
+
+
+def _stored_metric(
+    coordinator: HealthPitCoordinator,
+    user_id: str,
+    device_id: str,
+    category: str,
+    metric_id: str,
+) -> dict[str, Any] | None:
+    return next(
+        (
+            metric
+            for metric in coordinator.store.latest_metrics(user_id)
+            if str(metric.get("device_id") or "healthpit") == device_id
+            and metric.get("category") == category
+            and metric.get("metric_id") == metric_id
+        ),
+        None,
+    )
+
+
+async def async_import_metric_history(
+    hass: HomeAssistant,
+    coordinator: HealthPitCoordinator,
+    user_id: str,
+    device_id: str,
+    category: str,
+    metric_id: str,
+    points: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Import one ordered chunk of hourly HealthKit statistics."""
+    metric = _stored_metric(coordinator, user_id, device_id, category, metric_id)
+    if metric is None:
+        raise HomeAssistantError(
+            "Push the current metric before importing its history"
+        )
+
+    entity_id = _metric_entity_id(
+        er.async_get(hass), user_id, device_id, category, metric_id
+    )
+    if entity_id is None:
+        raise HomeAssistantError(
+            "The metric entity is still being created; retry the history chunk"
+        )
+
+    has_sum = metric.get("aggregation") == "sum"
+    precision = suggested_precision(metric)
+    rows: list[StatisticData] = []
+    for point in points:
+        parsed = dt_util.parse_datetime(str(point["start"]))
+        if parsed is None:
+            raise HomeAssistantError("History contains an invalid timestamp")
+        start = dt_util.as_utc(parsed)
+        if start != _hour(start):
+            raise HomeAssistantError("History timestamps must be on a full UTC hour")
+
+        if has_sum:
+            if "state" not in point or "sum" not in point:
+                raise HomeAssistantError(
+                    "Cumulative history points need state and sum"
+                )
+            rows.append(
+                StatisticData(
+                    start=start,
+                    state=rounded_value(float(point["state"]), precision),
+                    sum=rounded_value(float(point["sum"]), precision),
+                )
+            )
+        else:
+            if "mean" not in point:
+                raise HomeAssistantError("Measurement history points need mean")
+            mean = rounded_value(float(point["mean"]), precision)
+            rows.append(
+                StatisticData(
+                    start=start,
+                    mean=mean,
+                    min=rounded_value(float(point.get("min", mean)), precision),
+                    max=rounded_value(float(point.get("max", mean)), precision),
+                    mean_weight=1.0,
+                )
+            )
+
+    async_import_statistics(
+        hass,
+        _metadata(
+            entity_id=entity_id,
+            unit=str(metric.get("unit") or "") or None,
+            has_sum=has_sum,
+        ),
+        rows,
+    )
+    _LOGGER.debug("Queued %s metric history rows for %s", len(rows), entity_id)
+    return {"accepted": len(rows), "entity_id": entity_id}
+
+
 async def async_import_history(
     hass: HomeAssistant,
     coordinator: HealthPitCoordinator,
@@ -132,13 +270,10 @@ async def async_import_history(
                 if not rows:
                     continue
 
-                metadata = StatisticMetaData(
-                    has_mean=False,
+                metadata = _metadata(
+                    entity_id=entity_id,
+                    unit=unit,
                     has_sum=True,
-                    name=None,
-                    source="recorder",
-                    statistic_id=entity_id,
-                    unit_of_measurement=unit,
                 )
                 async_import_statistics(hass, metadata, rows)
                 imported += len(rows)

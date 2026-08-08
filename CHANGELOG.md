@@ -1,5 +1,30 @@
 # Änderungsprotokoll
 
+## Home Assistant 2.2.0
+
+### Added
+
+- The authenticated API can now import hourly HealthKit metric history into
+  Home Assistant's long-term statistics.
+- A dedicated workout-history endpoint can rebuild cumulative workout
+  statistics after a full historical upload from the iPhone app.
+- Payload tests cover ordered history batches, finite numeric values, display
+  precision, and dynamic GymPit workout entity discovery.
+
+### Changed
+
+- Sensor states and imported statistics now use metric-aware precision, which
+  removes meaningless floating-point tails while preserving useful decimals.
+- Recorder metadata now includes the current mean type and unit class required
+  by Home Assistant's statistics API.
+- The setup documentation and `healthpit.import_history` service description
+  now explain the complete historical import flow.
+
+### Fixed
+
+- Non-finite metric values are rejected before they can enter storage or
+  long-term statistics.
+
 ## 26.08.1
 
 ### Neu
