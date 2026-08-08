@@ -13,6 +13,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import API_BASE, DOMAIN
 from .coordinator import HealthPitCoordinator
 from .entity import HealthPitUserEntity
+from .precision import rounded_value, suggested_precision
 
 
 async def async_setup_entry(
@@ -120,7 +121,14 @@ class HealthPitMetricSensor(HealthPitUserEntity, SensorEntity):
     @property
     def native_value(self) -> float | None:
         item = self._item()
-        return item.get("value") if item else None
+        if item is None:
+            return None
+        return rounded_value(item.get("value"), suggested_precision(item))
+
+    @property
+    def suggested_display_precision(self) -> int | None:
+        item = self._item()
+        return suggested_precision(item) if item else None
 
     @property
     def native_unit_of_measurement(self) -> str | None:
@@ -185,7 +193,15 @@ class HealthPitWorkoutSensor(HealthPitUserEntity, SensorEntity):
     @property
     def native_value(self) -> Any:
         item = self._descriptor()
-        return item.get("value") if item else None
+        if item is None:
+            return None
+        precision = suggested_precision(item, self._descriptor_key)
+        return rounded_value(item.get("value"), precision)
+
+    @property
+    def suggested_display_precision(self) -> int | None:
+        item = self._descriptor()
+        return suggested_precision(item, self._descriptor_key) if item else None
 
     @property
     def native_unit_of_measurement(self) -> str | None:
@@ -230,6 +246,7 @@ class HealthPitRouteSensor(HealthPitUserEntity, SensorEntity):
     _attr_icon = "mdi:map-marker-path"
     _attr_native_unit_of_measurement = "km"
     _attr_device_class = SensorDeviceClass.DISTANCE
+    _attr_suggested_display_precision = 2
 
     def __init__(self, coordinator: HealthPitCoordinator, user_id: str) -> None:
         super().__init__(coordinator, user_id)

@@ -15,14 +15,17 @@ from aiohttp import web
 
 from homeassistant.components.http import HomeAssistantView
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 
 from .const import API_BASE, DOMAIN
 from .coordinator import HealthPitCoordinator
 from .duplicates import find_candidates
+from .history import async_import_history, async_import_metric_history
 from .route import as_geojson, as_gpx, as_svg, route_points
 from .payload import (
     PayloadError,
     normalize_health_batch,
+    normalize_metric_history_batch,
     normalize_link,
     normalize_reconcile,
     normalize_workout_batch,
@@ -172,6 +175,53 @@ class HealthPitWorkoutReconcileView(HomeAssistantView):
         if deleted:
             coordinator.async_handle_push()
         return web.json_response({"deleted": deleted, "kept": len(workout_ids)})
+
+
+class HealthPitMetricHistoryView(HomeAssistantView):
+    """Accept one chunk of hourly HealthKit long-term statistics."""
+
+    url = f"{API_BASE}/history/metrics"
+    name = f"api:{DOMAIN}:metric_history"
+    requires_auth = True
+
+    async def post(self, request: web.Request) -> web.Response:
+        coordinator = _coordinator(request)
+        user_id, _ = _user(request)
+        try:
+            device_id, category, metric_id, points = normalize_metric_history_batch(
+                await _json_body(request)
+            )
+            result = await async_import_metric_history(
+                _hass(request),
+                coordinator,
+                user_id,
+                device_id,
+                category,
+                metric_id,
+                points,
+            )
+        except PayloadError as err:
+            return _bad_request(err)
+        except HomeAssistantError as err:
+            return web.json_response(
+                {"error": str(err), "detail": str(err)}, status=409
+            )
+        return web.json_response(result)
+
+
+class HealthPitWorkoutHistoryView(HomeAssistantView):
+    """Backfill statistics from all workouts already uploaded by the app."""
+
+    url = f"{API_BASE}/history/workouts"
+    name = f"api:{DOMAIN}:workout_history"
+    requires_auth = True
+
+    async def post(self, request: web.Request) -> web.Response:
+        coordinator = _coordinator(request)
+        user_id, _ = _user(request)
+        return web.json_response(
+            await async_import_history(_hass(request), coordinator, user_id)
+        )
 
 
 class HealthPitWorkoutItemView(HomeAssistantView):
@@ -329,6 +379,8 @@ VIEWS = (
     # Registered before the {workout_id} route so "reconcile" is not swallowed
     # as a workout ID.
     HealthPitWorkoutReconcileView,
+    HealthPitMetricHistoryView,
+    HealthPitWorkoutHistoryView,
     HealthPitWorkoutItemView,
     HealthPitRouteView,
     HealthPitDuplicateDecisionView,

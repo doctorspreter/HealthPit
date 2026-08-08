@@ -73,8 +73,9 @@ import_history:
   name: Import history
   description: >-
     Write the cumulative sport values of all stored workouts into Home
-    Assistant's long-term statistics, so graphs cover the past instead of
-    starting today. Safe to run again; existing rows are overwritten.
+    Assistant's long-term statistics. HealthKit metric history is sent by the
+    iPhone app because Home Assistant cannot read it itself. Safe to run again;
+    existing rows are overwritten.
   fields:
     user_id:
       required: false
