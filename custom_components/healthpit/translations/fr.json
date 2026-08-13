@@ -101,5 +101,11 @@
         }
       }
     }
+  },
+  "issues": {
+    "outdated_app": {
+      "title": "L'app HealthPit est obsolète",
+      "description": "L'app HealthPit de l'appareil {device_id} envoie encore l'ancien format (modèle {model_version}, l'actuel est {recommended}). Ses valeurs sont traduites et enregistrées, rien n'est perdu — mettez toutefois l'app à jour pour qu'elle envoie elle-même les identifiants. Cet avis disparaît de lui-même après la première synchronisation de l'app à jour."
+    }
   }
 }

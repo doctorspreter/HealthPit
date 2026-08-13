@@ -27,6 +27,15 @@ struct DataSourcesSettingsView: View {
                 }
 
                 NavigationLink {
+                    BridgeDataSharingSettingsView()
+                } label: {
+                    DataSourceRow(title: "Daten mit HealthPit teilen",
+                                  subtitle: "Auswählen, was übertragen werden darf",
+                                  systemImage: "checklist",
+                                  tint: .blue)
+                }
+
+                NavigationLink {
                     WorkoutListView()
                 } label: {
                     DataSourceRow(title: "Trainings verwalten",
@@ -130,6 +139,98 @@ struct DataSourcesSettingsView: View {
         let defaults = UserDefaults.standard
         defaults.removeObject(forKey: BridgeSettings.hiddenHealthWorkoutIDsKey)
         actionMessage = L10n.string("Die lokalen App-Daten wurden gelöscht.")
+    }
+}
+
+private struct BridgeDataSharingSettingsView: View {
+    @State private var searchText = ""
+    @State private var enabledIDs: Set<String>
+
+    init() {
+        _enabledIDs = State(initialValue: Set(
+            BridgeDataTypeDescriptor.all
+                .filter { BridgeDataSharingSettings.isEnabled($0.id) }
+                .map(\.id)
+        ))
+    }
+
+    var body: some View {
+        List {
+            Section {
+                LabeledContent("Freigegeben") {
+                    Text("\(enabledIDs.count) / \(BridgeDataTypeDescriptor.all.count)")
+                        .monospacedDigit()
+                }
+            } footer: {
+                Text("Nur ausgewählte Daten werden bei neuen Synchronisierungen an Home Assistant übertragen. Bereits übertragene Daten bleiben unverändert.")
+            }
+
+            if groupedDataTypes.isEmpty {
+                ContentUnavailableView.search(text: searchText)
+            } else {
+                ForEach(groupedDataTypes, id: \.category) { group in
+                    Section(group.category.title) {
+                        ForEach(group.dataTypes) { dataType in
+                            Toggle(isOn: binding(for: dataType.id)) {
+                                Label(L10n.string(dataType.title), systemImage: dataType.systemImage)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .navigationTitle("Datenfreigabe")
+        .navigationBarTitleDisplayMode(.inline)
+        .searchable(text: $searchText, prompt: "Daten durchsuchen")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button("Alle auswählen") { setAll(enabled: true) }
+                    Button("Alle abwählen") { setAll(enabled: false) }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+                .accessibilityLabel("Auswahl bearbeiten")
+            }
+        }
+    }
+
+    private var groupedDataTypes: [(category: HealthCategory, dataTypes: [BridgeDataTypeDescriptor])] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let filtered = BridgeDataTypeDescriptor.all.filter { dataType in
+            query.isEmpty
+                || L10n.string(dataType.title).localizedCaseInsensitiveContains(query)
+                || dataType.category.title.localizedCaseInsensitiveContains(query)
+        }
+        let grouped = Dictionary(grouping: filtered, by: \.category)
+        return HealthCategory.allCases.compactMap { category in
+            guard let dataTypes = grouped[category], !dataTypes.isEmpty else { return nil }
+            return (
+                category,
+                dataTypes.sorted {
+                    L10n.string($0.title).localizedCaseInsensitiveCompare(L10n.string($1.title)) == .orderedAscending
+                }
+            )
+        }
+    }
+
+    private func binding(for dataTypeID: String) -> Binding<Bool> {
+        Binding(
+            get: { enabledIDs.contains(dataTypeID) },
+            set: { enabled in
+                if enabled {
+                    enabledIDs.insert(dataTypeID)
+                } else {
+                    enabledIDs.remove(dataTypeID)
+                }
+                BridgeDataSharingSettings.setEnabled(enabled, for: dataTypeID)
+            }
+        )
+    }
+
+    private func setAll(enabled: Bool) {
+        enabledIDs = enabled ? Set(BridgeDataTypeDescriptor.all.map(\.id)) : []
+        BridgeDataSharingSettings.setEnabledIDs(enabledIDs)
     }
 }
 

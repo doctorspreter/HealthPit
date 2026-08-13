@@ -10,7 +10,10 @@ API_BASE = f"/api/{DOMAIN}/v1"
 # Everything the apps sent lives in Home Assistant's own storage. The recorder
 # purges states after ten days by default, so workout history needs its own
 # place to survive that and a restart.
-STORAGE_VERSION = 1
+# Version 2 adds the canonical metric id and the provider fields to every
+# stored value. The upgrade runs once, keeps every storage key as it was and
+# therefore leaves entity ids and their history untouched.
+STORAGE_VERSION = 2
 STORAGE_KEY = DOMAIN
 
 # Guard rails so a looping client cannot grow the store without bound.

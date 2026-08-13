@@ -20,12 +20,14 @@ struct BridgeMetricPayload: Encodable {
     let icon: String?
     let deviceClass: String?
     let stateClass: String?
+    let displayPrecision: Int?
 
     enum CodingKeys: String, CodingKey {
         case id, category, title, value, unit, aggregation, icon
         case measuredAt = "measured_at"
         case deviceClass = "device_class"
         case stateClass = "state_class"
+        case displayPrecision = "display_precision"
     }
 }
 
@@ -37,6 +39,44 @@ struct BridgeBatchPayload: Encodable {
         case deviceID = "device_id"
         case metrics
     }
+}
+
+struct BridgeHistoryPointPayload: Encodable {
+    let start: Date
+    let state: Double?
+    let sum: Double?
+    let mean: Double?
+    let min: Double?
+    let max: Double?
+}
+
+struct BridgeMetricHistoryBatchPayload: Encodable {
+    let deviceID: String
+    let category: String
+    let metricID: String
+    let points: [BridgeHistoryPointPayload]
+
+    enum CodingKeys: String, CodingKey {
+        case deviceID = "device_id"
+        case category
+        case metricID = "metric_id"
+        case points
+    }
+}
+
+struct BridgeMetricHistoryResponse: Decodable {
+    let accepted: Int
+}
+
+struct BridgeWorkoutHistoryResponse: Decodable {
+    let rows: Int
+}
+
+struct BridgeHistoryImportResult: Sendable {
+    let metricCount: Int
+    let pointCount: Int
+    let workoutCount: Int
+    let workoutRows: Int
 }
 
 struct BridgeImportedWorkoutBatchPayload: Encodable {
@@ -445,21 +485,8 @@ final class BridgeSyncService {
         let credentials = try await bridgeCredentials()
 
         await SyncActivity.shared.enter(.metrics)
-        var endpoint = credentials.baseURL
-        endpoint.append(path: credentials.apiPath("health/batch"))
-
         let metrics = await collectMetrics()
-        let payload = BridgeBatchPayload(deviceID: credentials.deviceID, metrics: metrics)
-
-        var request = authorizedRequest(url: endpoint, method: "POST", credentials: credentials)
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try encoder.encode(payload)
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-        let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
-        guard (200..<300).contains(statusCode) else {
-            throw Self.bridgeError(from: data, statusCode: statusCode)
-        }
+        try await uploadMetrics(metrics, credentials: credentials)
 
         await SyncActivity.shared.enter(.uploadWorkouts)
         let uploadedAppleHealthWorkouts = try await uploadAppleHealthWorkoutDelta(credentials: credentials)
@@ -505,6 +532,7 @@ final class BridgeSyncService {
 
     @discardableResult
     func fullResyncAppleHealthWorkouts() async throws -> Int {
+        guard isSharingEnabled(BridgeDataTypeDescriptor.workoutsID) else { return 0 }
         let credentials = try await bridgeCredentials()
         let workouts = try await health.fetchAllWorkouts()
         let uploadableWorkouts = visibleAppleHealthWorkouts(workouts)
@@ -518,6 +546,320 @@ final class BridgeSyncService {
         return uploaded
     }
 
+    /// One explicit, repeatable backfill. HealthKit is aggregated by hour
+    /// before upload because Home Assistant stores long-term statistics at
+    /// hourly resolution too.
+    @discardableResult
+    func importAllHistory() async throws -> BridgeHistoryImportResult {
+        let credentials = try await bridgeCredentials()
+
+        // Establish all current entities first. Historical chunks attach to
+        // those entity IDs; they never create detached external statistics.
+        _ = try await runSync()
+
+        var uploadedWorkouts = 0
+        if isSharingEnabled(BridgeDataTypeDescriptor.workoutsID) {
+            let workouts = try await health.fetchAllWorkouts()
+            let visibleWorkouts = visibleAppleHealthWorkouts(workouts)
+            uploadedWorkouts = try await uploadAppleHealthWorkouts(
+                visibleWorkouts,
+                credentials: credentials
+            )
+            _ = try await reconcileAppleHealthWorkouts(
+                workouts: workouts,
+                credentials: credentials
+            )
+            await HealthWorkoutCacheStore.shared.saveAllTime(workouts)
+            rememberAppleHealthUploadCutoff(from: workouts)
+        }
+
+        var metricCount = 0
+        var pointCount = 0
+        for metric in HealthMetric.all {
+            guard isSharingEnabled(metric.id) else { continue }
+            guard let history = try? await health.fetchHourlyHistory(for: metric),
+                  !history.isEmpty else { continue }
+
+            let seed: BridgeMetricPayload
+            if let latest = try? await health.latestValueWithDate(for: metric) {
+                seed = metric.payload(value: latest.value,
+                                      measuredAt: latest.measuredAt ?? .now)
+            } else {
+                // A cumulative type with older data but nothing today still
+                // needs an entity; zero is its correct current daily value.
+                seed = metric.payload(value: 0, measuredAt: .now)
+            }
+            try await uploadMetrics([seed], credentials: credentials)
+
+            let points = history.map { point in
+                BridgeHistoryPointPayload(
+                    start: point.date,
+                    state: point.state.map { $0 * metric.displayScale },
+                    sum: point.sum.map { $0 * metric.displayScale },
+                    mean: point.mean.map { $0 * metric.displayScale },
+                    min: point.minimum.map { $0 * metric.displayScale },
+                    max: point.maximum.map { $0 * metric.displayScale }
+                )
+            }
+            pointCount += try await uploadHistory(
+                points,
+                metricID: metric.bridgeID,
+                category: metric.category.rawValue,
+                credentials: credentials
+            )
+            metricCount += 1
+        }
+
+        let sleepResult = try await importSleepHistory(credentials: credentials)
+        metricCount += sleepResult.metrics
+        pointCount += sleepResult.points
+
+        let cycleResult = try await importCycleHistory(credentials: credentials)
+        metricCount += cycleResult.metrics
+        pointCount += cycleResult.points
+
+        let workoutRows = try await importWorkoutHistory(credentials: credentials)
+        defaults.set(Date(), forKey: BridgeSettings.lastSyncDateKey)
+        BackgroundSyncScheduler.schedule()
+        await WorkoutRecordRefreshService.shared.refreshFromLocalCaches()
+        return BridgeHistoryImportResult(metricCount: metricCount,
+                                         pointCount: pointCount,
+                                         workoutCount: uploadedWorkouts,
+                                         workoutRows: workoutRows)
+    }
+
+    private func uploadMetrics(_ metrics: [BridgeMetricPayload],
+                               credentials: BridgeCredentials) async throws {
+        guard !metrics.isEmpty else { return }
+        var endpoint = credentials.baseURL
+        endpoint.append(path: credentials.apiPath("health/batch"))
+        let payload = BridgeBatchPayload(deviceID: credentials.deviceID,
+                                         metrics: metrics)
+        var request = authorizedRequest(url: endpoint,
+                                        method: "POST",
+                                        credentials: credentials)
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try encoder.encode(payload)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200..<300).contains(statusCode) else {
+            throw Self.bridgeError(from: data, statusCode: statusCode)
+        }
+    }
+
+    private func uploadHistory(_ points: [BridgeHistoryPointPayload],
+                               metricID: String,
+                               category: String,
+                               credentials: BridgeCredentials) async throws -> Int {
+        let chunkSize = 4_000
+        var accepted = 0
+        var offset = 0
+        while offset < points.count {
+            let end = min(offset + chunkSize, points.count)
+            let chunk = Array(points[offset..<end])
+            let payload = BridgeMetricHistoryBatchPayload(deviceID: credentials.deviceID,
+                                                          category: category,
+                                                          metricID: metricID,
+                                                          points: chunk)
+            var endpoint = credentials.baseURL
+            endpoint.append(path: credentials.apiPath("history/metrics"))
+
+            var attempts = 0
+            while true {
+                var request = authorizedRequest(url: endpoint,
+                                                method: "POST",
+                                                credentials: credentials)
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                request.httpBody = try encoder.encode(payload)
+                let (data, response) = try await URLSession.shared.data(for: request)
+                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+                if (200..<300).contains(statusCode) {
+                    let result = try decoder.decode(BridgeMetricHistoryResponse.self,
+                                                    from: data)
+                    accepted += result.accepted
+                    break
+                }
+                // A freshly seeded entity is added asynchronously by Home
+                // Assistant. Give its registry a brief moment, then retry the
+                // exact same idempotent chunk.
+                if statusCode == 409 && attempts < 4 {
+                    attempts += 1
+                    try await Task.sleep(for: .milliseconds(250))
+                    continue
+                }
+                throw Self.bridgeError(from: data, statusCode: statusCode)
+            }
+            offset = end
+        }
+        return accepted
+    }
+
+    private func importWorkoutHistory(credentials: BridgeCredentials) async throws -> Int {
+        guard isSharingEnabled(BridgeDataTypeDescriptor.workoutsID) else { return 0 }
+        var endpoint = credentials.baseURL
+        endpoint.append(path: credentials.apiPath("history/workouts"))
+        let request = authorizedRequest(url: endpoint,
+                                        method: "POST",
+                                        credentials: credentials)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200..<300).contains(statusCode) else {
+            throw Self.bridgeError(from: data, statusCode: statusCode)
+        }
+        return try decoder.decode(BridgeWorkoutHistoryResponse.self, from: data).rows
+    }
+
+    private func importSleepHistory(
+        credentials: BridgeCredentials
+    ) async throws -> (metrics: Int, points: Int) {
+        let sessions = try await health.fetchSleep(
+            interval: DateInterval(start: Date(timeIntervalSince1970: 0), end: .now)
+        )
+        guard let latest = sessions.first else { return (0, 0) }
+        let measuredAt = latest.end
+
+        let series: [(BridgeMetricPayload, [(Date, Double)])] = [
+            (.duration(id: "sleep_duration", category: .sleep, title: "Schlafdauer",
+                       seconds: latest.asleep, measuredAt: measuredAt),
+             sessions.map { ($0.end, $0.asleep / 3600) }),
+            (.duration(id: "sleep_time_in_bed", category: .sleep, title: "Zeit im Bett",
+                       seconds: latest.timeInBed, measuredAt: measuredAt),
+             sessions.map { ($0.end, $0.timeInBed / 3600) }),
+            (.percentage(id: "sleep_efficiency", category: .sleep, title: "Schlafeffizienz",
+                         value: latest.efficiency * 100, measuredAt: measuredAt),
+             sessions.map { ($0.end, $0.efficiency * 100) }),
+            (.duration(id: "sleep_deep_duration", category: .sleep, title: "Tiefschlaf",
+                       seconds: latest.deep, measuredAt: measuredAt),
+             sessions.map { ($0.end, $0.deep / 3600) }),
+            (.duration(id: "sleep_core_duration", category: .sleep, title: "Core-Schlaf",
+                       seconds: latest.core, measuredAt: measuredAt),
+             sessions.map { ($0.end, $0.core / 3600) }),
+            (.duration(id: "sleep_rem_duration", category: .sleep, title: "REM-Schlaf",
+                       seconds: latest.rem, measuredAt: measuredAt),
+             sessions.map { ($0.end, $0.rem / 3600) }),
+            (.duration(id: "sleep_awake_duration", category: .sleep, title: "Wachzeit",
+                       seconds: latest.awake, measuredAt: measuredAt),
+             sessions.map { ($0.end, $0.awake / 3600) }),
+        ]
+
+        var metricCount = 0
+        var pointCount = 0
+        for (seed, values) in series {
+            guard isSharingEnabled(seed.id) else { continue }
+            let points = Self.measurementHistoryPoints(values)
+            guard !points.isEmpty else { continue }
+            try await uploadMetrics([seed], credentials: credentials)
+            pointCount += try await uploadHistory(points,
+                                                  metricID: seed.id,
+                                                  category: seed.category,
+                                                  credentials: credentials)
+            metricCount += 1
+        }
+        return (metricCount, pointCount)
+    }
+
+    private static func measurementHistoryPoints(
+        _ values: [(Date, Double)]
+    ) -> [BridgeHistoryPointPayload] {
+        var utc = Calendar(identifier: .gregorian)
+        utc.timeZone = TimeZone(secondsFromGMT: 0)!
+        var buckets: [Date: [Double]] = [:]
+        for (date, value) in values where value.isFinite {
+            guard let hour = utc.dateInterval(of: .hour, for: date)?.start else { continue }
+            buckets[hour, default: []].append(value)
+        }
+        return buckets.keys.sorted().compactMap { start in
+            guard let bucket = buckets[start], !bucket.isEmpty else { return nil }
+            return BridgeHistoryPointPayload(start: start,
+                                             state: nil,
+                                             sum: nil,
+                                             mean: bucket.reduce(0, +) / Double(bucket.count),
+                                             min: bucket.min(),
+                                             max: bucket.max())
+        }
+    }
+
+    private func importCycleHistory(
+        credentials: BridgeCredentials
+    ) async throws -> (metrics: Int, points: Int) {
+        let calendar = Calendar.healthApp
+        let interval = DateInterval(start: Date(timeIntervalSince1970: 0), end: .now)
+        let days = try await health.fetchCycleDays(interval: interval)
+        let cycles = HealthKitManager.cycles(from: days)
+        guard !cycles.isEmpty else { return (0, 0) }
+
+        var cycleDayValues: [(Date, Double)] = []
+        var bleedingDayValues: [(Date, Double)] = []
+        var averageLengthValues: [(Date, Double)] = []
+        var averagePeriodValues: [(Date, Double)] = []
+        var completedLengths: [Int] = []
+        var completedPeriods: [Int] = []
+
+        for cycle in cycles {
+            let lastDay: Date
+            if let nextStart = cycle.nextStart {
+                lastDay = calendar.date(byAdding: .day, value: -1, to: nextStart)
+                    ?? nextStart
+            } else {
+                lastDay = calendar.startOfDay(for: .now)
+            }
+
+            var date = calendar.startOfDay(for: cycle.start)
+            var cycleDay = 1
+            while date <= lastDay {
+                cycleDayValues.append((date, Double(cycleDay)))
+                guard let next = calendar.date(byAdding: .day, value: 1, to: date),
+                      next > date else { break }
+                date = next
+                cycleDay += 1
+            }
+
+            bleedingDayValues.append((cycle.periodEnd, Double(cycle.bleedingDays)))
+            if let length = cycle.lengthInDays,
+               let completedAt = cycle.nextStart {
+                completedLengths.append(length)
+                completedPeriods.append(cycle.periodLengthInDays)
+                averageLengthValues.append(
+                    (completedAt,
+                     Double(completedLengths.reduce(0, +)) / Double(completedLengths.count))
+                )
+                averagePeriodValues.append(
+                    (completedAt,
+                     Double(completedPeriods.reduce(0, +)) / Double(completedPeriods.count))
+                )
+            }
+        }
+
+        let rawSeries: [(id: String, title: String, values: [(Date, Double)])] = [
+            ("cycle_current_day", "Zyklustag", cycleDayValues),
+            ("cycle_average_length", "Ø Zykluslänge", averageLengthValues),
+            ("cycle_average_period_length", "Ø Periodendauer", averagePeriodValues),
+            ("cycle_bleeding_days", "Blutungstage", bleedingDayValues),
+        ]
+
+        var metricCount = 0
+        var pointCount = 0
+        for item in rawSeries {
+            guard isSharingEnabled(item.id) else { continue }
+            let points = Self.measurementHistoryPoints(item.values)
+            guard let latest = item.values.max(by: { $0.0 < $1.0 }),
+                  !points.isEmpty else { continue }
+            let seed = BridgeMetricPayload.count(id: item.id,
+                                                 category: .cycle,
+                                                 title: item.title,
+                                                 value: latest.1,
+                                                 measuredAt: latest.0)
+            try await uploadMetrics([seed], credentials: credentials)
+            pointCount += try await uploadHistory(points,
+                                                  metricID: item.id,
+                                                  category: HealthCategory.cycle.rawValue,
+                                                  credentials: credentials)
+            metricCount += 1
+        }
+        return (metricCount, pointCount)
+    }
+
     func deleteImportedWorkout(id: UUID) async throws {
         try await deleteImportedWorkout(id: id, credentials: try await bridgeCredentials())
     }
@@ -527,73 +869,81 @@ final class BridgeSyncService {
         var out: [BridgeMetricPayload] = []
 
         for metric in HealthMetric.all {
+            guard isSharingEnabled(metric.id) else { continue }
             guard let value = try? await health.currentValue(for: metric) else { continue }
             out.append(metric.payload(value: value, measuredAt: now))
         }
 
         if let sleep = (try? await health.fetchSleep(in: .week))?.first {
             let sleepMeasuredAt = sleep.end
-            out.append(.duration(id: "sleep_duration",
-                                 category: .sleep,
-                                 title: "Schlafdauer",
-                                 seconds: sleep.asleep,
-                                 measuredAt: sleepMeasuredAt))
-            out.append(.duration(id: "sleep_time_in_bed",
-                                 category: .sleep,
-                                 title: "Zeit im Bett",
-                                 seconds: sleep.timeInBed,
-                                 measuredAt: sleepMeasuredAt))
-            out.append(.percentage(id: "sleep_efficiency",
-                                   category: .sleep,
-                                   title: "Schlafeffizienz",
-                                   value: sleep.efficiency * 100,
-                                   measuredAt: sleepMeasuredAt))
-            out.append(.duration(id: "sleep_deep_duration",
-                                 category: .sleep,
-                                 title: "Tiefschlaf",
-                                 seconds: sleep.deep,
-                                 measuredAt: sleepMeasuredAt))
-            out.append(.duration(id: "sleep_core_duration",
-                                 category: .sleep,
-                                 title: "Core-Schlaf",
-                                 seconds: sleep.core,
-                                 measuredAt: sleepMeasuredAt))
-            out.append(.duration(id: "sleep_rem_duration",
-                                 category: .sleep,
-                                 title: "REM-Schlaf",
-                                 seconds: sleep.rem,
-                                 measuredAt: sleepMeasuredAt))
-            out.append(.duration(id: "sleep_awake_duration",
-                                 category: .sleep,
-                                 title: "Wachzeit",
-                                 seconds: sleep.awake,
-                                 measuredAt: sleepMeasuredAt))
+            let sleepMetrics: [BridgeMetricPayload] = [
+                .duration(id: "sleep_duration",
+                          category: .sleep,
+                          title: "Schlafdauer",
+                          seconds: sleep.asleep,
+                          measuredAt: sleepMeasuredAt),
+                .duration(id: "sleep_time_in_bed",
+                          category: .sleep,
+                          title: "Zeit im Bett",
+                          seconds: sleep.timeInBed,
+                          measuredAt: sleepMeasuredAt),
+                .percentage(id: "sleep_efficiency",
+                            category: .sleep,
+                            title: "Schlafeffizienz",
+                            value: sleep.efficiency * 100,
+                            measuredAt: sleepMeasuredAt),
+                .duration(id: "sleep_deep_duration",
+                          category: .sleep,
+                          title: "Tiefschlaf",
+                          seconds: sleep.deep,
+                          measuredAt: sleepMeasuredAt),
+                .duration(id: "sleep_core_duration",
+                          category: .sleep,
+                          title: "Core-Schlaf",
+                          seconds: sleep.core,
+                          measuredAt: sleepMeasuredAt),
+                .duration(id: "sleep_rem_duration",
+                          category: .sleep,
+                          title: "REM-Schlaf",
+                          seconds: sleep.rem,
+                          measuredAt: sleepMeasuredAt),
+                .duration(id: "sleep_awake_duration",
+                          category: .sleep,
+                          title: "Wachzeit",
+                          seconds: sleep.awake,
+                          measuredAt: sleepMeasuredAt),
+            ]
+            out.append(contentsOf: sleepMetrics.filter { isSharingEnabled($0.id) })
         }
 
         if let cycle = try? await health.fetchCycleOverview(), cycle.hasData {
             let measuredAt = cycle.currentCycle?.start ?? now
-            if let day = cycle.currentCycleDay {
+            if isSharingEnabled("cycle_current_day"),
+               let day = cycle.currentCycleDay {
                 out.append(.count(id: "cycle_current_day",
                                   category: .cycle,
                                   title: "Zyklustag",
                                   value: Double(day),
                                   measuredAt: now))
             }
-            if let average = cycle.averageCycleLength {
+            if isSharingEnabled("cycle_average_length"),
+               let average = cycle.averageCycleLength {
                 out.append(.count(id: "cycle_average_length",
                                   category: .cycle,
                                   title: "Ø Zykluslänge",
                                   value: Double(average),
                                   measuredAt: measuredAt))
             }
-            if let period = cycle.averagePeriodLength {
+            if isSharingEnabled("cycle_average_period_length"),
+               let period = cycle.averagePeriodLength {
                 out.append(.count(id: "cycle_average_period_length",
                                   category: .cycle,
                                   title: "Ø Periodendauer",
                                   value: Double(period),
                                   measuredAt: measuredAt))
             }
-            if let current = cycle.currentCycle {
+            if isSharingEnabled("cycle_bleeding_days"),
+               let current = cycle.currentCycle {
                 out.append(.count(id: "cycle_bleeding_days",
                                   category: .cycle,
                                   title: "Blutungstage",
@@ -602,18 +952,59 @@ final class BridgeSyncService {
             }
         }
 
-        let workoutCount = await HealthWorkoutCacheStore.shared.countAllTime()
-        out.append(BridgeMetricPayload(id: "workout_count_all_time",
-                                       category: HealthCategory.workouts.rawValue,
-                                       title: "Workouts gesamt",
-                                       value: Double(workoutCount),
-                                       unit: "",
-                                       measuredAt: now,
-                                       aggregation: "sum",
-                                       icon: "mdi:run",
-                                       deviceClass: nil,
-                                       stateClass: "total"))
+        // Ziele: Zielwert und Erfuellungsgrad. Beides gehoert nach drueben,
+        // sonst laesst sich in Home Assistant nicht automatisieren ("Ring
+        // geschlossen"), ohne das Ziel dort ein zweites Mal zu pflegen.
+        for goal in ActivityGoalStore.goals(defaults: defaults) {
+            let syncID = ActivityGoalStore.syncID(for: goal)
+            guard isSharingEnabled(syncID) else { continue }
+            guard let metric = goal.metric else { continue }
+            let title = ActivityGoalStore.syncTitle(for: goal)
+            out.append(BridgeMetricPayload(id: syncID,
+                                           category: metric.category.rawValue,
+                                           title: title,
+                                           value: goal.target * metric.displayScale,
+                                           unit: metric.unitSymbol,
+                                           measuredAt: now,
+                                           aggregation: "latest",
+                                           icon: "mdi:target",
+                                           deviceClass: nil,
+                                           stateClass: "measurement",
+                                           displayPrecision: metric.fractionDigits))
+            let reached = await health.progressValue(for: goal, referenceDate: now)
+            let progress = goal.target > 0 ? min(reached / goal.target * 100, 999) : 0
+            out.append(BridgeMetricPayload(id: "\(syncID)_progress",
+                                           category: metric.category.rawValue,
+                                           title: L10n.format("%@ erreicht", title),
+                                           value: progress,
+                                           unit: "%",
+                                           measuredAt: now,
+                                           aggregation: "average",
+                                           icon: "mdi:target",
+                                           deviceClass: nil,
+                                           stateClass: "measurement",
+                                           displayPrecision: 0))
+        }
+
+        if isSharingEnabled(BridgeDataTypeDescriptor.workoutsID) {
+            let workoutCount = await HealthWorkoutCacheStore.shared.countAllTime()
+            out.append(BridgeMetricPayload(id: "workout_count_all_time",
+                                           category: HealthCategory.workouts.rawValue,
+                                           title: "Workouts gesamt",
+                                           value: Double(workoutCount),
+                                           unit: "",
+                                           measuredAt: now,
+                                           aggregation: "sum",
+                                           icon: "mdi:run",
+                                           deviceClass: nil,
+                                           stateClass: "total",
+                                           displayPrecision: 0))
+        }
         return out
+    }
+
+    private func isSharingEnabled(_ dataTypeID: String) -> Bool {
+        BridgeDataSharingSettings.isEnabled(dataTypeID, defaults: defaults)
     }
 
     static func bridgeErrorMessage(from data: Data, statusCode: Int) -> String? {
@@ -695,6 +1086,7 @@ final class BridgeSyncService {
     }
 
     private func uploadLocalWorkouts(credentials: BridgeCredentials) async throws -> Int {
+        guard isSharingEnabled(BridgeDataTypeDescriptor.workoutsID) else { return 0 }
         let workouts = await LocalWorkoutStore.shared.load()
             .filter { [.manual, .gpx, .tcx].contains($0.source) }
         guard !workouts.isEmpty else { return 0 }
@@ -704,6 +1096,7 @@ final class BridgeSyncService {
     }
 
     private func uploadAppleHealthWorkoutDelta(credentials: BridgeCredentials) async throws -> Int {
+        guard isSharingEnabled(BridgeDataTypeDescriptor.workoutsID) else { return 0 }
         let cutoff = appleHealthUploadCutoff()
         let workouts: [WorkoutSummary]
         if let cutoff {
@@ -725,6 +1118,7 @@ final class BridgeSyncService {
 
     private func uploadAppleHealthWorkouts(_ workouts: [WorkoutSummary],
                                            credentials: BridgeCredentials) async throws -> Int {
+        guard isSharingEnabled(BridgeDataTypeDescriptor.workoutsID) else { return 0 }
         var uploaded = 0
         let batchSize = 500
         for start in stride(from: 0, to: workouts.count, by: batchSize) {
@@ -758,6 +1152,7 @@ final class BridgeSyncService {
 
     private func reconcileAppleHealthWorkouts(workouts: [WorkoutSummary],
                                              credentials: BridgeCredentials) async throws -> Int {
+        guard isSharingEnabled(BridgeDataTypeDescriptor.workoutsID) else { return 0 }
         var endpoint = credentials.baseURL
         endpoint.append(path: credentials.apiPath("workouts/imports/reconcile"))
 
@@ -788,7 +1183,9 @@ final class BridgeSyncService {
             return 0
         }
         await HealthWorkoutCacheStore.shared.mergeAllTime(workouts)
-        rememberAppleHealthUploadCutoff(from: workouts)
+        if isSharingEnabled(BridgeDataTypeDescriptor.workoutsID) {
+            rememberAppleHealthUploadCutoff(from: workouts)
+        }
         defaults.set(syncStartedAt.addingTimeInterval(-30), forKey: BridgeSettings.appleHealthWorkoutPackageCursorKey)
         return workouts.count
     }
@@ -928,6 +1325,7 @@ final class BridgeSyncService {
         _ workouts: [LocalWorkout],
         credentials: BridgeCredentials
     ) async throws -> Int {
+        guard isSharingEnabled(BridgeDataTypeDescriptor.workoutsID) else { return 0 }
         guard !workouts.isEmpty else { return 0 }
 
         var endpoint = credentials.baseURL
@@ -1175,6 +1573,16 @@ final class BridgeSyncService {
 
 }
 
+// Nicht fileprivate: die Ziele leiten ihre Kennung fuer Home Assistant aus
+// derselben Regel ab und muessen dieselbe Schreibweise treffen.
+extension HealthMetric {
+    var bridgeID: String {
+        let raw = quantityTypeIdentifier.rawValue
+            .replacingOccurrences(of: "HKQuantityTypeIdentifier", with: "")
+        return raw.snakeCased()
+    }
+}
+
 private extension HealthMetric {
     func payload(value: Double, measuredAt: Date) -> BridgeMetricPayload {
         BridgeMetricPayload(id: bridgeID,
@@ -1186,13 +1594,12 @@ private extension HealthMetric {
                             aggregation: aggregation == .cumulativeSum ? "sum" : "average",
                             icon: mdiIcon,
                             deviceClass: deviceClass,
-                            stateClass: aggregation == .cumulativeSum ? "total" : "measurement")
-    }
-
-    var bridgeID: String {
-        let raw = quantityTypeIdentifier.rawValue
-            .replacingOccurrences(of: "HKQuantityTypeIdentifier", with: "")
-        return raw.snakeCased()
+                            // HealthKit sends today's running total. It resets
+                            // at midnight, so HA must detect the new cycle.
+                            stateClass: aggregation == .cumulativeSum
+                                ? "total_increasing"
+                                : "measurement",
+                            displayPrecision: fractionDigits)
     }
 
     var deviceClass: String? {
@@ -1232,7 +1639,8 @@ private extension BridgeMetricPayload {
                             aggregation: "latest",
                             icon: "mdi:sleep",
                             deviceClass: "duration",
-                            stateClass: "measurement")
+                            stateClass: "measurement",
+                            displayPrecision: 1)
     }
 
     static func percentage(id: String,
@@ -1249,7 +1657,8 @@ private extension BridgeMetricPayload {
                             aggregation: "average",
                             icon: "mdi:sleep",
                             deviceClass: nil,
-                            stateClass: "measurement")
+                            stateClass: "measurement",
+                            displayPrecision: 0)
     }
 
     /// Ganze Tage o. Ae. – einheitenlose Zaehlwerte.
@@ -1267,7 +1676,8 @@ private extension BridgeMetricPayload {
                             aggregation: "latest",
                             icon: "mdi:water",
                             deviceClass: nil,
-                            stateClass: "measurement")
+                            stateClass: "measurement",
+                            displayPrecision: 0)
     }
 }
 

@@ -8,35 +8,48 @@
 import CoreLocation
 import Foundation
 
+/// Ergebnis der Dateianalyse. `containsDate` bleibt getrennt vom Workout, weil
+/// `LocalWorkout` aus Kompatibilitaetsgruenden immer einen Startwert braucht.
+/// Eine GPX-Datei ohne Zeitstempel darf dadurch nicht mehr stillschweigend als
+/// Training von "jetzt" gespeichert werden.
+struct WorkoutFileImport: Identifiable {
+    let id = UUID()
+    let workout: LocalWorkout
+    let containsDate: Bool
+}
+
 enum WorkoutFileImporter {
-    static func importWorkout(from url: URL) throws -> LocalWorkout {
+    static func analyze(from url: URL) throws -> WorkoutFileImport {
         let data = try Data(contentsOf: url)
         let ext = url.pathExtension.lowercased()
         let parser = WorkoutXMLParser(source: ext == "tcx" ? .tcx : .gpx)
         let points = try parser.parse(data: data)
-        let sorted = points.sorted {
-            ($0.timestamp ?? .distantPast) < ($1.timestamp ?? .distantPast)
-        }
-        let start = sorted.compactMap(\.timestamp).first ?? .now
-        let fallbackEnd = sorted.compactMap(\.timestamp).last ?? start
+        // GPX/TCX-Punkte stehen bereits in Streckenreihenfolge. Das ist gerade
+        // bei komplett undatierten Dateien wichtig und vermeidet, dass Punkte
+        // ohne Zeitstempel vor die restliche Route sortiert werden.
+        let timestamps = points.compactMap(\.timestamp)
+        let containsDate = !timestamps.isEmpty || parser.documentDate != nil
+        let start = timestamps.min() ?? parser.documentDate ?? .now
+        let fallbackEnd = timestamps.max() ?? start
         let end = parser.totalTimeSeconds.map { start.addingTimeInterval($0) } ?? fallbackEnd
-        let distanceKm = parser.distanceMeters.map { $0 / 1000 } ?? routeDistance(sorted)
-        let heartRates = sorted.compactMap(\.heartRate)
+        let distanceKm = parser.distanceMeters.map { $0 / 1000 } ?? routeDistance(points)
+        let heartRates = points.compactMap(\.heartRate)
 
-        return LocalWorkout(id: UUID(),
-	                            source: ext == "tcx" ? .tcx : .gpx,
-	                            sport: parser.detectedSport ?? inferredSport(from: url),
-                            title: url.deletingPathExtension().lastPathComponent,
-	                            start: start,
-	                            end: end,
-	                            distanceKm: distanceKm > 0 ? distanceKm : nil,
-	                            energyKcal: parser.calories,
-	                            averageHeartRate: average(heartRates),
-	                            maxHeartRate: heartRates.max(),
-                            notes: "",
-                            weather: nil,
-                            injury: nil,
-                            route: sorted)
+        let workout = LocalWorkout(id: UUID(),
+                                   source: ext == "tcx" ? .tcx : .gpx,
+                                   sport: parser.detectedSport ?? inferredSport(from: url),
+                                   title: url.deletingPathExtension().lastPathComponent,
+                                   start: start,
+                                   end: end,
+                                   distanceKm: distanceKm > 0 ? distanceKm : nil,
+                                   energyKcal: parser.calories,
+                                   averageHeartRate: average(heartRates),
+                                   maxHeartRate: heartRates.max(),
+                                   notes: "",
+                                   weather: nil,
+                                   injury: nil,
+                                   route: points)
+        return WorkoutFileImport(workout: workout, containsDate: containsDate)
     }
 
     private static func average(_ values: [Double]) -> Double? {
@@ -72,6 +85,7 @@ final class WorkoutXMLParser: NSObject, XMLParserDelegate {
     private(set) var totalTimeSeconds: Double?
     private(set) var distanceMeters: Double?
     private(set) var calories: Double?
+    private(set) var documentDate: Date?
     private let source: LocalWorkout.Source
     private var points: [LocalRoutePoint] = []
     private var currentPoint: LocalRoutePoint?
@@ -121,6 +135,11 @@ final class WorkoutXMLParser: NSObject, XMLParserDelegate {
             detectedSport = normalizeSport(sport)
         }
 
+        if source == .tcx, name == "lap",
+           let value = attributeDict["StartTime"] ?? attributeDict["starttime"] {
+            documentDate = documentDate ?? parseDate(value)
+        }
+
         if name == "heartratebpm" || name == "heartrate" || name == "hr" {
             inHeartRate = true
         }
@@ -144,13 +163,23 @@ final class WorkoutXMLParser: NSObject, XMLParserDelegate {
             appendCurrentPoint()
             inTrackpoint = false
         case "time":
-            currentPoint?.timestamp = parseDate(text)
+            if currentPoint != nil {
+                currentPoint?.timestamp = parseDate(text)
+            } else {
+                documentDate = documentDate ?? parseDate(text)
+            }
+        case "id":
+            if source == .tcx {
+                documentDate = documentDate ?? parseDate(text)
+            }
         case "ele", "altitudemeters":
             currentPoint?.elevation = Double(text)
         case "totaltimeseconds":
             totalTimeSeconds = Double(text)
         case "distancemeters":
-            if distanceMeters == nil { distanceMeters = Double(text) }
+            if let value = Double(text) {
+                distanceMeters = max(distanceMeters ?? 0, value)
+            }
         case "calories":
             calories = Double(text)
         case "latitudedegrees":
@@ -162,6 +191,11 @@ final class WorkoutXMLParser: NSObject, XMLParserDelegate {
         case "type", "sport":
             if detectedSport == nil { detectedSport = normalizeSport(text) }
         case "heartratebpm", "heartrate", "hr":
+            // GPX-Erweiterungen schreiben den Puls oft direkt in `<hr>`, TCX
+            // dagegen in ein verschachteltes `<Value>`.
+            if let value = Double(text) {
+                currentPoint?.heartRate = value
+            }
             inHeartRate = false
         default:
             break

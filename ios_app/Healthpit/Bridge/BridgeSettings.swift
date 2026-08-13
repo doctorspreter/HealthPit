@@ -25,6 +25,8 @@ enum BridgeSettings {
     nonisolated static let syncEnabledKey = "bridgeSyncEnabled"
     nonisolated static let syncIntervalKey = "bridgeSyncInterval"
     nonisolated static let lastSyncDateKey = "bridgeLastSyncDate"
+    nonisolated static let historyImportPromptHandledKey = "bridgeHistoryImportPromptHandled"
+    nonisolated static let lastHistoryImportDateKey = "bridgeLastHistoryImportDate"
     nonisolated static let lastLocalRefreshDateKey = "lastLocalRefreshDate"
     nonisolated static let appleHealthWorkoutUploadCutoffKey = "bridgeAppleHealthWorkoutUploadCutoff"
     nonisolated static let appleHealthWorkoutPackageCursorKey = "bridgeAppleHealthWorkoutPackageCursor"

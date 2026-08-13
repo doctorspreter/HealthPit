@@ -10,7 +10,17 @@ three modes without knowing where the data came from.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from math import isfinite
 from typing import Any
+
+from .metrics import (
+    DEFAULT_INGEST_PROVIDER,
+    DEFAULT_ORIGIN_PROVIDER,
+    PROVIDERS,
+    canonical_metric_id,
+    provisional_metric_id,
+    registry_category,
+)
 
 CATEGORIES = {
     "activity",
@@ -48,6 +58,7 @@ MAX_EXERCISES_PER_WORKOUT = 500
 MAX_SETS_PER_EXERCISE = 1000
 MAX_ROUTE_POINTS = 20000
 MAX_RECONCILE_IDS = 50000
+MAX_HISTORY_POINTS_PER_BATCH = 5000
 
 # Ein Lauf traegt einige tausend GPS-Punkte. So viele braucht niemand, um die
 # Strecke zu erkennen, und sie machen den Speicher unnoetig gross.
@@ -100,8 +111,8 @@ def _number(value: Any) -> float | None:
         number = float(value)
     except (TypeError, ValueError):
         return None
-    # NaN compares unequal to itself and would poison every later aggregation.
-    return number if number == number else None
+    # NaN and infinities would poison later aggregations and JSON storage.
+    return number if isfinite(number) else None
 
 
 def _required_number(value: Any, *, field: str) -> float:
@@ -138,6 +149,20 @@ def _timestamp(value: str | None) -> float | None:
         return None
 
 
+def _provider_code(value: Any, default: str) -> str:
+    """A three-letter provider code, or the default when nothing usable came."""
+    if not isinstance(value, str):
+        return default
+    code = value.strip().upper()
+    if code in PROVIDERS:
+        return code
+    if len(code) == 3 and code.isalpha():
+        # An unknown provider is fine: the registry is meant to grow. Only the
+        # shape is enforced here.
+        return code
+    return default
+
+
 def normalize_metric(raw: Any) -> dict[str, Any]:
     """Validate one health metric and return it in bridge-API shape."""
     if not isinstance(raw, dict):
@@ -158,8 +183,57 @@ def normalize_metric(raw: Any) -> dict[str, Any]:
     if state_class is not None and state_class not in STATE_CLASSES:
         raise PayloadError(f"state_class must be one of {sorted(STATE_CLASSES)}")
 
+    display_precision = raw.get("display_precision", raw.get("displayPrecision"))
+    if display_precision is not None:
+        if (
+            isinstance(display_precision, bool)
+            or not isinstance(display_precision, int)
+            or not 0 <= display_precision <= 6
+        ):
+            raise PayloadError("display_precision must be an integer from 0 to 6")
+
+    legacy_id = _required_text(raw.get("id"), field="id", max_length=120)
+
+    # The canonical id may come with the payload; otherwise it is derived from
+    # the id the app has always sent. Unknown values keep a provisional id so
+    # they stay visible instead of vanishing.
+    origin_provider = _provider_code(
+        _first(raw, "origin_provider", "originProvider"), DEFAULT_ORIGIN_PROVIDER
+    )
+    ingest_provider = _provider_code(
+        _first(raw, "ingest_provider", "ingestProvider"), DEFAULT_INGEST_PROVIDER
+    )
+    canonical = canonical_metric_id(
+        _first(raw, "metric_id", "metricId")
+    ) or canonical_metric_id(legacy_id) or provisional_metric_id(origin_provider, legacy_id)
+
     return {
-        "metric_id": _required_text(raw.get("id"), field="id", max_length=120),
+        # The storage key stays the id the app has always sent, so existing
+        # sensors keep their entity id and their history.
+        "metric_id": legacy_id,
+        "legacy_metric_id": legacy_id,
+        "canonical_metric_id": canonical,
+        "registry_category": registry_category(canonical) if canonical else None,
+        "origin_provider": origin_provider,
+        "ingest_provider": ingest_provider,
+        "source_app_id": _text(
+            _first(raw, "source_app_id", "sourceAppId"), field="source_app_id", max_length=120
+        )
+        or None,
+        "observation_id": _text(
+            _first(raw, "observation_id", "observationId"),
+            field="observation_id",
+            max_length=64,
+        )
+        or None,
+        "unit_code": _text(
+            _first(raw, "unit_code", "unitCode"), field="unit_code", max_length=16
+        )
+        or None,
+        "period_type": _text(
+            _first(raw, "period_type", "periodType"), field="period_type", max_length=16
+        )
+        or None,
         "category": category,
         "title": _required_text(raw.get("title"), field="title", max_length=120),
         "value": _required_number(raw.get("value"), field="value"),
@@ -171,6 +245,7 @@ def normalize_metric(raw: Any) -> dict[str, Any]:
         "icon": raw.get("icon") or None,
         "device_class": raw.get("device_class") or None,
         "state_class": state_class,
+        "display_precision": display_precision,
     }
 
 
@@ -206,6 +281,67 @@ def normalize_health_batch(
     if not out:
         raise PayloadError("; ".join(problems) or "No usable metric in the batch")
     return device_id, out, problems
+
+
+def normalize_metric_history_batch(
+    raw: Any,
+) -> tuple[str, str, str, list[dict[str, Any]]]:
+    """Validate one chunk of hourly long-term statistics.
+
+    Metric metadata is deliberately not accepted from this endpoint. The
+    corresponding current metric must have been pushed first, and its stored
+    metadata decides the unit and whether this is a mean or a cumulative
+    series. That prevents a client from changing an existing statistic's type
+    halfway through its history.
+    """
+    if not isinstance(raw, dict):
+        raise PayloadError("The payload must be an object")
+
+    device_id = _required_text(
+        _first(raw, "device_id", "deviceId"), field="device_id", max_length=80
+    )
+    category = _required_text(raw.get("category"), field="category", max_length=40)
+    if category not in CATEGORIES:
+        raise PayloadError(f"category must be one of {sorted(CATEGORIES)}")
+    metric_id = _required_text(
+        _first(raw, "metric_id", "metricId"), field="metric_id", max_length=120
+    )
+
+    raw_points = raw.get("points")
+    if not isinstance(raw_points, list) or not raw_points:
+        raise PayloadError("points must be a non-empty list")
+    if len(raw_points) > MAX_HISTORY_POINTS_PER_BATCH:
+        raise PayloadError(
+            f"points holds more than {MAX_HISTORY_POINTS_PER_BATCH} entries"
+        )
+
+    points: list[dict[str, Any]] = []
+    previous_timestamp: float | None = None
+    for item in raw_points:
+        if not isinstance(item, dict):
+            raise PayloadError("Each history point must be an object")
+        start = _datetime_text(item.get("start"), field="start")
+        assert start is not None
+        timestamp = _timestamp(start)
+        if timestamp is None:
+            raise PayloadError("start is not a valid timestamp")
+        if previous_timestamp is not None and timestamp <= previous_timestamp:
+            raise PayloadError("history points must be strictly ordered by start")
+        previous_timestamp = timestamp
+
+        point = {"start": start}
+        for field in ("state", "sum", "mean", "min", "max"):
+            if field not in item or item[field] is None:
+                continue
+            value = _number(item[field])
+            if value is None:
+                raise PayloadError(f"{field} must be a finite number")
+            point[field] = value
+        if len(point) == 1:
+            raise PayloadError("Each history point needs statistic values")
+        points.append(point)
+
+    return device_id, category, metric_id, points
 
 
 def _normalize_set(raw: Any, *, index: int) -> dict[str, Any]:

@@ -33,6 +33,8 @@ struct HealthPitApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @AppStorage(AppLanguage.storageKey) private var appLanguageRawValue = AppLanguage.system.rawValue
     @AppStorage(MeasurementSystemSetting.storageKey) private var measurementSystemRawValue = MeasurementSystemSetting.automatic.rawValue
+    @State private var undatedImport: WorkoutFileImport?
+    @State private var availableWorkouts: [UnifiedWorkout] = []
 
     var body: some Scene {
         WindowGroup {
@@ -42,6 +44,15 @@ struct HealthPitApp: App {
                 // muss die Oberfläche daher komplett neu aufgebaut werden.
                 .id("\(appLanguageRawValue)-\(measurementSystemRawValue)")
                 .environment(\.locale, AppLanguage.from(appLanguageRawValue).locale)
+                .sheet(item: $undatedImport) { imported in
+                    UndatedWorkoutImportView(imported: imported,
+                                             workouts: availableWorkouts) { workout in
+                        Task {
+                            await LocalWorkoutStore.shared.save(workout)
+                            _ = try? await BridgeSyncService.shared.uploadLocalWorkouts()
+                        }
+                    }
+                }
                 .onOpenURL { url in
                     Task {
                         await importSharedWorkoutFile(url)
@@ -53,8 +64,24 @@ struct HealthPitApp: App {
     private func importSharedWorkoutFile(_ url: URL) async {
         let access = url.startAccessingSecurityScopedResource()
         defer { if access { url.stopAccessingSecurityScopedResource() } }
-        guard let workout = try? WorkoutFileImporter.importWorkout(from: url) else { return }
-        await LocalWorkoutStore.shared.save(workout)
-        _ = try? await BridgeSyncService.shared.uploadLocalWorkouts()
+        guard let imported = try? WorkoutFileImporter.analyze(from: url) else { return }
+        if imported.containsDate {
+            await LocalWorkoutStore.shared.save(imported.workout)
+            _ = try? await BridgeSyncService.shared.uploadLocalWorkouts()
+            return
+        }
+
+        async let local = LocalWorkoutStore.shared.loadSummaries()
+        let cachedHealth = await HealthWorkoutCacheStore.shared.loadAllTime()
+        let fetchedHealth = try? await HealthKitManager.shared.fetchAllWorkouts()
+        let health: [WorkoutSummary]
+        if let fetchedHealth, !fetchedHealth.isEmpty {
+            health = fetchedHealth.filter(\.isEligibleForLocalHealthCache)
+            await HealthWorkoutCacheStore.shared.saveAllTime(health)
+        } else {
+            health = cachedHealth
+        }
+        availableWorkouts = UnifiedWorkoutBuilder.build(health: health, local: await local)
+        undatedImport = imported
     }
 }

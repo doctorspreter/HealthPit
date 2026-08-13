@@ -142,6 +142,11 @@ actor LocalWorkoutStore {
 
     private func qualityScore(_ workout: LocalWorkout) -> Double {
         var score = workout.duration
+        // A GymPit bridge copy contains the strength-training details that
+        // Apple Health cannot represent. Prefer it decisively when an older
+        // or duplicate copy has the same timing and summary values.
+        score += Double(workout.exercises.count) * 10_000
+        score += Double(workout.exercises.flatMap(\.sets).count) * 1_000
         if let distance = workout.distanceKm { score += distance * 100 }
         score += Double(workout.route.count)
         if workout.averageHeartRate != nil { score += 500 }

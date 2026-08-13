@@ -74,13 +74,30 @@ struct CardContainer<Content: View>: View {
 
     var body: some View {
         content
-            .padding(size == .small ? 10 : 12)
+            .padding(size == .small ? 11 : 14)
             .frame(maxWidth: .infinity,
                    minHeight: size.minHeight,
                    maxHeight: size.minHeight,
                    alignment: .leading)
-            .background(Color(.secondarySystemBackground),
-                        in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .background {
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                tint.opacity(0.18),
+                                Color(.secondarySystemBackground),
+                                Color(.systemBackground),
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .strokeBorder(tint.opacity(0.2), lineWidth: 1)
+            }
+            .shadow(color: tint.opacity(0.11), radius: 12, y: 6)
             .clipped()
     }
 }

@@ -30,6 +30,10 @@ struct SleepDetailView: View {
     @State private var referenceDate = Date()
     @State private var sessions: [SleepSession] = []
     @State private var isLoading = false
+    @State private var selectedSleepTime: Date?
+    @State private var hypnogramZoomLevel = 1.0
+    @State private var selectedNightDate: Date?
+    @State private var nightlyZoomLevel = 1.0
 
     /// Reihenfolge der Y-Achse im Hypnogramm (unten → oben).
     ///
@@ -48,20 +52,24 @@ struct SleepDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
+                sleepHero
+
                 Picker("Zeitraum", selection: $range) {
                     ForEach([TimeRange.day, .week, .month, .year]) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
+                .padding(5)
+                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
 
                 periodControls
 
                 if isLoading && sessions.isEmpty {
                     ProgressView().frame(maxWidth: .infinity, minHeight: 200)
                 } else if sessions.isEmpty {
-                    ContentUnavailableView("Keine Schlafdaten",
-                                           systemImage: "bed.double",
-                                           description: Text("Für diesen Zeitraum liegen keine Schlafdaten vor."))
-                        .frame(maxWidth: .infinity, minHeight: 200)
+                    ProfessionalEmptyState(title: "Keine Schlafdaten",
+                                           message: "Für diesen Zeitraum liegen keine Schlafdaten vor.",
+                                           symbol: "bed.double.fill",
+                                           tint: .indigo)
                 } else {
                     if range == .day {
                         daySleepOverview
@@ -74,11 +82,26 @@ struct SleepDetailView: View {
                     }
                 }
             }
-            .padding()
+            .padding(.horizontal, 18)
+            .padding(.bottom, 32)
         }
+        .professionalPageBackground(tint: .indigo)
         .navigationTitle("Schlaf")
         .navigationBarTitleDisplayMode(.inline)
         .task(id: loadKey) { await load() }
+    }
+
+    private var sleepHero: some View {
+        let overview = sessions.isEmpty ? nil : (range == .day ? sessions.first.map(self.overview(for:)) : averageSleep)
+        return ProfessionalPageHero(
+            eyebrow: range == .day ? "Letzte Nacht" : periodLabel,
+            title: "Schlaf & Erholung",
+            subtitle: "Phasen, Dauer und Qualität verständlich zusammengefasst.",
+            symbol: "moon.stars.fill",
+            tint: .indigo,
+            value: overview?.asleep.hoursMinutes ?? "–",
+            detail: overview.map { "\(Int(($0.efficiency * 100).rounded())) % Effizienz" }
+        )
     }
 
     private var periodControls: some View {
@@ -109,9 +132,8 @@ struct SleepDetailView: View {
             .buttonStyle(.borderless)
             .disabled(isNextPeriodInFuture)
         }
-        .padding(10)
-        .background(Color(.secondarySystemBackground),
-                    in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(12)
+        .professionalCard(tint: .indigo, cornerRadius: 18)
     }
 
     // MARK: Apple-Health-nahe Zusammenfassung
@@ -137,8 +159,7 @@ struct SleepDetailView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
-        .background(Color(.secondarySystemBackground),
-                    in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .professionalCard(tint: .indigo)
     }
 
     private var daySleepOverview: some View {
@@ -164,8 +185,8 @@ struct SleepDetailView: View {
 
     private func stageDistribution(_ s: SleepOverview) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Schlafphasen")
-                .font(.headline)
+            ProfessionalSectionHeader(title: "Schlafphasen",
+                                      subtitle: "Verteilung der erfassten Nacht")
             phaseBar(s)
                 .frame(height: 18)
             ForEach(stageSlices(s)) { slice in
@@ -184,9 +205,8 @@ struct SleepDetailView: View {
                 }
             }
         }
-        .padding(14)
-        .background(Color(.secondarySystemBackground),
-                    in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(16)
+        .professionalCard(tint: .indigo)
     }
 
     private func phaseBar(_ s: SleepOverview) -> some View {
@@ -253,19 +273,33 @@ struct SleepDetailView: View {
     // MARK: Hypnogramm der letzten Nacht
 
     private func hypnogram(_ s: SleepSession) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        let selectedSegment = selectedSleepSegment(in: s)
+        return VStack(alignment: .leading, spacing: 8) {
             Text("Letzte Nacht").font(.headline)
-            Chart(s.segments) { seg in
-                BarMark(
-                    xStart: .value("Start", seg.start),
-                    xEnd: .value("Ende", seg.end),
-                    y: .value("Phase", seg.stage.title)
-                )
-                .foregroundStyle(seg.stage.color)
-                .cornerRadius(4)
+            Chart {
+                ForEach(s.segments) { seg in
+                    BarMark(
+                        xStart: .value("Start", seg.start),
+                        xEnd: .value("Ende", seg.end),
+                        y: .value("Phase", seg.stage.title)
+                    )
+                    .foregroundStyle(seg.stage.color)
+                    .cornerRadius(4)
+                    .opacity(seg.id == selectedSegment?.id ? 1 : 0.82)
+                }
+
+                if let segment = selectedSegment {
+                    RuleMark(x: .value("Ausgewählt", selectedSleepTime ?? segment.start))
+                        .foregroundStyle(.primary.opacity(0.65))
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                }
             }
             .chartYScale(domain: stageOrder)
             .chartXScale(domain: s.start...s.end)
+            .chartXVisibleDomain(length: max(30 * 60, s.end.timeIntervalSince(s.start) / hypnogramZoomLevel))
+            .chartScrollableAxes(.horizontal)
+            .chartTapSelection(value: $selectedSleepTime)
+            .chartPinchZoom($hypnogramZoomLevel, maximumZoom: 4)
             .chartLegend(.hidden)
             .chartXAxis {
                 AxisMarks(values: .stride(by: .hour, count: 1)) { _ in
@@ -281,6 +315,16 @@ struct SleepDetailView: View {
                 }
             }
             .frame(height: 180)
+            .modernChartSurface(tint: .indigo)
+
+            if let segment = selectedSegment {
+                ChartSelectedValue(
+                    title: "\(segment.start.formatted(.dateTime.hour().minute()))–\(segment.end.formatted(.dateTime.hour().minute()))",
+                    values: [(segment.stage.color, "\(segment.stage.title) · \(segment.duration.hoursMinutes)")]
+                )
+            }
+
+            ChartGestureHint()
 
             // Legende mit Dauer je Phase
             ForEach(SleepStage.allCases) { stage in
@@ -313,6 +357,12 @@ struct SleepDetailView: View {
                         .foregroundStyle(by: .value("Phase", stage.title))
                     }
                 }
+
+                if let selectedNight {
+                    RuleMark(x: .value("Ausgewählt", selectedNight.end))
+                        .foregroundStyle(.secondary.opacity(0.7))
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                }
             }
             .chartForegroundStyleScale(
                 domain: styleScale.map(\.0),
@@ -320,6 +370,46 @@ struct SleepDetailView: View {
             )
             .id(range.rawValue)
             .frame(height: 220)
+            .chartXScale(domain: nightlyChartDomain)
+            .chartXVisibleDomain(length: nightlyVisibleDuration)
+            .chartScrollableAxes(.horizontal)
+            .chartTapSelection(value: $selectedNightDate)
+            .chartPinchZoom($nightlyZoomLevel)
+            .chartXAxis {
+                AxisMarks(values: .automatic(desiredCount: 5)) { _ in
+                    AxisGridLine()
+                    AxisTick()
+                    AxisValueLabel(format: .dateTime.day().month(), centered: false)
+                        .font(.caption2)
+                }
+            }
+            .chartYAxis {
+                AxisMarks(position: .leading, values: .automatic(desiredCount: 4)) { value in
+                    AxisGridLine()
+                    AxisTick()
+                    AxisValueLabel {
+                        if let number = value.as(Double.self) {
+                            Text(compactChartAxisNumber(number))
+                                .font(.caption2)
+                        } else if let number = value.as(Int.self) {
+                            Text(number.formatted())
+                                .font(.caption2)
+                        }
+                    }
+                }
+            }
+            .modernChartSurface(tint: .indigo)
+
+            if let selectedNight {
+                ChartSelectedValue(
+                    title: selectedNight.end.formatted(.dateTime.weekday(.abbreviated).day().month().year()),
+                    values: SleepStage.allCases
+                        .filter { $0 != .awake && selectedNight.duration(of: $0) > 0 }
+                        .map { ($0.color, "\($0.title) \(selectedNight.duration(of: $0).hoursMinutes)") }
+                )
+            }
+
+            ChartGestureHint()
         }
     }
 
@@ -357,10 +447,9 @@ struct SleepDetailView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
         }
-        .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)
-        .padding(12)
-        .background(Color(.secondarySystemBackground),
-                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
+        .padding(14)
+        .professionalCard(tint: color, cornerRadius: 18)
     }
 
     private func smallStat(_ value: String, _ title: String) -> some View {
@@ -374,14 +463,17 @@ struct SleepDetailView: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
         }
-        .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
-        .padding(10)
-        .background(Color(.secondarySystemBackground),
-                    in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)
+        .padding(12)
+        .professionalCard(tint: .indigo, cornerRadius: 16)
     }
 
     private func load() async {
         isLoading = true
+        selectedSleepTime = nil
+        selectedNightDate = nil
+        hypnogramZoomLevel = 1
+        nightlyZoomLevel = 1
         sessions = await SleepCacheStore.shared.load(range: range, referenceDate: referenceDate)
         isLoading = sessions.isEmpty
         let fresh = (try? await health.fetchSleep(in: range, referenceDate: referenceDate)) ?? sessions
@@ -435,6 +527,38 @@ struct SleepDetailView: View {
 
     private var sessionsForCharts: [SleepSession] {
         sessions.sorted { $0.end < $1.end }
+    }
+
+    private func selectedSleepSegment(in session: SleepSession) -> SleepSegment? {
+        guard let selectedSleepTime else { return nil }
+        if let exact = session.segments.first(where: {
+            selectedSleepTime >= $0.start && selectedSleepTime <= $0.end
+        }) {
+            return exact
+        }
+        return session.segments.min {
+            abs($0.start.addingTimeInterval($0.duration / 2).timeIntervalSince(selectedSleepTime))
+                < abs($1.start.addingTimeInterval($1.duration / 2).timeIntervalSince(selectedSleepTime))
+        }
+    }
+
+    private var selectedNight: SleepSession? {
+        guard let selectedNightDate else { return nil }
+        return sessionsForCharts.min {
+            abs($0.end.timeIntervalSince(selectedNightDate))
+                < abs($1.end.timeIntervalSince(selectedNightDate))
+        }
+    }
+
+    private var nightlyChartDomain: ClosedRange<Date> {
+        let start = sessionsForCharts.map(\.end).min() ?? referenceDate
+        let last = sessionsForCharts.map(\.end).max() ?? start
+        let end = Calendar.healthApp.date(byAdding: .day, value: 1, to: last) ?? last.addingTimeInterval(86_400)
+        return start...end
+    }
+
+    private var nightlyVisibleDuration: TimeInterval {
+        max(2 * 86_400, nightlyChartDomain.upperBound.timeIntervalSince(nightlyChartDomain.lowerBound) / nightlyZoomLevel)
     }
 
     private func stageSlices(_ s: SleepOverview) -> [SleepStageSlice] {

@@ -21,9 +21,33 @@ from .const import (
     STORAGE_KEY,
     STORAGE_VERSION,
 )
+from .metrics import transfer_summary, upgrade_storage
 from .workout_merge import unify_workouts
 
 _LOGGER = logging.getLogger(__name__)
+
+
+async def _async_migrate(
+    old_major_version: int, old_minor_version: int, old_data: dict[str, Any]
+) -> dict[str, Any]:
+    """Carry stored values over to the metric-id model.
+
+    Nothing is deleted and no key changes: the old sensor id stays the storage
+    key, so Home Assistant keeps the entity and its recorded history. The
+    canonical id is added next to it.
+    """
+    if old_major_version >= 2:
+        return old_data
+    summary = transfer_summary(old_data)
+    migrated = upgrade_storage(old_data)
+    _LOGGER.info(
+        "HealthPit storage upgraded to the metric registry: "
+        "%s values (%s without a known metric id), %s workouts",
+        summary["metrics"],
+        summary["unresolved"],
+        summary["workouts"],
+    )
+    return migrated
 
 
 def _empty_user(name: str) -> dict[str, Any]:
@@ -36,7 +60,11 @@ class HealthPitStore:
     def __init__(self, hass: HomeAssistant) -> None:
         self._hass = hass
         self._store: Store[dict[str, Any]] = Store(
-            hass, STORAGE_VERSION, STORAGE_KEY, private=True
+            hass,
+            STORAGE_VERSION,
+            STORAGE_KEY,
+            private=True,
+            migrate_func=_async_migrate,
         )
         self._users: dict[str, dict[str, Any]] = {}
 
@@ -55,6 +83,10 @@ class HealthPitStore:
                     "workouts": _dicts(bucket.get("workouts")),
                     "links": _links(bucket.get("links")),
                 }
+        # A store written by an older version, or restored from a backup, can
+        # still arrive without the new fields. Filling them in on load costs
+        # nothing and keeps every reader on one shape.
+        self._users = upgrade_storage({"users": self._users})["users"]
         _LOGGER.debug(
             "Loaded %s users: %s",
             len(self._users),
@@ -120,6 +152,7 @@ class HealthPitStore:
         """Store the latest value per metric and return how many were accepted."""
         bucket = self._bucket(user_id, user_name)
         for metric in metrics:
+            # Key unchanged on purpose: it decides the entity id.
             key = f"{device_id}|{metric['category']}|{metric['metric_id']}"
             bucket["metrics"][key] = {**metric, "device_id": device_id}
         _trim(bucket["metrics"], MAX_METRICS_PER_USER, key="measured_at")

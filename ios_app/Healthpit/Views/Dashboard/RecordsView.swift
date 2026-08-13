@@ -18,19 +18,31 @@ struct RecordsView: View {
     private static let allSportsValue = "Alle"
 
     var body: some View {
-        List {
-            if isLoading {
-                HStack { Spacer(); ProgressView(); Spacer() }
-            } else if records.isEmpty {
-                ContentUnavailableView("Keine Rekorde",
-                                       systemImage: "trophy",
-                                       description: Text(message ?? L10n.string("Noch nicht genug Daten vorhanden.")))
-            } else {
-                Section {
-                    motivationHeader
-                }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                ProfessionalPageHero(
+                    eyebrow: "Persönliche Bestleistungen",
+                    title: "Deine Rekorde",
+                    subtitle: "Fortschritt, der sichtbar bleibt – über alle Sportarten und Zeiträume.",
+                    symbol: "trophy.fill",
+                    tint: .orange,
+                    value: records.isEmpty ? "–" : "\(visibleRecords.count)",
+                    detail: "Bestleistungen"
+                )
 
-                Section("Sportart") {
+                if isLoading {
+                    ProgressView().frame(maxWidth: .infinity, minHeight: 180)
+                } else if records.isEmpty {
+                    ProfessionalEmptyState(title: "Noch keine Rekorde",
+                                           message: message ?? L10n.string("Noch nicht genug Daten vorhanden."),
+                                           symbol: "trophy.fill",
+                                           tint: .orange)
+                } else {
+                    motivationHeader
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        ProfessionalSectionHeader(title: "Sportart",
+                                                  subtitle: "Filtere deine persönlichen Bestleistungen")
                     Picker("Sportart", selection: $selectedSport) {
                         ForEach(sportOptions, id: \.self) { sport in
                             Text(L10n.string(sport)).tag(sport)
@@ -40,9 +52,12 @@ struct RecordsView: View {
                     Text("Rekorde beziehen sich immer auf die komplette verfügbare Zeit.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                }
+                    }
+                    .padding(16)
+                    .professionalCard(tint: .orange)
 
-                Section("Highlights") {
+                    ProfessionalSectionHeader(title: "Highlights",
+                                              subtitle: "Deine stärksten aktuellen Leistungen")
                     LazyVGrid(columns: [GridItem(.flexible(), spacing: 12),
                                         GridItem(.flexible(), spacing: 12)],
                               spacing: 12) {
@@ -52,10 +67,10 @@ struct RecordsView: View {
                             }
                         }
                     }
-                    .padding(.vertical, 4)
-                }
 
-                Section("Aktuelle Bestleistungen") {
+                    ProfessionalSectionHeader(title: "Alle Bestleistungen",
+                                              subtitle: "Chronologisch nach dem neuesten Rekord")
+                    LazyVStack(spacing: 10) {
                     ForEach(Array(visibleRecords.prefix(visibleRecordLimit))) { record in
                         recordLink(record) {
                             recordRow(record)
@@ -66,11 +81,18 @@ struct RecordsView: View {
                             visibleRecordLimit += 10
                         } label: {
                             Label("Weitere anzeigen", systemImage: "chevron.down")
+                                .frame(maxWidth: .infinity)
+                                .padding(14)
+                                .professionalCard(tint: .orange)
                         }
+                    }
                     }
                 }
             }
+            .padding(.horizontal, 18)
+            .padding(.bottom, 32)
         }
+        .professionalPageBackground(tint: .orange)
         .navigationTitle("Rekorde")
         .navigationBarTitleDisplayMode(.inline)
         .refreshable {
@@ -124,6 +146,8 @@ struct RecordsView: View {
                 .background(.orange.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
         }
+        .padding(16)
+        .professionalCard(tint: .orange)
     }
 
     private var sportOptions: [String] {
@@ -178,7 +202,8 @@ struct RecordsView: View {
                 .font(.subheadline.bold())
                 .multilineTextAlignment(.trailing)
         }
-        .padding(.vertical, 8)
+        .padding(14)
+        .professionalCard(tint: record.tint)
     }
 
     private func highlightCard(_ record: WorkoutRecord) -> some View {

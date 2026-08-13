@@ -15,14 +15,23 @@ from aiohttp import web
 
 from homeassistant.components.http import HomeAssistantView
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 
+from .compatibility import (  # HEALTHPIT-COMPAT-2026-08
+    annotate,
+    app_model_version,
+    status_fields,
+)
+from .compatibility_issue import async_update_app_issue  # HEALTHPIT-COMPAT-2026-08
 from .const import API_BASE, DOMAIN
 from .coordinator import HealthPitCoordinator
-from .duplicates import find_candidates
+from .duplicates import describe_decisions, find_candidates
+from .history import async_import_history, async_import_metric_history
 from .route import as_geojson, as_gpx, as_svg, route_points
 from .payload import (
     PayloadError,
     normalize_health_batch,
+    normalize_metric_history_batch,
     normalize_link,
     normalize_reconcile,
     normalize_workout_batch,
@@ -90,12 +99,24 @@ class HealthPitHealthBatchView(HomeAssistantView):
     async def post(self, request: web.Request) -> web.Response:
         coordinator = _coordinator(request)
         user_id, user_name = _user(request)
+        body = await _json_body(request)
+
+        # HEALTHPIT-COMPAT-2026-08
+        # Beide App-Staende sind willkommen. Eine alte App schickt nur die
+        # Sensorkennung; die fachliche Kennung leitet `normalize_metric`
+        # daraus ab. Nichts geht verloren, der Nutzer bekommt aber einen
+        # Hinweis in „Reparaturen".
+        model_version = app_model_version(body, request.headers)
+
         try:
-            device_id, metrics, problems = normalize_health_batch(
-                await _json_body(request)
-            )
+            device_id, metrics, problems = normalize_health_batch(body)
         except PayloadError as err:
             return _bad_request(err)
+
+        annotate(metrics, model_version)  # HEALTHPIT-COMPAT-2026-08
+        async_update_app_issue(  # HEALTHPIT-COMPAT-2026-08
+            _hass(request), device_id, model_version
+        )
 
         if problems:
             _LOGGER.warning(
@@ -108,7 +129,15 @@ class HealthPitHealthBatchView(HomeAssistantView):
             user_id, user_name, device_id, metrics
         )
         coordinator.async_handle_push()
-        return web.json_response({"accepted": accepted, "skipped": problems})
+        return web.json_response(
+            {
+                "accepted": accepted,
+                "skipped": problems,
+                # HEALTHPIT-COMPAT-2026-08: die App zeigt daran, ob sie oder
+                # die Integration hinterherhinkt.
+                **status_fields(),
+            }
+        )
 
 
 class HealthPitWorkoutImportView(HomeAssistantView):
@@ -172,6 +201,53 @@ class HealthPitWorkoutReconcileView(HomeAssistantView):
         if deleted:
             coordinator.async_handle_push()
         return web.json_response({"deleted": deleted, "kept": len(workout_ids)})
+
+
+class HealthPitMetricHistoryView(HomeAssistantView):
+    """Accept one chunk of hourly HealthKit long-term statistics."""
+
+    url = f"{API_BASE}/history/metrics"
+    name = f"api:{DOMAIN}:metric_history"
+    requires_auth = True
+
+    async def post(self, request: web.Request) -> web.Response:
+        coordinator = _coordinator(request)
+        user_id, _ = _user(request)
+        try:
+            device_id, category, metric_id, points = normalize_metric_history_batch(
+                await _json_body(request)
+            )
+            result = await async_import_metric_history(
+                _hass(request),
+                coordinator,
+                user_id,
+                device_id,
+                category,
+                metric_id,
+                points,
+            )
+        except PayloadError as err:
+            return _bad_request(err)
+        except HomeAssistantError as err:
+            return web.json_response(
+                {"error": str(err), "detail": str(err)}, status=409
+            )
+        return web.json_response(result)
+
+
+class HealthPitWorkoutHistoryView(HomeAssistantView):
+    """Backfill statistics from all workouts already uploaded by the app."""
+
+    url = f"{API_BASE}/history/workouts"
+    name = f"api:{DOMAIN}:workout_history"
+    requires_auth = True
+
+    async def post(self, request: web.Request) -> web.Response:
+        coordinator = _coordinator(request)
+        user_id, _ = _user(request)
+        return web.json_response(
+            await async_import_history(_hass(request), coordinator, user_id)
+        )
 
 
 class HealthPitWorkoutItemView(HomeAssistantView):
@@ -254,12 +330,13 @@ class HealthPitDuplicatesView(HomeAssistantView):
         store = coordinator.store
         limit = _positive_int(request.query.get("limit"), default=200)
         links = store.links(user_id)
+        workouts = store.unified_workouts(user_id)
         return web.json_response(
             {
-                "candidates": find_candidates(
-                    store.unified_workouts(user_id), links, limit=limit
-                ),
-                "decisions": links,
+                "candidates": find_candidates(workouts, links, limit=limit),
+                # Mit Beschreibung: eine Entscheidung ohne die Trainings, um
+                # die es ging, kann niemand nachvollziehen.
+                "decisions": describe_decisions(workouts, links),
             }
         )
 
@@ -318,6 +395,9 @@ class HealthPitStatusView(HomeAssistantView):
                 "status": "ok",
                 "user": user_name,
                 "user_id": user_id,
+                # HEALTHPIT-COMPAT-2026-08: sagt der App, welchen Stand sie
+                # hier vorfindet.
+                **status_fields(),
                 **coordinator.store.summary(user_id),
             }
         )
@@ -329,6 +409,8 @@ VIEWS = (
     # Registered before the {workout_id} route so "reconcile" is not swallowed
     # as a workout ID.
     HealthPitWorkoutReconcileView,
+    HealthPitMetricHistoryView,
+    HealthPitWorkoutHistoryView,
     HealthPitWorkoutItemView,
     HealthPitRouteView,
     HealthPitDuplicateDecisionView,

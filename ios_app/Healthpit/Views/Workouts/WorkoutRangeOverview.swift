@@ -14,6 +14,8 @@ struct WorkoutRangeOverview: View {
     let items: [UnifiedWorkout]
     let sportItems: [UnifiedWorkout]
     private let calendar = Calendar.healthApp
+    @State private var selectedMonthDate: Date?
+    @State private var yearChartZoomLevel = 1.0
 
     var body: some View {
         Section("Übersicht") {
@@ -158,38 +160,65 @@ struct WorkoutRangeOverview: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("\(activeDays.count) Trainingstage im Monat")
                 .font(.subheadline.bold())
-            let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 7)
-            LazyVGrid(columns: columns, spacing: 4) {
+            // Bewusst feste Zeilen statt LazyVGrid: ein Lazy-Container in einer
+            // Listenzeile laesst UIKit die Zellenhoehe immer wieder neu messen —
+            // die Liste geriet dadurch beim Oeffnen in eine Layout-Schleife und
+            // die App brach ab.
+            HStack(spacing: 4) {
                 ForEach(weekdayHeaders, id: \.self) { title in
                     Text(L10n.string(title))
                         .font(.caption2.bold())
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity)
                 }
-                ForEach(Array(monthGridDays().enumerated()), id: \.offset) { _, day in
-                    if let day {
-                        let dayWorkouts = workouts(on: day)
-                        let hasWorkout = !dayWorkouts.isEmpty
-                        RoundedRectangle(cornerRadius: 5, style: .continuous)
-                            .fill(hasWorkout ? HealthCategory.workouts.tint : Color.secondary.opacity(0.14))
-                            .frame(height: 22)
-                            .overlay {
-                                Text("\(calendar.component(.day, from: day))")
-                                    .font(.caption2.bold())
-                                    .foregroundStyle(hasWorkout ? Color.white : Color.secondary)
-                            }
-                            .overlay {
-                                if calendar.isDateInToday(day) {
-                                    RoundedRectangle(cornerRadius: 5, style: .continuous)
-                                        .stroke(Color.orange, lineWidth: 2)
-                                }
-                            }
-                            .accessibilityLabel(day.formatted(.dateTime.day().month()))
-                    } else {
-                        Color.clear.frame(height: 28)
+            }
+            ForEach(Array(monthGridWeeks().enumerated()), id: \.offset) { _, week in
+                HStack(spacing: 4) {
+                    ForEach(Array(week.enumerated()), id: \.offset) { _, day in
+                        monthDayCell(day)
                     }
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func monthDayCell(_ day: Date?) -> some View {
+        if let day {
+            let hasWorkout = !workouts(on: day).isEmpty
+            RoundedRectangle(cornerRadius: 5, style: .continuous)
+                .fill(hasWorkout ? HealthCategory.workouts.tint : Color.secondary.opacity(0.14))
+                .frame(maxWidth: .infinity)
+                .frame(height: 22)
+                .overlay {
+                    Text("\(calendar.component(.day, from: day))")
+                        .font(.caption2.bold())
+                        .foregroundStyle(hasWorkout ? Color.white : Color.secondary)
+                }
+                .overlay {
+                    if calendar.isDateInToday(day) {
+                        RoundedRectangle(cornerRadius: 5, style: .continuous)
+                            .stroke(Color.orange, lineWidth: 2)
+                    }
+                }
+                .accessibilityLabel(day.formatted(.dateTime.day().month()))
+        } else {
+            Color.clear
+                .frame(maxWidth: .infinity)
+                .frame(height: 22)
+        }
+    }
+
+    /// Der Monat in Wochenzeilen — die letzte Woche wird auf sieben Felder
+    /// aufgefuellt, damit alle Zeilen gleich breit rastern.
+    private func monthGridWeeks() -> [[Date?]] {
+        var days = monthGridDays()
+        let remainder = days.count % 7
+        if remainder != 0 {
+            days.append(contentsOf: Array(repeating: nil, count: 7 - remainder))
+        }
+        return stride(from: 0, to: days.count, by: 7).map { start in
+            Array(days[start..<min(start + 7, days.count)])
         }
     }
 
@@ -197,16 +226,36 @@ struct WorkoutRangeOverview: View {
         VStack(alignment: .leading, spacing: 10) {
             Text(L10n.format("%lld Trainings im Jahr", Int64(items.count)))
                 .font(.headline)
-            Chart(monthCounts) { item in
-                LineMark(x: .value("Monat", item.month),
-                         y: .value("Trainings", item.count))
-                    .foregroundStyle(HealthCategory.workouts.tint)
-                    .interpolationMethod(.catmullRom)
-                PointMark(x: .value("Monat", item.month),
-                          y: .value("Trainings", item.count))
-                    .foregroundStyle(HealthCategory.workouts.tint)
+            Chart {
+                ForEach(monthCounts) { item in
+                    LineMark(x: .value("Monat", item.month),
+                             y: .value("Trainings", item.count))
+                        .foregroundStyle(HealthCategory.workouts.tint)
+                        .interpolationMethod(.catmullRom)
+                    PointMark(x: .value("Monat", item.month),
+                              y: .value("Trainings", item.count))
+                        .foregroundStyle(HealthCategory.workouts.tint)
+
+                    if item.id == selectedMonth?.id {
+                        PointMark(x: .value("Ausgewählt", item.month),
+                                  y: .value("Trainings", item.count))
+                            .foregroundStyle(HealthCategory.workouts.tint)
+                            .symbolSize(75)
+                    }
+                }
+
+                if let selectedMonth {
+                    RuleMark(x: .value("Ausgewählt", selectedMonth.month))
+                        .foregroundStyle(.secondary.opacity(0.7))
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                }
             }
             .frame(height: 150)
+            .chartXScale(domain: yearChartDomain)
+            .chartXVisibleDomain(length: yearChartVisibleDuration)
+            .chartScrollableAxes(.horizontal)
+            .chartTapSelection(value: $selectedMonthDate)
+            .chartPinchZoom($yearChartZoomLevel, maximumZoom: 4)
             .chartXAxis {
                 AxisMarks(values: .automatic(desiredCount: 6)) { _ in
                     AxisGridLine()
@@ -216,14 +265,51 @@ struct WorkoutRangeOverview: View {
                 }
             }
             .chartYAxis {
-                AxisMarks(values: .automatic(desiredCount: 4)) { _ in
+                AxisMarks(values: .automatic(desiredCount: 4)) { value in
                     AxisGridLine()
                     AxisTick()
-                    AxisValueLabel()
-                        .font(.caption2)
+                    AxisValueLabel {
+                        if let number = value.as(Double.self) {
+                            Text(compactChartAxisNumber(number))
+                                .font(.caption2)
+                        } else if let number = value.as(Int.self) {
+                            Text(number.formatted())
+                                .font(.caption2)
+                        }
+                    }
                 }
             }
+            .modernChartSurface(tint: HealthCategory.workouts.tint)
+
+            if let selectedMonth {
+                ChartSelectedValue(
+                    title: selectedMonth.month.formatted(.dateTime.month(.wide).year()),
+                    values: [(HealthCategory.workouts.tint, "\(selectedMonth.count) Trainings")]
+                )
+            }
+
+            ChartGestureHint()
         }
+    }
+
+    private var selectedMonth: WorkoutMonthCount? {
+        guard let selectedMonthDate else { return nil }
+        return monthCounts.min {
+            abs($0.month.timeIntervalSince(selectedMonthDate))
+                < abs($1.month.timeIntervalSince(selectedMonthDate))
+        }
+    }
+
+    private var yearChartDomain: ClosedRange<Date> {
+        let dates = monthCounts.map(\.month)
+        let start = dates.min() ?? referenceDate
+        let last = dates.max() ?? start
+        let end = calendar.date(byAdding: .month, value: 1, to: last) ?? last.addingTimeInterval(31 * 86_400)
+        return start...end
+    }
+
+    private var yearChartVisibleDuration: TimeInterval {
+        max(62 * 86_400, yearChartDomain.upperBound.timeIntervalSince(yearChartDomain.lowerBound) / yearChartZoomLevel)
     }
 
     private func stat(_ title: String, _ value: String) -> some View {
@@ -333,9 +419,10 @@ struct WorkoutRangeOverview: View {
 }
 
 private struct WorkoutMonthCount: Identifiable {
-    let id = UUID()
     let month: Date
     let count: Int
+
+    var id: Date { month }
 }
 
 private struct WorkoutSportStat: Identifiable {
@@ -415,6 +502,8 @@ struct WorkoutSportDetailView: View {
 
     @State private var range: WorkoutSportRange = .all
     @State private var referenceDate = Date()
+    @State private var selectedChartDate: Date?
+    @State private var chartZoomLevel = 1.0
 
     private var visibleItems: [UnifiedWorkout] {
         guard let timeRange = range.timeRange else { return items }
@@ -431,7 +520,11 @@ struct WorkoutSportDetailView: View {
     }
 
     var body: some View {
-        List {
+        let points = chartPoints
+        let highlightedPoint = selectedChartPoint(in: points)
+        let chartDomain = sportChartDomain(for: points)
+        let showsPointSymbols = points.count <= 60
+        return List {
             Section {
                 Picker("Zeitraum", selection: $range) {
                     ForEach(WorkoutSportRange.allCases) { option in
@@ -468,22 +561,44 @@ struct WorkoutSportDetailView: View {
             }
 
             Section {
-                if chartPoints.isEmpty {
+                if points.isEmpty {
                     ContentUnavailableView("Keine Daten",
                                            systemImage: "chart.line.uptrend.xyaxis",
                                            description: Text("Für diese Sportart liegen noch keine Werte vor."))
                 } else {
-                    Chart(chartPoints) { point in
-                        LineMark(x: .value("Tag", point.day),
-                                 y: .value(isStrength ? "Volumen" : "Minuten", point.primaryValue))
-                            .foregroundStyle(HealthCategory.workouts.tint)
-                            .interpolationMethod(.catmullRom)
-                        PointMark(x: .value("Tag", point.day),
-                                  y: .value(isStrength ? "Volumen" : "Minuten", point.primaryValue))
-                            .foregroundStyle(HealthCategory.workouts.tint)
+                    Chart {
+                        ForEach(points) { point in
+                            LineMark(x: .value("Tag", point.day),
+                                     y: .value(isStrength ? "Volumen" : "Minuten", point.primaryValue))
+                                .foregroundStyle(HealthCategory.workouts.tint)
+                                .interpolationMethod(showsPointSymbols ? .catmullRom : .linear)
+                            if showsPointSymbols {
+                                PointMark(x: .value("Tag", point.day),
+                                          y: .value(isStrength ? "Volumen" : "Minuten", point.primaryValue))
+                                    .foregroundStyle(HealthCategory.workouts.tint)
+                            }
+
+                            if point.id == highlightedPoint?.id {
+                                PointMark(x: .value("Ausgewählt", point.day),
+                                          y: .value(isStrength ? "Volumen" : "Minuten", point.primaryValue))
+                                    .foregroundStyle(HealthCategory.workouts.tint)
+                                    .symbolSize(80)
+                            }
+                        }
+
+                        if let highlightedPoint {
+                            RuleMark(x: .value("Ausgewählt", highlightedPoint.day))
+                                .foregroundStyle(.secondary.opacity(0.7))
+                                .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                        }
                     }
                     .frame(height: 220)
                     .chartYAxisLabel(isStrength ? "Volumen (kg)" : "Dauer (Min)")
+                    .chartXScale(domain: chartDomain)
+                    .chartXVisibleDomain(length: sportChartVisibleDuration(for: chartDomain))
+                    .chartScrollableAxes(.horizontal)
+                    .chartTapSelection(value: $selectedChartDate)
+                    .chartPinchZoom($chartZoomLevel)
                     .chartXAxis {
                         AxisMarks(values: .automatic(desiredCount: 5)) { _ in
                             AxisGridLine()
@@ -493,13 +608,30 @@ struct WorkoutSportDetailView: View {
                         }
                     }
                     .chartYAxis {
-                        AxisMarks(values: .automatic(desiredCount: 4)) { _ in
+                        AxisMarks(values: .automatic(desiredCount: 4)) { value in
                             AxisGridLine()
                             AxisTick()
-                            AxisValueLabel()
-                                .font(.caption2)
+                            AxisValueLabel {
+                                if let number = value.as(Double.self) {
+                                    Text(compactChartAxisNumber(number))
+                                        .font(.caption2)
+                                } else if let number = value.as(Int.self) {
+                                    Text(number.formatted())
+                                        .font(.caption2)
+                                }
+                            }
                         }
                     }
+                    .modernChartSurface(tint: HealthCategory.workouts.tint)
+
+                    if let selectedChartPoint = highlightedPoint {
+                        ChartSelectedValue(
+                            title: selectedChartPoint.day.formatted(.dateTime.weekday(.abbreviated).day().month().year()),
+                            values: [(HealthCategory.workouts.tint, selectedChartPoint.label)]
+                        )
+                    }
+
+                    ChartGestureHint()
                 }
 
                 HStack(spacing: 12) {
@@ -568,6 +700,26 @@ struct WorkoutSportDetailView: View {
         }
         .filter { $0.primaryValue > 0 }
         .sorted { $0.day < $1.day }
+    }
+
+    private func selectedChartPoint(in points: [WorkoutSportChartPoint]) -> WorkoutSportChartPoint? {
+        guard let selectedChartDate else { return nil }
+        return points.min {
+            abs($0.day.timeIntervalSince(selectedChartDate))
+                < abs($1.day.timeIntervalSince(selectedChartDate))
+        }
+    }
+
+    private func sportChartDomain(for points: [WorkoutSportChartPoint]) -> ClosedRange<Date> {
+        let start = points.map(\.day).min() ?? referenceDate
+        let last = points.map(\.day).max() ?? start
+        let end = Calendar.healthApp.date(byAdding: .day, value: 1, to: last) ?? last.addingTimeInterval(86_400)
+        return start...end
+    }
+
+    private func sportChartVisibleDuration(for domain: ClosedRange<Date>) -> TimeInterval {
+        let total = domain.upperBound.timeIntervalSince(domain.lowerBound)
+        return min(total, max(86_400, total / chartZoomLevel))
     }
 
     private var totalDuration: TimeInterval {

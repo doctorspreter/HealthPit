@@ -1,5 +1,69 @@
 # Änderungsprotokoll
 
+## Home Assistant 2.3.0
+
+### Added
+
+- **Central metric registry.** Every value now carries a stable,
+  provider-neutral identifier (`ACT_STEPS`, `HRT_RATE`, `BDY_WEIGHT`) next to
+  the sensor id it always had, plus its category, canonical unit and where it
+  came from. See [docs/DATA-MODEL.md](docs/DATA-MODEL.md).
+- **Provider fields on every value.** `origin_provider` says where a value was
+  produced, `ingest_provider` how it reached HealthPit — a Garmin reading that
+  arrives through Apple Health is now distinguishable from an Apple one.
+- **Storage version 2** upgrades everything already stored: canonical ids are
+  filled in, workouts get provider codes, values whose meaning is unknown are
+  kept and marked rather than dropped. Nothing is deleted, no key changes, and
+  running it twice changes nothing.
+- **Both app versions are supported.** An app that still sends only the old
+  sensor ids is accepted and translated; a per-device notice under *Repairs*
+  asks for an update and clears itself after the first sync from an updated
+  app. Nothing is rejected.
+- **Duplicate decisions say what they were about.** The `duplicates` endpoint
+  now describes both sides of a past decision — sport, title, start, source —
+  instead of sending two opaque keys.
+
+### Changed
+
+- Sensors expose the new fields as attributes: `canonical_metric_id`,
+  `registry_category`, `origin_provider`, `ingest_provider`, and where known
+  `source_app_id`, `observation_id`, `unit_code`, `period_type`.
+- **Entity ids are unchanged on purpose.** A renamed entity loses its history
+  and breaks automations, so the old sensor id stays the storage key.
+  Retiring the old names is a separate, later step:
+  [docs/REMOVING-THE-COMPATIBILITY-LAYER.md](docs/REMOVING-THE-COMPATIBILITY-LAYER.md).
+
+### Removed
+
+- The `testordner` sandbox copy of the iOS app, which never belonged in this
+  repository.
+
+
+## Home Assistant 2.2.0
+
+### Added
+
+- The authenticated API can now import hourly HealthKit metric history into
+  Home Assistant's long-term statistics.
+- A dedicated workout-history endpoint can rebuild cumulative workout
+  statistics after a full historical upload from the iPhone app.
+- Payload tests cover ordered history batches, finite numeric values, display
+  precision, and dynamic GymPit workout entity discovery.
+
+### Changed
+
+- Sensor states and imported statistics now use metric-aware precision, which
+  removes meaningless floating-point tails while preserving useful decimals.
+- Recorder metadata now includes the current mean type and unit class required
+  by Home Assistant's statistics API.
+- The setup documentation and `healthpit.import_history` service description
+  now explain the complete historical import flow.
+
+### Fixed
+
+- Non-finite metric values are rejected before they can enter storage or
+  long-term statistics.
+
 ## 26.08.1
 
 ### Neu
@@ -12,6 +76,9 @@
 
 ### Behoben
 
+- GymPit-Krafttrainings werden beim Öffnen und Aktualisieren der Workout-Liste
+  aus Home Assistant nachgeladen. Die App zeigt dadurch wieder Übungen und
+  Sätze statt nur der Zusammenfassung aus Apple Health.
 - Die App lud GymPit-Trainings erneut hoch, die GymPit selbst schon gesendet
   hatte. Jedes Training lag dadurch zweimal in Home Assistant.
 - Schreibweise überall **HealthPit** und **GymPit**.

@@ -20,6 +20,8 @@ struct BridgeSettingsView: View {
     @AppStorage(BridgeSettings.syncEnabledKey) private var syncEnabled = true
     @AppStorage(BridgeSettings.syncIntervalKey) private var syncInterval = 3600.0
     @AppStorage(BridgeSettings.lastSyncDateKey) private var lastSyncDate = Date.distantPast
+    @AppStorage(BridgeSettings.historyImportPromptHandledKey) private var historyImportPromptHandled = false
+    @AppStorage(BridgeSettings.lastHistoryImportDateKey) private var lastHistoryImportDate = Date.distantPast
     @AppStorage(DashboardItem.storageKey) private var dashboardOrderRaw = DashboardItem.encode(DashboardItem.defaultOrder)
     @AppStorage(DashboardItem.sizeStorageKey) private var dashboardSizesRaw = ""
     @AppStorage(DashboardItem.hiddenStorageKey) private var dashboardHiddenRaw = ""
@@ -29,8 +31,13 @@ struct BridgeSettingsView: View {
     @State private var homeAssistantToken = ""
     @State private var isSyncing = false
     @State private var isFullSyncing = false
+    @State private var isImportingHistory = false
     @State private var isConnecting = false
     @State private var isBridgeConnected = false
+    @State private var isShowingHistoryImportPrompt = false
+    @State private var historyImportFailed = false
+    @State private var historyImportMessage: String?
+    @State private var historyImportDetail: String?
     @State private var connectionStatus = ""
     @State private var connectionDetail: String?
     @State private var message: String?
@@ -47,37 +54,63 @@ struct BridgeSettingsView: View {
                     NavigationLink {
                         connectionScreen
                     } label: {
-                        Label("Verbindung", systemImage: "antenna.radiowaves.left.and.right")
+                        ProfessionalSettingsLabel(title: "Verbindung",
+                                                  subtitle: "Home Assistant und Synchronisierung",
+                                                  symbol: "antenna.radiowaves.left.and.right",
+                                                  tint: .blue)
                     }
                     NavigationLink {
                         DataSourcesSettingsView()
                     } label: {
-                        Label("Datenquellen", systemImage: "point.3.connected.trianglepath.dotted")
+                        ProfessionalSettingsLabel(title: "Datenquellen",
+                                                  subtitle: "Apple Health und Importe priorisieren",
+                                                  symbol: "point.3.connected.trianglepath.dotted",
+                                                  tint: .teal)
                     }
                     NavigationLink {
                         DuplicateSettingsView()
                     } label: {
-                        Label("Duplikate", systemImage: "square.on.square.dashed")
+                        ProfessionalSettingsLabel(title: "Duplikate",
+                                                  subtitle: "Doppelte Trainings erkennen",
+                                                  symbol: "square.on.square.dashed",
+                                                  tint: .orange)
                     }
                     NavigationLink {
                         backupScreen
                     } label: {
-                        Label("Datensicherung", systemImage: "externaldrive")
+                        ProfessionalSettingsLabel(title: "Datensicherung",
+                                                  subtitle: "Exportieren und wiederherstellen",
+                                                  symbol: "externaldrive.fill",
+                                                  tint: .indigo)
                     }
-                }
+                } header: { Text("Daten & Verbindung") }
 
                 Section {
                     NavigationLink {
+                        ActivityGoalSettingsView()
+                    } label: {
+                        ProfessionalSettingsLabel(title: "Ziele",
+                                                  subtitle: "Tages-, Wochen- und Monatsziele festlegen",
+                                                  symbol: "target",
+                                                  tint: .orange)
+                    }
+                    NavigationLink {
                         homeScreenScreen
                     } label: {
-                        Label("Startseite", systemImage: "square.grid.2x2")
+                        ProfessionalSettingsLabel(title: "Startseite",
+                                                  subtitle: "Bereiche, Reihenfolge und Größen",
+                                                  symbol: "square.grid.2x2.fill",
+                                                  tint: .purple)
                     }
                     NavigationLink {
                         appearanceScreen
                     } label: {
-                        Label("Sprache und Einheiten", systemImage: "globe")
+                        ProfessionalSettingsLabel(title: "Sprache & Einheiten",
+                                                  subtitle: "Darstellung persönlich anpassen",
+                                                  symbol: "globe.europe.africa.fill",
+                                                  tint: .pink)
                     }
-                }
+                } header: { Text("Darstellung") }
 
                 Section("App") {
                     LabeledContent("Version") {
@@ -85,6 +118,8 @@ struct BridgeSettingsView: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .professionalPageBackground(tint: .purple)
             .fileExporter(
                 isPresented: $isExportingBackup,
                 document: backupDocument,
@@ -196,7 +231,7 @@ struct BridgeSettingsView: View {
                             Text("Jetzt synchronisieren")
                         }
                     }
-                    .disabled(isSyncing || !syncEnabled)
+                    .disabled(isSyncing || isFullSyncing || isImportingHistory || !syncEnabled)
 
                     Button(role: .destructive) {
                         Task { await fullWorkoutSync() }
@@ -206,7 +241,7 @@ struct BridgeSettingsView: View {
                             Text("Apple-Health-Workouts komplett neu laden")
                         }
                     }
-                    .disabled(isSyncing || isFullSyncing || !syncEnabled)
+                    .disabled(isSyncing || isFullSyncing || isImportingHistory || !syncEnabled)
 
                     if let message {
                         Text(message)
@@ -217,9 +252,73 @@ struct BridgeSettingsView: View {
                         technicalDetail(messageDetail)
                     }
                 }
+
+                Section("Langzeitdaten in Home Assistant") {
+                    Button {
+                        Task { await importHistory() }
+                    } label: {
+                        HStack {
+                            if isImportingHistory { ProgressView() }
+                            Text("Bisherige Daten integrieren")
+                        }
+                    }
+                    // Der einmalige Import ist bewusst auch bei deaktiviertem
+                    // Hintergrund-Sync verfügbar.
+                    .disabled(isSyncing || isFullSyncing || isImportingHistory)
+
+                    Text("Integriere auch die Daten, die vor der Verbindung mit Home Assistant aufgezeichnet wurden. Die Übertragung erfolgt einmalig und kann mehrere Minuten dauern.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    HStack(alignment: .top, spacing: 12) {
+                        Text("Status")
+                        Spacer(minLength: 12)
+                        historyImportStatus
+                            .multilineTextAlignment(.trailing)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    // `LabeledContent` can make a multiline value consume the
+                    // remaining Form height. Keep this row at its intrinsic
+                    // height so the import result follows directly below it.
+                    .fixedSize(horizontal: false, vertical: true)
+
+                    if let historyImportMessage {
+                        Text(historyImportMessage)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                    if let historyImportDetail {
+                        technicalDetail(historyImportDetail)
+                    }
+                }
         }
         .navigationTitle("Verbindung")
         .navigationBarTitleDisplayMode(.inline)
+        .alert("Bisherige Daten integrieren?", isPresented: $isShowingHistoryImportPrompt) {
+            Button("Jetzt integrieren") {
+                Task { await importHistory() }
+            }
+            Button("Später", role: .cancel) {}
+        } message: {
+            Text("Möchtest du auch die Daten, die vor der Verbindung aufgezeichnet wurden, in Home Assistant integrieren? Du kannst dies auch später in den Einstellungen nachholen.")
+        }
+    }
+
+    @ViewBuilder
+    private var historyImportStatus: some View {
+        if isImportingHistory {
+            Text("Übertragung läuft …")
+                .foregroundStyle(.secondary)
+        } else if historyImportFailed {
+            Label("Integration fehlgeschlagen – erneut versuchen", systemImage: "exclamationmark.triangle.fill")
+                .foregroundStyle(.red)
+        } else if lastHistoryImportDate > .distantPast {
+            Label("Alle bisherigen Daten wurden integriert", systemImage: "checkmark.circle.fill")
+                .foregroundStyle(.green)
+        } else {
+            Text("Noch nicht integriert")
+                .foregroundStyle(.secondary)
+        }
     }
 
     private var backupScreen: some View {
@@ -306,6 +405,8 @@ struct BridgeSettingsView: View {
     }
 
     private func connectBridge() async {
+        let shouldOfferHistoryImport = !historyImportPromptHandled
+            && lastHistoryImportDate == .distantPast
         isConnecting = true
         connectionDetail = nil
         connectionStatus = L10n.string("Verbindet …")
@@ -313,6 +414,10 @@ struct BridgeSettingsView: View {
             _ = try await BridgeSyncService.shared.connect()
             isConnecting = false
             await refreshBridgeConnectionStatus()
+            if shouldOfferHistoryImport {
+                historyImportPromptHandled = true
+                isShowingHistoryImportPrompt = true
+            }
         } catch {
             isConnecting = false
             isBridgeConnected = BridgeSyncService.shared.hasSession
@@ -395,6 +500,29 @@ struct BridgeSettingsView: View {
         } catch {
             message = BridgeErrorText.message(for: error)
             messageDetail = BridgeErrorText.technicalDetail(for: error)
+        }
+    }
+
+    private func importHistory() async {
+        isImportingHistory = true
+        historyImportFailed = false
+        historyImportMessage = nil
+        historyImportDetail = nil
+        defer { isImportingHistory = false }
+        do {
+            let result = try await BridgeSyncService.shared.importAllHistory()
+            lastHistoryImportDate = .now
+            historyImportPromptHandled = true
+            historyImportMessage = L10n.format(
+                "%lld historische Werte aus %lld Messreihen und %lld Workouts wurden an Home Assistant gesendet.",
+                result.pointCount + result.workoutRows,
+                result.metricCount,
+                result.workoutCount
+            )
+        } catch {
+            historyImportFailed = true
+            historyImportMessage = BridgeErrorText.message(for: error)
+            historyImportDetail = BridgeErrorText.technicalDetail(for: error)
         }
     }
 

@@ -192,6 +192,39 @@ def _side(workout: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def describe_decisions(
+    workouts: list[dict[str, Any]], links: list[dict[str, str]]
+) -> list[dict[str, Any]]:
+    """Past decisions with the workouts they were made about.
+
+    A decision used to travel as two opaque keys, so the app could only say
+    "merged" without saying what. The keys are still what a decision hangs on;
+    the description is added next to them.
+    """
+    by_key: dict[str, dict[str, Any]] = {}
+    for workout in workouts:
+        side = _side(workout)
+        for key in side["keys"] or [side["key"]]:
+            by_key.setdefault(key, side)
+
+    described: list[dict[str, Any]] = []
+    for link in links:
+        primary = str(link.get("primary", ""))
+        linked = str(link.get("linked", ""))
+        described.append(
+            {
+                "primary": primary,
+                "linked": linked,
+                "action": link.get("action", ""),
+                # Missing when the workout has since been deleted. The app
+                # shows the decision anyway, so it can still be undone.
+                "primary_side": by_key.get(primary),
+                "linked_side": by_key.get(linked),
+            }
+        )
+    return described
+
+
 def _shares_a_source_id(left: dict[str, Any], right: dict[str, Any]) -> bool:
     """True once the two already describe the same underlying recording."""
     return bool(_source_keys(left) & _source_keys(right))

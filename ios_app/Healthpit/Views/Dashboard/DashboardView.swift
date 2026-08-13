@@ -29,6 +29,9 @@ struct DashboardView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: dashboardSpacing) {
+                    ProfessionalDashboardHero()
+                        .padding(.bottom, 10)
+
                     if showingSyncStatus || SyncActivity.shared.isRunning {
                         SyncRefreshStatusView()
                     }
@@ -39,6 +42,19 @@ struct DashboardView: View {
                         }
                         .frame(height: DashboardWidgetSize.wide.minHeight)
                     }
+
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Deine Bereiche")
+                                .font(.title3.bold())
+                            Text("Tippe auf einen Bereich fuer Details und Trends")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                    }
+                    .padding(.top, 6)
+                    .padding(.bottom, 4)
 
                     ForEach(Array(dashboardRows.enumerated()), id: \.offset) { _, row in
                         GeometryReader { proxy in
@@ -57,7 +73,13 @@ struct DashboardView: View {
                 }
                 .padding()
             }
-            .navigationTitle("Fitness")
+            .background(
+                LinearGradient(colors: [Color.accentColor.opacity(0.08), .clear],
+                               startPoint: .topLeading,
+                               endPoint: .center)
+                    .ignoresSafeArea()
+            )
+            .navigationTitle("HealthPit")
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Button {

@@ -101,5 +101,11 @@
         }
       }
     }
+  },
+  "issues": {
+    "outdated_app": {
+      "title": "HealthPit App 版本过旧",
+      "description": "设备 {device_id} 上的 HealthPit App 仍在发送旧数据格式（模型 {model_version}，当前为 {recommended}）。其数值会被转换并保存，不会丢失，但请更新 App，让它自行发送标识。更新后的 App 首次同步时，此提示会自动消失。"
+    }
   }
 }

@@ -17,23 +17,45 @@ struct OnboardingView: View {
     @State private var errorMessage: String?
 
     var body: some View {
-        VStack(spacing: 24) {
-            Spacer()
+        ZStack {
+            LinearGradient(colors: [.purple.opacity(0.2), .blue.opacity(0.08), Color(.systemBackground)],
+                           startPoint: .topLeading,
+                           endPoint: .bottomTrailing)
+                .ignoresSafeArea()
 
-            Image(systemName: "heart.text.square.fill")
-                .font(.system(size: 72))
-                .foregroundStyle(.pink)
+            VStack(spacing: 26) {
+                Spacer()
 
-            Text("HealthPit")
-                .font(.largeTitle.bold())
+                ZStack {
+                    Circle().fill(.pink.opacity(0.12)).frame(width: 142, height: 142)
+                    Circle().stroke(.pink.opacity(0.2), lineWidth: 1).frame(width: 116, height: 116)
+                    Image(systemName: "heart.text.square.fill")
+                        .font(.system(size: 62))
+                        .symbolRenderingMode(.palette)
+                        .foregroundStyle(.white, .pink)
+                }
 
-            Text("Verbinde dich mit Apple Health, um deine Gesundheitsdaten übersichtlich darzustellen. Die Daten verlassen dein Gerät nicht.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
+                VStack(spacing: 10) {
+                    Text("HealthPit")
+                        .font(.system(.largeTitle, design: .rounded, weight: .bold))
 
-            Spacer()
+                    Text("Deine Gesundheit. Deine Daten.")
+                        .font(.title3.weight(.semibold))
+
+                    Text("HealthPit liest deine Werte aus Apple Health und synchronisiert sie direkt mit deinem Home Assistant — ohne Umweg über fremde Server.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 20)
+                }
+
+                HStack(spacing: 18) {
+                    onboardingFeature("chart.xyaxis.line", "Trends", .orange)
+                    onboardingFeature("lock.shield.fill", "Privat", .green)
+                    onboardingFeature("bolt.heart.fill", "Aktuell", .pink)
+                }
+
+                Spacer()
 
             Button {
                 Task { await connect() }
@@ -49,7 +71,7 @@ struct OnboardingView: View {
                 .font(.headline)
             }
             .disabled(isRequesting)
-            .padding(.horizontal)
+            .padding(.horizontal, 8)
 
             if let errorMessage {
                 Text(errorMessage)
@@ -58,8 +80,21 @@ struct OnboardingView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
             }
+            }
+            .padding(20)
         }
-        .padding()
+    }
+
+    private func onboardingFeature(_ icon: String, _ title: String, _ tint: Color) -> some View {
+        VStack(spacing: 7) {
+            Image(systemName: icon)
+                .font(.headline)
+                .foregroundStyle(tint)
+                .frame(width: 42, height: 42)
+                .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+            Text(title).font(.caption.bold())
+        }
+        .frame(maxWidth: .infinity)
     }
 
     private func connect() async {

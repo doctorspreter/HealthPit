@@ -101,5 +101,11 @@
         }
       }
     }
+  },
+  "issues": {
+    "outdated_app": {
+      "title": "HealthPit app is outdated",
+      "description": "The HealthPit app on device {device_id} still sends the old data format (model {model_version}, current is {recommended}). Its values are translated and stored, so nothing is lost — but please update the app so it sends the metric ids itself. This notice disappears on its own after the first sync from the updated app."
+    }
   }
 }

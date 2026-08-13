@@ -16,6 +16,9 @@ struct ActivityOverviewView: View {
     @State private var trendStats: [String: [DailyStatistic]] = [:]
     @State private var sleepTrendSessions: [SleepSession] = []
     @State private var loaded = false
+    @State private var goals: [ActivityGoal] = ActivityGoalStore.goals()
+    @State private var goalValues: [UUID: Double] = [:]
+    @State private var isEditingGoals = false
 
     private let primaryMetrics: [HealthMetric] = [
         HealthMetric.metric(.stepCount),
@@ -30,16 +33,19 @@ struct ActivityOverviewView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 24) {
                 header
+                goalSection
                 if !trends.isEmpty {
                     trendSection
                 }
                 todaySection
                 allMetricsLink
             }
-            .padding()
+            .padding(.horizontal, 18)
+            .padding(.bottom, 32)
         }
+        .professionalPageBackground(tint: .orange)
         .navigationTitle("Aktivität")
         .navigationBarTitleDisplayMode(.inline)
         .task { await loadCached() }
@@ -47,26 +53,54 @@ struct ActivityOverviewView: View {
             await refreshLive()
             SyncRefreshStatusStore.markLocalRefresh()
         }
+        .sheet(isPresented: $isEditingGoals) {
+            NavigationStack {
+                ActivityGoalSettingsView()
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Fertig") { isEditingGoals = false }
+                        }
+                    }
+            }
+        }
+        .onChange(of: isEditingGoals) { _, isOpen in
+            if !isOpen { Task { await reloadGoals() } }
+        }
+    }
+
+    private var goalSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ProfessionalSectionHeader(title: "Ziele",
+                                      subtitle: "Was du dir für Tag, Woche, Monat oder Jahr vorgenommen hast")
+            ActivityGoalSummary(goals: goals,
+                                values: goalValues,
+                                onEditGoals: { isEditingGoals = true })
+        }
+    }
+
+    private func reloadGoals() async {
+        goals = ActivityGoalStore.goals()
+        goalValues = await health.progressValues(for: goals)
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(Date.now, format: .dateTime.weekday().day().month())
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Text("Heute & auffällige Trends")
-                .font(.title2.bold())
-            Text("Graue Balken zeigen deinen 3-Monats-Normalwert. Trends erscheinen nur bei relevanten Änderungen.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        let steps = primaryMetrics.first(where: { $0.id == HKQuantityTypeIdentifier.stepCount.rawValue })
+        let value = steps.map { $0.formattedValueWithUnit(today[$0.id] ?? 0) }
+        return ProfessionalPageHero(
+            eyebrow: Date.now.formatted(.dateTime.weekday(.wide).day().month()),
+            title: "Aktivität",
+            subtitle: "Bewegung, Belastung und deine Entwicklung auf einen Blick.",
+            symbol: "figure.run.circle.fill",
+            tint: .orange,
+            value: value,
+            detail: "Schritte heute"
+        )
     }
 
     private var trendSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Trends")
-                .font(.headline)
+            ProfessionalSectionHeader(title: "Deine Trends",
+                                      subtitle: "Letzte 14 Tage im Vergleich zu deinem Normalwert")
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 12),
                                 GridItem(.flexible(), spacing: 12)],
                       spacing: 12) {
@@ -74,7 +108,7 @@ struct ActivityOverviewView: View {
                     trendCard(trend)
                 }
             }
-            Text("Vergleich: letzte 14 abgeschlossene Tage/Nächte gegen die vorherigen 90 Tage.")
+            Label("Vergleich mit den vorherigen 90 Tagen", systemImage: "clock.arrow.circlepath")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
@@ -82,8 +116,8 @@ struct ActivityOverviewView: View {
 
     private var todaySection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Heute")
-                .font(.headline)
+            ProfessionalSectionHeader(title: "Heute",
+                                      subtitle: "Aktuelle Werte gegenüber deinem 3-Monats-Schnitt")
             ForEach(primaryMetrics) { metric in
                 activityRow(metric)
             }
@@ -95,10 +129,11 @@ struct ActivityOverviewView: View {
             CategoryMetricListView(category: .activity)
         } label: {
             Label("Alle Aktivitätswerte", systemImage: "list.bullet")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(12)
-                .background(Color(.secondarySystemBackground),
-                            in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .padding(16)
+                .professionalCard(tint: .orange)
         }
         .buttonStyle(.plain)
     }
@@ -110,22 +145,28 @@ struct ActivityOverviewView: View {
         return NavigationLink {
             MetricDetailView(metric: metric)
         } label: {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    Label(metric.title, systemImage: metric.systemImage)
-                        .font(.subheadline.bold())
+                    Image(systemName: metric.systemImage)
+                        .font(.subheadline.weight(.bold))
                         .foregroundStyle(metric.category.tint)
+                        .frame(width: 34, height: 34)
+                        .background(metric.category.tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                    Text(metric.title)
+                        .font(.subheadline.bold())
                     Spacer()
                     Text(metric.formattedValueWithUnit(current))
-                        .font(.subheadline.bold())
+                        .font(.system(.subheadline, design: .rounded, weight: .bold))
                 }
                 ZStack(alignment: .leading) {
                     GeometryReader { proxy in
                         RoundedRectangle(cornerRadius: 5, style: .continuous)
-                            .fill(Color.secondary.opacity(0.18))
+                            .fill(Color.secondary.opacity(0.13))
                             .frame(width: proxy.size.width * min(average / maxValue, 1))
                         RoundedRectangle(cornerRadius: 5, style: .continuous)
-                            .fill(metric.category.tint)
+                            .fill(LinearGradient(colors: [metric.category.tint, metric.category.tint.opacity(0.65)],
+                                                 startPoint: .leading,
+                                                 endPoint: .trailing))
                             .frame(width: proxy.size.width * min(current / maxValue, 1))
                     }
                 }
@@ -134,9 +175,8 @@ struct ActivityOverviewView: View {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
-            .padding(12)
-            .background(Color(.secondarySystemBackground),
-                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .padding(14)
+            .professionalCard(tint: metric.category.tint)
         }
         .buttonStyle(.plain)
     }
@@ -158,9 +198,8 @@ struct ActivityOverviewView: View {
                 .lineLimit(2)
         }
         .frame(maxWidth: .infinity, minHeight: 124, alignment: .leading)
-        .padding(12)
-        .background(trend.color.opacity(0.09),
-                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .padding(14)
+        .professionalCard(tint: trend.color)
     }
 
     private var trends: [ActivityTrend] {
@@ -251,6 +290,7 @@ struct ActivityOverviewView: View {
     private func loadCached() async {
         today = await DashboardMetricCacheStore.shared.load(metricIDs: primaryMetrics.map(\.id))
         loaded = true
+        await reloadGoals()
     }
 
     private func refreshLive() async {
@@ -267,6 +307,7 @@ struct ActivityOverviewView: View {
         sleepTrendSessions = (try? await health.fetchSleep(interval: windows.full)) ?? []
         await DashboardMetricCacheStore.shared.save(values: today)
         loaded = true
+        await reloadGoals()
     }
 
     private func trendWindows(referenceDate: Date = .now) -> TrendWindows {

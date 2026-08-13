@@ -9,20 +9,22 @@ import SwiftUI
 import CoreLocation
 import Charts
 import MapKit
+import UniformTypeIdentifiers
 
 struct ManualWorkoutView: View {
     let onSave: (LocalWorkout) -> Void
+    private let draft: LocalWorkout?
     @Environment(\.dismiss) private var dismiss
 
-    @State private var sport = "Bouldern"
-    @State private var title = ""
-    @State private var start = Date()
-    @State private var durationMinutes = 60.0
-    @State private var distanceKm = ""
-    @State private var energyKcal = ""
-    @State private var averageHeartRate = ""
-    @State private var maxHeartRate = ""
-    @State private var notes = ""
+    @State private var sport: String
+    @State private var title: String
+    @State private var start: Date
+    @State private var durationMinutes: Double
+    @State private var distanceKm: String
+    @State private var energyKcal: String
+    @State private var averageHeartRate: String
+    @State private var maxHeartRate: String
+    @State private var notes: String
     @State private var exportToAppleHealth = true
     @State private var message: String?
     @State private var isSaving = false
@@ -37,14 +39,31 @@ struct ManualWorkoutView: View {
     /// die Bridge und nach Home Assistant. Wuerde er mit der App-Sprache
     /// wechseln, entstuenden dort fuer dieselbe Sportart neue Entitaeten.
     /// Uebersetzt wird deshalb nur die Beschriftung.
-    private let sports = ["Bouldern", "Squash", "Krafttraining", "Laufen", "Radfahren", "Sonstiges"]
+    private let sports = ["Bouldern", "Squash", "Krafttraining", "Laufen", "Gehen", "Radfahren", "Sonstiges"]
+
+    init(draft: LocalWorkout? = nil, onSave: @escaping (LocalWorkout) -> Void) {
+        self.draft = draft
+        self.onSave = onSave
+        _sport = State(initialValue: draft?.sport ?? "Bouldern")
+        _title = State(initialValue: draft?.title ?? "")
+        _start = State(initialValue: draft?.start ?? Date())
+        let importedMinutes = draft.map { $0.duration / 60 } ?? 0
+        _durationMinutes = State(initialValue: importedMinutes > 0 ? importedMinutes : 60)
+        _distanceKm = State(initialValue: draft?.distanceKm.map {
+            String(format: "%.2f", WorkoutUnits.distanceValue(km: $0))
+        } ?? "")
+        _energyKcal = State(initialValue: draft?.energyKcal.map { String(Int($0.rounded())) } ?? "")
+        _averageHeartRate = State(initialValue: draft?.averageHeartRate.map { String(Int($0.rounded())) } ?? "")
+        _maxHeartRate = State(initialValue: draft?.maxHeartRate.map { String(Int($0.rounded())) } ?? "")
+        _notes = State(initialValue: draft?.notes ?? "")
+    }
 
     var body: some View {
         NavigationStack {
             Form {
                 Section("Training") {
                     Picker("Sportart", selection: $sport) {
-                        ForEach(sports, id: \.self) { Text(L10n.string($0)).tag($0) }
+                        ForEach(selectableSports, id: \.self) { Text(L10n.string($0)).tag($0) }
                     }
                     TextField("Titel optional", text: $title)
                     DatePicker("Start", selection: $start)
@@ -63,17 +82,19 @@ struct ManualWorkoutView: View {
                     TextField("Notizen", text: $notes, axis: .vertical)
                 }
 
-                Section("Wiederholung") {
-                    Picker("Rhythmus", selection: $repeatRule) {
-                        ForEach(WorkoutRepeatRule.allCases) { rule in
-                            Text(rule.title).tag(rule)
+                if draft == nil {
+                    Section("Wiederholung") {
+                        Picker("Rhythmus", selection: $repeatRule) {
+                            ForEach(WorkoutRepeatRule.allCases) { rule in
+                                Text(rule.title).tag(rule)
+                            }
                         }
-                    }
-                    if repeatRule != .none {
-                        DatePicker("Bis", selection: $repeatEnd, in: start..., displayedComponents: .date)
-                        Text(repeatSummary)
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
+                        if repeatRule != .none {
+                            DatePicker("Bis", selection: $repeatEnd, in: start..., displayedComponents: .date)
+                            Text(repeatSummary)
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
 
@@ -136,6 +157,12 @@ struct ManualWorkoutView: View {
     }
 
     /// Die Termine, die dieses Formular gerade anlegen wuerde.
+    private var selectableSports: [String] {
+        ([sport] + sports).reduce(into: []) { result, value in
+            if !result.contains(value) { result.append(value) }
+        }
+    }
+
     private var repeatDates: [Date] {
         repeatRule.occurrences(from: start, until: repeatEnd)
     }
@@ -151,8 +178,8 @@ struct ManualWorkoutView: View {
     }
 
     private func workout(startingAt date: Date) -> LocalWorkout {
-        LocalWorkout(id: UUID(),
-                     source: .manual,
+        LocalWorkout(id: draft?.id ?? UUID(),
+                     source: draft?.source ?? .manual,
                      sport: sport,
                      title: title.isEmpty ? sport : title,
                      start: date,
@@ -165,9 +192,10 @@ struct ManualWorkoutView: View {
                      averageHeartRate: Double(averageHeartRate.replacingOccurrences(of: ",", with: ".")),
                      maxHeartRate: Double(maxHeartRate.replacingOccurrences(of: ",", with: ".")),
                      notes: notes,
-                     weather: nil,
-                     injury: nil,
-                     route: [])
+                     weather: draft?.weather,
+                     injury: draft?.injury,
+                     route: draft?.route ?? [],
+                     exercises: draft?.exercises ?? [])
     }
 
     private func save() async {
@@ -216,6 +244,10 @@ struct LocalWorkoutDetailView: View {
     @State private var injuryPainType = ""
     @State private var injurySeverity = 0
     @State private var isSavingInjury = false
+    @State private var showingRouteImporter = false
+    @State private var isImportingRoute = false
+    @State private var routeImportMessage: String?
+    @State private var savedWorkoutOverride: LocalWorkout?
     @AppStorage(HealthDataSourceSettings.writeWorkoutsKey) private var appleHealthWorkoutWritingEnabled = true
     private let statColumns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
     private let injuryLocations = ["", "Knie links", "Knie rechts", "Schulter links", "Schulter rechts", "Rücken", "Hüfte", "Fuß", "Handgelenk", "Ellbogen", "Sonstiges"]
@@ -272,9 +304,26 @@ struct LocalWorkoutDetailView: View {
                 }
             }
 
-            if routeMapPoints.count > 1 {
-                Section("Karte") {
+            Section("Karte") {
+                if routeMapPoints.count > 1 {
                     WorkoutRouteMapView(points: routeMapPoints, splits: splits, isCycling: isCycling)
+                }
+                Button {
+                    showingRouteImporter = true
+                } label: {
+                    if isImportingRoute {
+                        ProgressView()
+                    } else {
+                        Label(effectiveRoute.isEmpty ? "Karte hinzufügen" : "Karte ersetzen",
+                              systemImage: "map.badge.plus")
+                    }
+                }
+                .disabled(isImportingRoute)
+
+                if let routeImportMessage {
+                    Text(routeImportMessage)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
             }
             if !records.isEmpty {
@@ -324,8 +373,8 @@ struct LocalWorkoutDetailView: View {
             Section {
                 LazyVGrid(columns: statColumns, spacing: 12) {
                     stat("Dauer", durationText(workout.duration))
-                    stat("Distanz", workout.distanceKm.map { WorkoutUnits.distance(km: $0, fractionDigits: 2) } ?? "-")
-                    stat("Kalorien", workout.energyKcal.map { "\(Int($0.rounded())) kcal" } ?? "-")
+                    stat("Distanz", effectiveWorkout.distanceKm.map { WorkoutUnits.distance(km: $0, fractionDigits: 2) } ?? "-")
+                    stat("Kalorien", effectiveWorkout.energyKcal.map { "\(Int($0.rounded())) kcal" } ?? "-")
                     stat("Ø Puls", effectiveHeartRate.map { "\(Int($0.average.rounded())) bpm" } ?? "-")
                 }
             }
@@ -429,9 +478,9 @@ struct LocalWorkoutDetailView: View {
                 }
                 .disabled(isSavingInjury)
             }
-            if !workout.route.isEmpty {
+            if !effectiveRoute.isEmpty {
                 Section("Quellen") {
-                    Text("\(workout.route.count) Routenpunkte gespeichert.")
+                    Text("\(effectiveRoute.count) Routenpunkte gespeichert.")
                 }
             }
         }
@@ -449,6 +498,11 @@ struct LocalWorkoutDetailView: View {
             await loadFallbackHeartRate()
             await loadHealthDetail()
         }
+        .fileImporter(isPresented: $showingRouteImporter,
+                      allowedContentTypes: [.xml, UTType(filenameExtension: "gpx") ?? .xml],
+                      allowsMultipleSelection: false) { result in
+            Task { await importRoute(result) }
+        }
     }
 
     private func stat(_ title: String, _ value: String) -> some View {
@@ -464,11 +518,11 @@ struct LocalWorkoutDetailView: View {
     }
 
     private var tempoText: String? {
-        guard let km = workout.distanceKm, km > 0, workout.duration > 0 else { return nil }
+        guard let km = effectiveWorkout.distanceKm, km > 0, effectiveWorkout.duration > 0 else { return nil }
         if isCycling {
-            return speedText(km / (workout.duration / 3600))
+            return speedText(km / (effectiveWorkout.duration / 3600))
         }
-        return paceText(workout.duration / km)
+        return paceText(effectiveWorkout.duration / km)
     }
 
     private var isCycling: Bool {
@@ -485,9 +539,13 @@ struct LocalWorkoutDetailView: View {
         }
     }
 
+    private var effectiveWorkout: LocalWorkout {
+        savedWorkoutOverride ?? workout
+    }
+
     private var effectiveRoute: [LocalRoutePoint] {
-        if !workout.route.isEmpty {
-            return workout.route
+        if !effectiveWorkout.route.isEmpty {
+            return effectiveWorkout.route
         }
         return (healthDetail?.route ?? []).map {
             LocalRoutePoint(latitude: $0.latitude,
@@ -495,6 +553,77 @@ struct LocalWorkoutDetailView: View {
                             elevation: $0.elevation,
                             timestamp: $0.timestamp,
                             heartRate: nil)
+        }
+    }
+
+    private func importRoute(_ result: Result<[URL], Error>) async {
+        guard case .success(let urls) = result, let url = urls.first else {
+            if case .failure(let error) = result {
+                routeImportMessage = error.localizedDescription
+            }
+            return
+        }
+
+        isImportingRoute = true
+        routeImportMessage = nil
+        defer { isImportingRoute = false }
+
+        let access = url.startAccessingSecurityScopedResource()
+        defer { if access { url.stopAccessingSecurityScopedResource() } }
+
+        do {
+            let imported = try WorkoutFileImporter.analyze(from: url)
+            guard imported.workout.route.count > 1 else {
+                routeImportMessage = L10n.string("Die Datei enthält keine verwendbare Strecke.")
+                return
+            }
+
+            let base = effectiveWorkout
+            var updated: LocalWorkout
+            if let healthWorkout,
+               base.source == .appleHealth,
+               base.id == healthWorkout.uuid {
+                updated = LocalWorkout(id: UUID(),
+                                       source: imported.workout.source,
+                                       sport: base.sport,
+                                       title: base.title,
+                                       start: base.start,
+                                       end: base.end,
+                                       distanceKm: base.distanceKm,
+                                       energyKcal: base.energyKcal,
+                                       averageHeartRate: base.averageHeartRate,
+                                       maxHeartRate: base.maxHeartRate,
+                                       notes: base.notes,
+                                       weather: base.weather,
+                                       injury: base.injury,
+                                       route: [],
+                                       exercises: base.exercises)
+            } else {
+                updated = base
+            }
+
+            updated.route = route(imported.workout.route, alignedTo: updated.start)
+            updated.distanceKm = imported.workout.distanceKm ?? updated.distanceKm
+            updated.energyKcal = imported.workout.energyKcal ?? updated.energyKcal
+            updated.averageHeartRate = imported.workout.averageHeartRate ?? updated.averageHeartRate
+            updated.maxHeartRate = imported.workout.maxHeartRate ?? updated.maxHeartRate
+
+            await LocalWorkoutStore.shared.save(updated)
+            savedWorkoutOverride = updated
+            _ = try? await BridgeSyncService.shared.uploadLocalWorkouts()
+            routeImportMessage = L10n.string("Karte wurde zum Training hinzugefügt.")
+        } catch {
+            routeImportMessage = error.localizedDescription
+        }
+    }
+
+    private func route(_ points: [LocalRoutePoint], alignedTo targetStart: Date) -> [LocalRoutePoint] {
+        guard let sourceStart = points.compactMap(\.timestamp).min() else { return points }
+        let offset = targetStart.timeIntervalSince(sourceStart)
+        return points.map { point in
+            var shifted = point
+            shifted.timestamp = point.timestamp?.addingTimeInterval(offset)
+            return shifted
         }
     }
 
@@ -529,13 +658,13 @@ struct LocalWorkoutDetailView: View {
                                     maximum: values.max() ?? 0,
                                     samples: points)
         }
-        if let average = workout.averageHeartRate {
+        if let average = effectiveWorkout.averageHeartRate {
             return HeartRateSummary(average: average,
                                     minimum: average,
-                                    maximum: workout.maxHeartRate ?? average,
+                                    maximum: effectiveWorkout.maxHeartRate ?? average,
                                     samples: [])
         }
-        if let max = workout.maxHeartRate {
+        if let max = effectiveWorkout.maxHeartRate {
             return HeartRateSummary(average: max, minimum: max, maximum: max, samples: [])
         }
         return nil
@@ -615,7 +744,7 @@ struct LocalWorkoutDetailView: View {
         appleHealthMessage = nil
         defer { isExportingToAppleHealth = false }
         do {
-            try await HealthKitManager.shared.saveToAppleHealth(workout)
+            try await HealthKitManager.shared.saveToAppleHealth(effectiveWorkout)
             appleHealthMessage = L10n.string("Training wurde an Apple Health übergeben.")
         } catch {
             appleHealthMessage = error.localizedDescription
@@ -625,17 +754,18 @@ struct LocalWorkoutDetailView: View {
     private func saveInjury() async {
         isSavingInjury = true
         defer { isSavingInjury = false }
-        var updated = workout
+        var updated = effectiveWorkout
         let injury = WorkoutInjury(location: injuryLocation,
                                    painType: injuryPainType,
                                    severity: injurySeverity)
         updated.injury = injury.isEmpty ? nil : injury
         await LocalWorkoutStore.shared.save(updated)
+        savedWorkoutOverride = updated
         _ = try? await BridgeSyncService.shared.uploadLocalWorkouts()
     }
 
     private var splits: [WorkoutSplit] {
-        if workout.route.isEmpty, let healthSplits = healthDetail?.splits, !healthSplits.isEmpty {
+        if effectiveWorkout.route.isEmpty, let healthSplits = healthDetail?.splits, !healthSplits.isEmpty {
             return healthSplits
         }
         let route = effectiveRoute

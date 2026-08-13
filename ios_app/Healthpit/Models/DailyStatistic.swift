@@ -23,3 +23,14 @@ struct DailyStatistic: Identifiable, Hashable, Sendable {
         self.value = value
     }
 }
+
+/// One Home Assistant long-term-statistics row, aligned to a full UTC hour.
+/// Cumulative metrics use `state`/`sum`; measurements use mean/min/max.
+struct HealthMetricHistoryPoint: Hashable, Sendable {
+    let date: Date
+    let state: Double?
+    let sum: Double?
+    let mean: Double?
+    let minimum: Double?
+    let maximum: Double?
+}

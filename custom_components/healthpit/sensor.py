@@ -13,6 +13,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import API_BASE, DOMAIN
 from .coordinator import HealthPitCoordinator
 from .entity import HealthPitUserEntity
+from .precision import rounded_value, suggested_precision
 
 
 async def async_setup_entry(
@@ -120,7 +121,14 @@ class HealthPitMetricSensor(HealthPitUserEntity, SensorEntity):
     @property
     def native_value(self) -> float | None:
         item = self._item()
-        return item.get("value") if item else None
+        if item is None:
+            return None
+        return rounded_value(item.get("value"), suggested_precision(item))
+
+    @property
+    def suggested_display_precision(self) -> int | None:
+        item = self._item()
+        return suggested_precision(item) if item else None
 
     @property
     def native_unit_of_measurement(self) -> str | None:
@@ -145,13 +153,26 @@ class HealthPitMetricSensor(HealthPitUserEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         item = self._item() or {}
-        return {
+        attributes: dict[str, Any] = {
             "category": self._category,
             "device_id": self._device_id,
             "aggregation": item.get("aggregation"),
             "measured_at": item.get("measured_at"),
+            # The sensor id stays what it always was, so automations keep
+            # working. What the value *is* now stands next to it.
             "metric_id": self._metric_id,
+            "canonical_metric_id": item.get("canonical_metric_id"),
+            "registry_category": item.get("registry_category"),
+            "origin_provider": item.get("origin_provider"),
+            "ingest_provider": item.get("ingest_provider"),
         }
+        # Only worth showing when the value did not come straight from the
+        # phone: it says which app or device really produced it.
+        for optional in ("source_app_id", "observation_id", "unit_code", "period_type"):
+            value = item.get(optional)
+            if value:
+                attributes[optional] = value
+        return attributes
 
 
 class HealthPitWorkoutSensor(HealthPitUserEntity, SensorEntity):
@@ -185,7 +206,15 @@ class HealthPitWorkoutSensor(HealthPitUserEntity, SensorEntity):
     @property
     def native_value(self) -> Any:
         item = self._descriptor()
-        return item.get("value") if item else None
+        if item is None:
+            return None
+        precision = suggested_precision(item, self._descriptor_key)
+        return rounded_value(item.get("value"), precision)
+
+    @property
+    def suggested_display_precision(self) -> int | None:
+        item = self._descriptor()
+        return suggested_precision(item, self._descriptor_key) if item else None
 
     @property
     def native_unit_of_measurement(self) -> str | None:
@@ -230,6 +259,7 @@ class HealthPitRouteSensor(HealthPitUserEntity, SensorEntity):
     _attr_icon = "mdi:map-marker-path"
     _attr_native_unit_of_measurement = "km"
     _attr_device_class = SensorDeviceClass.DISTANCE
+    _attr_suggested_display_precision = 2
 
     def __init__(self, coordinator: HealthPitCoordinator, user_id: str) -> None:
         super().__init__(coordinator, user_id)

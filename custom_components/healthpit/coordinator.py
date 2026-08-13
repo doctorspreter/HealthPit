@@ -35,6 +35,16 @@ def build_user_data(
                 "icon": metric.get("icon"),
                 "measured_at": metric.get("measured_at"),
                 "state_class": metric.get("state_class"),
+                "display_precision": metric.get("display_precision"),
+                # New model: what the value is, and where it came from.
+                "canonical_metric_id": metric.get("canonical_metric_id"),
+                "registry_category": metric.get("registry_category"),
+                "origin_provider": metric.get("origin_provider"),
+                "ingest_provider": metric.get("ingest_provider"),
+                "source_app_id": metric.get("source_app_id"),
+                "observation_id": metric.get("observation_id"),
+                "unit_code": metric.get("unit_code"),
+                "period_type": metric.get("period_type"),
             }
         )
     for items in by_category.values():

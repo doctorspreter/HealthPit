@@ -26,6 +26,20 @@ struct CycleDetailView: View {
                 ProgressView("Lade …")
             } else {
                 List {
+                    Section {
+                        ProfessionalPageHero(
+                            eyebrow: "Zyklusgesundheit",
+                            title: "Dein Zyklus",
+                            subtitle: "Verlauf, Blutung und Symptome diskret und übersichtlich dokumentiert.",
+                            symbol: "drop.circle.fill",
+                            tint: HealthCategory.cycle.tint,
+                            value: overview.currentCycleDay.map { "Tag \($0)" } ?? "–",
+                            detail: "aktueller Zyklus"
+                        )
+                        .listRowInsets(EdgeInsets(top: 8, leading: 18, bottom: 10, trailing: 18))
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                    }
                     summarySection
                     monthControls
                     calendarSection
@@ -39,8 +53,11 @@ struct CycleDetailView: View {
                         }
                     }
                 }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
             }
         }
+        .professionalPageBackground(tint: HealthCategory.cycle.tint)
         .navigationTitle(HealthCategory.cycle.title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -81,6 +98,7 @@ struct CycleDetailView: View {
                                 "Ø Periode")
                 }
                 .padding(.vertical, 4)
+                .listRowBackground(Color.clear)
             }
         } else {
             Section {
@@ -92,6 +110,8 @@ struct CycleDetailView: View {
                         .foregroundStyle(.secondary)
                 }
                 .padding(.vertical, 4)
+                .padding(.horizontal, 4)
+                .professionalCard(tint: HealthCategory.cycle.tint)
             }
         }
     }
@@ -109,8 +129,7 @@ struct CycleDetailView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 10)
-        .background(HealthCategory.cycle.tint.opacity(0.12),
-                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .professionalCard(tint: HealthCategory.cycle.tint, cornerRadius: 16)
     }
 
     private var monthControls: some View {

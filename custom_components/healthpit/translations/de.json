@@ -101,5 +101,11 @@
         }
       }
     }
+  },
+  "issues": {
+    "outdated_app": {
+      "title": "HealthPit-App ist veraltet",
+      "description": "Die HealthPit-App auf dem Gerät {device_id} sendet noch das alte Datenformat (Modell {model_version}, aktuell ist {recommended}). Die Werte werden übersetzt und gespeichert, es geht also nichts verloren — bitte die App trotzdem aktualisieren, damit sie die Kennungen selbst mitschickt. Der Hinweis verschwindet nach dem ersten Abgleich der neuen App von selbst."
+    }
   }
 }

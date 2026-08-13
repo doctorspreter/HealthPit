@@ -9,8 +9,6 @@
 .env
 **/.env
 
-home_assistant_docker/.env
-home_assistant_docker/data/
 *.sqlite3
 *.sqlite3-*
 *.db
@@ -24,5 +22,8 @@ ios_app/**/*.xcworkspace/xcuserdata/
 Xcode/
 homeassistant_apps/
 
-# Beiseitegestellte Daten der alten Bridge (enthaelt Zugangsdaten und Workouts)
-legacy_bridge_data/
+# Sandbox copies of the app used for experiments. They carry their own Xcode
+# projects and build output and have no place in this repository.
+tests/healthpit_datamodel/
+tests/HealthPitHuawei/
+testordner/

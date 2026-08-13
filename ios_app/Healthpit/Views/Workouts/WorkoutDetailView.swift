@@ -17,6 +17,8 @@ struct WorkoutDetailView: View {
     @State private var detail: WorkoutDetail?
     @State private var isLoading = false
     @State private var showingSplitTable = false
+    @State private var selectedHeartRateDate: Date?
+    @State private var heartRateZoomLevel = 1.0
 
     private let columns = [GridItem(.flexible(), spacing: 12),
                            GridItem(.flexible(), spacing: 12)]
@@ -155,7 +157,9 @@ struct WorkoutDetailView: View {
     }
 
     private func heartRateSection(_ heartRate: HeartRateSummary) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        let selectedPoint = selectedHeartRatePoint(in: heartRate)
+        let chartPoints = chartSampledValues(heartRate.samples)
+        return VStack(alignment: .leading, spacing: 10) {
             Text("Puls")
                 .font(.headline)
             HStack(spacing: 12) {
@@ -163,14 +167,40 @@ struct WorkoutDetailView: View {
                 statTile(WorkoutStat(label: "Max Puls", value: "\(Int(heartRate.maximum.rounded())) bpm", systemImage: "heart.fill"))
             }
             if !heartRate.samples.isEmpty {
-                Chart(heartRate.samples) { point in
-                    LineMark(
-                        x: .value("Zeit", point.date),
-                        y: .value("bpm", point.bpm)
-                    )
+                Chart {
+                    ForEach(chartPoints) { point in
+                        LineMark(
+                            x: .value("Zeit", point.date),
+                            y: .value("bpm", point.bpm)
+                        )
+                        .foregroundStyle(.pink)
+                        .interpolationMethod(.catmullRom)
+                        .lineStyle(StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
+
+                    }
+
+                    if let point = selectedPoint {
+                        PointMark(
+                            x: .value("Ausgewählt", point.date),
+                            y: .value("bpm", point.bpm)
+                        )
+                        .foregroundStyle(.pink)
+                        .symbolSize(80)
+                    }
+
+                    if let point = selectedPoint {
+                        RuleMark(x: .value("Ausgewählt", point.date))
+                            .foregroundStyle(.secondary.opacity(0.7))
+                            .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                    }
                 }
                 .frame(height: 180)
                 .chartYAxisLabel("bpm")
+                .chartXScale(domain: heartRateDomain(heartRate))
+                .chartXVisibleDomain(length: heartRateVisibleDuration(heartRate))
+                .chartScrollableAxes(.horizontal)
+                .chartTapSelection(value: $selectedHeartRateDate)
+                .chartPinchZoom($heartRateZoomLevel)
                 .chartXAxis {
                     AxisMarks(values: .automatic(desiredCount: 4)) { _ in
                         AxisGridLine()
@@ -180,15 +210,51 @@ struct WorkoutDetailView: View {
                     }
                 }
                 .chartYAxis {
-                    AxisMarks(values: .automatic(desiredCount: 4)) { _ in
+                    AxisMarks(values: .automatic(desiredCount: 4)) { value in
                         AxisGridLine()
                         AxisTick()
-                        AxisValueLabel()
-                            .font(.caption2)
+                        AxisValueLabel {
+                            if let number = value.as(Double.self) {
+                                Text(compactChartAxisNumber(number))
+                                    .font(.caption2)
+                            } else if let number = value.as(Int.self) {
+                                Text(number.formatted())
+                                    .font(.caption2)
+                            }
+                        }
                     }
                 }
+                .modernChartSurface(tint: .pink)
+
+                if let point = selectedPoint {
+                    ChartSelectedValue(
+                        title: point.date.formatted(.dateTime.hour().minute().second()),
+                        values: [(.pink, "\(Int(point.bpm.rounded())) bpm")]
+                    )
+                }
+
+                ChartGestureHint()
             }
         }
+    }
+
+    private func selectedHeartRatePoint(in heartRate: HeartRateSummary) -> HeartRatePoint? {
+        guard let selectedHeartRateDate else { return nil }
+        return heartRate.samples.min {
+            abs($0.date.timeIntervalSince(selectedHeartRateDate))
+                < abs($1.date.timeIntervalSince(selectedHeartRateDate))
+        }
+    }
+
+    private func heartRateDomain(_ heartRate: HeartRateSummary) -> ClosedRange<Date> {
+        let start = heartRate.samples.map(\.date).min() ?? Date()
+        let end = heartRate.samples.map(\.date).max() ?? start.addingTimeInterval(1)
+        return start...(end > start ? end : start.addingTimeInterval(1))
+    }
+
+    private func heartRateVisibleDuration(_ heartRate: HeartRateSummary) -> TimeInterval {
+        let domain = heartRateDomain(heartRate)
+        return max(30, domain.upperBound.timeIntervalSince(domain.lowerBound) / heartRateZoomLevel)
     }
 
     private var routeCoordinates: [CLLocationCoordinate2D]? {

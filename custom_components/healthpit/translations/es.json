@@ -101,5 +101,11 @@
         }
       }
     }
+  },
+  "issues": {
+    "outdated_app": {
+      "title": "La app HealthPit está desactualizada",
+      "description": "La app HealthPit del dispositivo {device_id} todavía envía el formato antiguo (modelo {model_version}, el actual es {recommended}). Sus valores se traducen y se guardan, así que no se pierde nada, pero actualiza la app para que envíe los identificadores por sí misma. El aviso desaparece solo tras la primera sincronización de la app actualizada."
+    }
   }
 }

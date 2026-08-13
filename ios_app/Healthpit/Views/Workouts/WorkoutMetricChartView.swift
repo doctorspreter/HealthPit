@@ -42,33 +42,69 @@ struct WorkoutMetricChartView: View {
     let elevationGainBySplit: [Int: Double]
     let isCycling: Bool
 
-    @State private var selected: Set<WorkoutMetricKind> = []
+    @State private var selectedKinds: [WorkoutMetricKind] = []
+    @State private var selectedKilometer: Int?
+    @State private var chartZoomLevel = 1.0
 
     var body: some View {
-        let points = chartPoints
+        let kinds = activeKinds
+        let series = seriesValues(for: kinds)
+        let domains = scaleDomains(for: series)
+        let points = chartPoints(for: kinds, series: series, domains: domains)
+        let showsPointSymbols = points.count <= 60
+        let selectedPoints = nearestPoints(to: selectedKilometer, in: points, kinds: kinds)
+        let selectedIDs = Set(selectedPoints.map(\.id))
+        let primaryKind = kinds.first ?? (isCycling ? .speed : .pace)
+        let secondaryKind = kinds.dropFirst().first
         if !points.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
-                metricPicker
+                metricPicker(activeKinds: kinds)
 
-                Chart(points) { point in
-                    LineMark(
-                        x: .value("km", point.kilometer),
-                        y: .value("Wert", point.normalized)
-                    )
-                    .interpolationMethod(.catmullRom)
-                    .foregroundStyle(by: .value("Metrik", point.kind.title))
+                axisAssignment(primary: primaryKind, secondary: secondaryKind)
 
-                    PointMark(
-                        x: .value("km", point.kilometer),
-                        y: .value("Wert", point.normalized)
-                    )
-                    .foregroundStyle(by: .value("Metrik", point.kind.title))
+                Chart {
+                    ForEach(points) { point in
+                        LineMark(
+                            x: .value("km", point.kilometer),
+                            y: .value("Skaliert", point.normalized)
+                        )
+                        .interpolationMethod(showsPointSymbols ? .catmullRom : .linear)
+                        .foregroundStyle(by: .value("Metrik", point.kind.title))
+
+                        if showsPointSymbols {
+                            PointMark(
+                                x: .value("km", point.kilometer),
+                                y: .value("Skaliert", point.normalized)
+                            )
+                            .foregroundStyle(by: .value("Metrik", point.kind.title))
+                        }
+
+                        if selectedIDs.contains(point.id) {
+                            PointMark(
+                                x: .value("Ausgewählt", point.kilometer),
+                                y: .value("Skaliert", point.normalized)
+                            )
+                            .foregroundStyle(point.kind.color)
+                            .symbolSize(85)
+                        }
+                    }
+
+                    if let selectedKilometer = selectedPoints.first?.kilometer {
+                        RuleMark(x: .value("Ausgewählt", selectedKilometer))
+                            .foregroundStyle(.secondary.opacity(0.7))
+                            .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                    }
                 }
                 .frame(height: 260)
                 .chartForegroundStyleScale(colorScale)
                 .chartXAxisLabel(WorkoutUnits.isImperial ? L10n.string("Meilen") : L10n.string("Kilometer"))
-                .chartYAxis(.hidden)
-                .chartLegend(position: .bottom, alignment: .leading)
+                .chartYScale(domain: 0...1)
+                .chartXScale(domain: kilometerDomain(for: points))
+                .chartXVisibleDomain(length: visibleKilometerCount(for: points))
+                .chartScrollableAxes(.horizontal)
+                .chartTapSelection(value: $selectedKilometer)
+                .chartPinchZoom($chartZoomLevel)
+                .chartLegend(.hidden)
                 .chartXAxis {
                     AxisMarks(values: .automatic(desiredCount: 5)) { _ in
                         AxisGridLine()
@@ -77,43 +113,84 @@ struct WorkoutMetricChartView: View {
                             .font(.caption2)
                     }
                 }
+                .chartYAxis {
+                    AxisMarks(position: .leading, values: normalizedAxisValues) { value in
+                        AxisGridLine()
+                        AxisTick()
+                        AxisValueLabel {
+                            if let normalized = value.as(Double.self),
+                               let domain = domains[primaryKind] {
+                                Text(axisValue(domain.rawValue(at: normalized), for: primaryKind))
+                                    .font(.caption2)
+                                    .foregroundStyle(primaryKind.color)
+                            }
+                        }
+                    }
 
-                if !latestValues.isEmpty {
-                    HStack(spacing: 8) {
-                        ForEach(latestValues) { item in
-                            Label(item.value, systemImage: "circle.fill")
-                                .font(.caption2)
-                                .foregroundStyle(item.kind.color)
-                                .lineLimit(1)
+                    if let secondaryKind, let secondaryDomain = domains[secondaryKind] {
+                        AxisMarks(position: .trailing, values: normalizedAxisValues) { value in
+                            AxisTick()
+                            AxisValueLabel {
+                                if let normalized = value.as(Double.self) {
+                                    Text(axisValue(secondaryDomain.rawValue(at: normalized), for: secondaryKind))
+                                        .font(.caption2)
+                                        .foregroundStyle(secondaryKind.color)
+                                }
+                            }
                         }
                     }
                 }
+                .modernChartSurface(tint: primaryKind.color)
+
+                if let selectedKilometer = selectedPoints.first?.kilometer, !selectedPoints.isEmpty {
+                    ChartSelectedValue(
+                        title: "\(WorkoutUnits.distanceSymbol) \(selectedKilometer)",
+                        values: selectedPoints.map { ($0.kind.color, $0.displayValue) }
+                    )
+                }
+
+                ChartGestureHint()
             }
         }
     }
 
-    private var metricPicker: some View {
+    private func metricPicker(activeKinds: [WorkoutMetricKind]) -> some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(availableKinds) { kind in
                     Button {
-                        toggle(kind)
+                        toggle(kind, current: activeKinds)
+                        selectedKilometer = nil
                     } label: {
                         HStack(spacing: 6) {
-                            Image(systemName: selectedKinds.contains(kind) ? "checkmark.circle.fill" : "circle")
+                            Image(systemName: activeKinds.contains(kind) ? "checkmark.circle.fill" : "circle")
                             Text(kind.title)
                         }
                         .font(.caption.bold())
                         .foregroundStyle(kind.color)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 7)
-                        .background(kind.color.opacity(selectedKinds.contains(kind) ? 0.16 : 0.07),
+                        .background(kind.color.opacity(activeKinds.contains(kind) ? 0.16 : 0.07),
                                     in: Capsule())
                     }
                     .buttonStyle(.plain)
                 }
             }
         }
+    }
+
+    private func axisAssignment(primary: WorkoutMetricKind,
+                                secondary: WorkoutMetricKind?) -> some View {
+        HStack {
+            Text("Links: \(primary.title)")
+                .foregroundStyle(primary.color)
+            Spacer()
+            if let secondary {
+                Text("Rechts: \(secondary.title)")
+                    .foregroundStyle(secondary.color)
+            }
+        }
+        .font(.caption2.bold())
     }
 
     private var availableKinds: [WorkoutMetricKind] {
@@ -126,35 +203,67 @@ struct WorkoutMetricChartView: View {
         return kinds
     }
 
-    private var selectedKinds: Set<WorkoutMetricKind> {
-        let available = Set(availableKinds)
-        let filtered = selected.intersection(available)
-        return filtered.isEmpty ? available : filtered
-    }
-
-    private var chartPoints: [WorkoutMetricChartPoint] {
-        selectedKinds.flatMap { normalizedPoints(for: $0) }
-            .sorted {
-                if $0.kind.title == $1.kind.title { return $0.kilometer < $1.kilometer }
-                return $0.kind.title < $1.kind.title
-            }
-    }
-
-    private var latestValues: [WorkoutMetricLatestValue] {
-        selectedKinds.compactMap { kind in
-            guard let last = rawValues(for: kind).last else { return nil }
-            return WorkoutMetricLatestValue(kind: kind, value: displayValue(last.value, for: kind))
+    private var activeKinds: [WorkoutMetricKind] {
+        let available = availableKinds
+        let filtered = selectedKinds.filter { available.contains($0) }
+        if !filtered.isEmpty {
+            return filtered
         }
-        .sorted { $0.kind.title < $1.kind.title }
+        return available
     }
 
-    private var colorScale: KeyValuePairs<String, Color> {
-        [
-            WorkoutMetricKind.pace.title: WorkoutMetricKind.pace.color,
-            WorkoutMetricKind.speed.title: WorkoutMetricKind.speed.color,
-            WorkoutMetricKind.heartRate.title: WorkoutMetricKind.heartRate.color,
-            WorkoutMetricKind.elevation.title: WorkoutMetricKind.elevation.color,
-        ]
+    private func seriesValues(for kinds: [WorkoutMetricKind]) -> [WorkoutMetricKind: [WorkoutMetricRawValue]] {
+        Dictionary(uniqueKeysWithValues: kinds.map { ($0, rawValues(for: $0)) })
+    }
+
+    private func scaleDomains(for series: [WorkoutMetricKind: [WorkoutMetricRawValue]])
+        -> [WorkoutMetricKind: WorkoutMetricScaleDomain] {
+        series.mapValues { WorkoutMetricScaleDomain(values: $0.map(\.value)) }
+    }
+
+    private func chartPoints(for kinds: [WorkoutMetricKind],
+                             series: [WorkoutMetricKind: [WorkoutMetricRawValue]],
+                             domains: [WorkoutMetricKind: WorkoutMetricScaleDomain]) -> [WorkoutMetricChartPoint] {
+        kinds.flatMap { kind -> [WorkoutMetricChartPoint] in
+            guard let domain = domains[kind] else { return [] }
+            return (series[kind] ?? []).map {
+                WorkoutMetricChartPoint(kilometer: $0.kilometer,
+                                        kind: kind,
+                                        normalized: domain.normalized($0.value),
+                                        displayValue: displayValue($0.value, for: kind))
+            }
+        }
+    }
+
+    private func nearestPoints(to kilometer: Int?,
+                               in points: [WorkoutMetricChartPoint],
+                               kinds: [WorkoutMetricKind]) -> [WorkoutMetricChartPoint] {
+        guard let kilometer else { return [] }
+        return kinds.compactMap { kind in
+            points.filter { $0.kind == kind }
+                .min { abs($0.kilometer - kilometer) < abs($1.kilometer - kilometer) }
+        }
+    }
+
+    private func toggle(_ kind: WorkoutMetricKind, current: [WorkoutMetricKind]) {
+        if current.contains(kind) {
+            guard current.count > 1 else { return }
+            selectedKinds = current.filter { $0 != kind }
+        } else {
+            selectedKinds = current + [kind]
+        }
+    }
+
+    private func kilometerDomain(for points: [WorkoutMetricChartPoint]) -> ClosedRange<Int> {
+        let values = points.map(\.kilometer)
+        let lower = values.min() ?? 0
+        return lower...(max(values.max() ?? lower, lower + 1))
+    }
+
+    private func visibleKilometerCount(for points: [WorkoutMetricChartPoint]) -> Int {
+        let domain = kilometerDomain(for: points)
+        let count = domain.upperBound - domain.lowerBound + 1
+        return min(count, max(2, Int(ceil(Double(count) / chartZoomLevel))))
     }
 
     private var hasHeartRate: Bool {
@@ -163,34 +272,6 @@ struct WorkoutMetricChartView: View {
 
     private var hasElevation: Bool {
         splits.contains { (elevationGainBySplit[$0.id] ?? 0) > 0 }
-    }
-
-    private func toggle(_ kind: WorkoutMetricKind) {
-        if selectedKinds.contains(kind), selectedKinds.count == 1 {
-            selected = []
-            return
-        }
-        if selected.contains(kind) {
-            selected.remove(kind)
-        } else {
-            selected.insert(kind)
-        }
-    }
-
-    private func normalizedPoints(for kind: WorkoutMetricKind) -> [WorkoutMetricChartPoint] {
-        let values = rawValues(for: kind)
-        guard !values.isEmpty else { return [] }
-        let raw = values.map(\.value)
-        let minValue = raw.min() ?? 0
-        let maxValue = raw.max() ?? minValue
-        let span = max(maxValue - minValue, 0.0001)
-
-        return values.map { item in
-            WorkoutMetricChartPoint(kilometer: item.kilometer,
-                                    kind: kind,
-                                    normalized: (item.value - minValue) / span,
-                                    displayValue: displayValue(item.value, for: kind))
-        }
     }
 
     private func rawValues(for kind: WorkoutMetricKind) -> [WorkoutMetricRawValue] {
@@ -238,6 +319,32 @@ struct WorkoutMetricChartView: View {
             return "\(Int(value.rounded())) hm"
         }
     }
+
+    private func axisValue(_ value: Double, for kind: WorkoutMetricKind) -> String {
+        switch kind {
+        case .pace:
+            return WorkoutUnits.pace(secondsPerKilometer: Int((value * 60).rounded()))
+        case .speed:
+            return compactAxisNumber(WorkoutUnits.speedValue(kmh: value), unit: WorkoutUnits.speedSymbol)
+        case .heartRate:
+            return "\(Int(value.rounded()))"
+        case .elevation:
+            return "\(Int(value.rounded()))"
+        }
+    }
+
+    private var normalizedAxisValues: [Double] {
+        [0, 0.5, 1]
+    }
+
+    private var colorScale: KeyValuePairs<String, Color> {
+        [
+            WorkoutMetricKind.pace.title: WorkoutMetricKind.pace.color,
+            WorkoutMetricKind.speed.title: WorkoutMetricKind.speed.color,
+            WorkoutMetricKind.heartRate.title: WorkoutMetricKind.heartRate.color,
+            WorkoutMetricKind.elevation.title: WorkoutMetricKind.elevation.color,
+        ]
+    }
 }
 
 private struct WorkoutMetricRawValue {
@@ -246,17 +353,12 @@ private struct WorkoutMetricRawValue {
 }
 
 private struct WorkoutMetricChartPoint: Identifiable {
-    let id = UUID()
     let kilometer: Int
     let kind: WorkoutMetricKind
     let normalized: Double
     let displayValue: String
-}
 
-private struct WorkoutMetricLatestValue: Identifiable {
-    let id = UUID()
-    let kind: WorkoutMetricKind
-    let value: String
+    var id: String { "\(kind.rawValue)-\(kilometer)" }
 }
 
 struct WorkoutTimelineSample: Hashable {
@@ -271,34 +373,77 @@ struct WorkoutSampleTimelineChartView: View {
     let samples: [WorkoutTimelineSample]
     let heartRate: HeartRateSummary?
     let isCycling: Bool
+    private let cachedSpeedValues: [WorkoutTimelineSpeedValue]
 
-    @State private var selected: Set<WorkoutMetricKind> = []
+    @State private var selectedKinds: [WorkoutMetricKind] = []
+    @State private var selectedDate: Date?
+    @State private var chartZoomLevel = 1.0
+
+    init(samples: [WorkoutTimelineSample], heartRate: HeartRateSummary?, isCycling: Bool) {
+        self.samples = samples
+        self.heartRate = heartRate
+        self.isCycling = isCycling
+        self.cachedSpeedValues = Self.makeSpeedValues(from: samples)
+    }
 
     var body: some View {
-        let points = chartPoints
+        let kinds = activeKinds
+        let series = seriesValues(for: kinds)
+        let domains = scaleDomains(for: series)
+        let points = chartPoints(for: kinds, series: series, domains: domains)
+        let showsPointSymbols = points.count <= 60
+        let selectedPoints = nearestPoints(to: selectedDate, in: points, kinds: kinds)
+        let selectedIDs = Set(selectedPoints.map(\.id))
+        let primaryKind = kinds.first ?? (isCycling ? .speed : .pace)
+        let secondaryKind = kinds.dropFirst().first
         if !points.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Alle Messwerte")
                     .font(.headline)
-                metricPicker
-                Chart(points) { point in
-                    LineMark(
-                        x: .value("Zeit", point.date),
-                        y: .value("Wert", point.normalized)
-                    )
-                    .interpolationMethod(.catmullRom)
-                    .foregroundStyle(by: .value("Metrik", point.kind.title))
+                metricPicker(activeKinds: kinds)
+                axisAssignment(primary: primaryKind, secondary: secondaryKind)
+                Chart {
+                    ForEach(points) { point in
+                        LineMark(
+                            x: .value("Zeit", point.date),
+                            y: .value("Skaliert", point.normalized)
+                        )
+                        .interpolationMethod(showsPointSymbols ? .catmullRom : .linear)
+                        .foregroundStyle(by: .value("Metrik", point.kind.title))
 
-                    PointMark(
-                        x: .value("Zeit", point.date),
-                        y: .value("Wert", point.normalized)
-                    )
-                    .foregroundStyle(by: .value("Metrik", point.kind.title))
+                        if showsPointSymbols {
+                            PointMark(
+                                x: .value("Zeit", point.date),
+                                y: .value("Skaliert", point.normalized)
+                            )
+                            .foregroundStyle(by: .value("Metrik", point.kind.title))
+                        }
+
+                        if selectedIDs.contains(point.id) {
+                            PointMark(
+                                x: .value("Ausgewählt", point.date),
+                                y: .value("Skaliert", point.normalized)
+                            )
+                            .foregroundStyle(point.kind.color)
+                            .symbolSize(85)
+                        }
+                    }
+
+                    if let selectedDate = selectedPoints.first?.date {
+                        RuleMark(x: .value("Ausgewählt", selectedDate))
+                            .foregroundStyle(.secondary.opacity(0.7))
+                            .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                    }
                 }
                 .frame(height: 260)
                 .chartForegroundStyleScale(colorScale)
-                .chartYAxis(.hidden)
-                .chartLegend(position: .bottom, alignment: .leading)
+                .chartYScale(domain: 0...1)
+                .chartXScale(domain: timelineDomain(for: points))
+                .chartXVisibleDomain(length: visibleTimelineDuration(for: points))
+                .chartScrollableAxes(.horizontal)
+                .chartTapSelection(value: $selectedDate)
+                .chartPinchZoom($chartZoomLevel)
+                .chartLegend(.hidden)
                 .chartXAxis {
                     AxisMarks(values: .automatic(desiredCount: 4)) { _ in
                         AxisGridLine()
@@ -307,43 +452,84 @@ struct WorkoutSampleTimelineChartView: View {
                             .font(.caption2)
                     }
                 }
+                .chartYAxis {
+                    AxisMarks(position: .leading, values: normalizedAxisValues) { value in
+                        AxisGridLine()
+                        AxisTick()
+                        AxisValueLabel {
+                            if let normalized = value.as(Double.self),
+                               let domain = domains[primaryKind] {
+                                Text(axisValue(domain.rawValue(at: normalized), for: primaryKind))
+                                    .font(.caption2)
+                                    .foregroundStyle(primaryKind.color)
+                            }
+                        }
+                    }
 
-                if !latestValues.isEmpty {
-                    HStack(spacing: 8) {
-                        ForEach(latestValues) { item in
-                            Label(item.value, systemImage: "circle.fill")
-                                .font(.caption2)
-                                .foregroundStyle(item.kind.color)
-                                .lineLimit(1)
+                    if let secondaryKind, let secondaryDomain = domains[secondaryKind] {
+                        AxisMarks(position: .trailing, values: normalizedAxisValues) { value in
+                            AxisTick()
+                            AxisValueLabel {
+                                if let normalized = value.as(Double.self) {
+                                    Text(axisValue(secondaryDomain.rawValue(at: normalized), for: secondaryKind))
+                                        .font(.caption2)
+                                        .foregroundStyle(secondaryKind.color)
+                                }
+                            }
                         }
                     }
                 }
+                .modernChartSurface(tint: primaryKind.color)
+
+                if let selectedDate = selectedPoints.first?.date, !selectedPoints.isEmpty {
+                    ChartSelectedValue(
+                        title: selectedDate.formatted(.dateTime.hour().minute().second()),
+                        values: selectedPoints.map { ($0.kind.color, $0.displayValue) }
+                    )
+                }
+
+                ChartGestureHint()
             }
         }
     }
 
-    private var metricPicker: some View {
+    private func metricPicker(activeKinds: [WorkoutMetricKind]) -> some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(availableKinds) { kind in
                     Button {
-                        toggle(kind)
+                        toggle(kind, current: activeKinds)
+                        selectedDate = nil
                     } label: {
                         HStack(spacing: 6) {
-                            Image(systemName: selectedKinds.contains(kind) ? "checkmark.circle.fill" : "circle")
+                            Image(systemName: activeKinds.contains(kind) ? "checkmark.circle.fill" : "circle")
                             Text(kind.title)
                         }
                         .font(.caption.bold())
                         .foregroundStyle(kind.color)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 7)
-                        .background(kind.color.opacity(selectedKinds.contains(kind) ? 0.16 : 0.07),
+                        .background(kind.color.opacity(activeKinds.contains(kind) ? 0.16 : 0.07),
                                     in: Capsule())
                     }
                     .buttonStyle(.plain)
                 }
             }
         }
+    }
+
+    private func axisAssignment(primary: WorkoutMetricKind,
+                                secondary: WorkoutMetricKind?) -> some View {
+        HStack {
+            Text("Links: \(primary.title)")
+                .foregroundStyle(primary.color)
+            Spacer()
+            if let secondary {
+                Text("Rechts: \(secondary.title)")
+                    .foregroundStyle(secondary.color)
+            }
+        }
+        .font(.caption2.bold())
     }
 
     private var availableKinds: [WorkoutMetricKind] {
@@ -360,62 +546,68 @@ struct WorkoutSampleTimelineChartView: View {
         return kinds
     }
 
-    private var selectedKinds: Set<WorkoutMetricKind> {
-        let available = Set(availableKinds)
-        let filtered = selected.intersection(available)
-        return filtered.isEmpty ? available : filtered
+    private var activeKinds: [WorkoutMetricKind] {
+        let available = availableKinds
+        let filtered = selectedKinds.filter { available.contains($0) }
+        if !filtered.isEmpty {
+            return filtered
+        }
+        return available
     }
 
-    private var chartPoints: [WorkoutTimelineChartPoint] {
-        selectedKinds.flatMap { normalizedPoints(for: $0) }
-            .sorted {
-                if $0.kind.title == $1.kind.title { return $0.date < $1.date }
-                return $0.kind.title < $1.kind.title
+    private func seriesValues(for kinds: [WorkoutMetricKind]) -> [WorkoutMetricKind: [WorkoutTimelineRawValue]] {
+        Dictionary(uniqueKeysWithValues: kinds.map { ($0, rawValues(for: $0)) })
+    }
+
+    private func scaleDomains(for series: [WorkoutMetricKind: [WorkoutTimelineRawValue]])
+        -> [WorkoutMetricKind: WorkoutMetricScaleDomain] {
+        series.mapValues { WorkoutMetricScaleDomain(values: $0.map(\.value)) }
+    }
+
+    private func chartPoints(for kinds: [WorkoutMetricKind],
+                             series: [WorkoutMetricKind: [WorkoutTimelineRawValue]],
+                             domains: [WorkoutMetricKind: WorkoutMetricScaleDomain]) -> [WorkoutTimelineChartPoint] {
+        kinds.flatMap { kind -> [WorkoutTimelineChartPoint] in
+            guard let domain = domains[kind] else { return [] }
+            return chartSampledValues(series[kind] ?? []).map {
+                WorkoutTimelineChartPoint(date: $0.date,
+                                          kind: kind,
+                                          normalized: domain.normalized($0.value),
+                                          displayValue: displayValue($0.value, for: kind))
             }
-    }
-
-    private var latestValues: [WorkoutMetricLatestValue] {
-        selectedKinds.compactMap { kind in
-            guard let last = rawValues(for: kind).last else { return nil }
-            return WorkoutMetricLatestValue(kind: kind, value: displayValue(last.value, for: kind))
         }
-        .sorted { $0.kind.title < $1.kind.title }
     }
 
-    private var colorScale: KeyValuePairs<String, Color> {
-        [
-            WorkoutMetricKind.pace.title: WorkoutMetricKind.pace.color,
-            WorkoutMetricKind.speed.title: WorkoutMetricKind.speed.color,
-            WorkoutMetricKind.heartRate.title: WorkoutMetricKind.heartRate.color,
-            WorkoutMetricKind.elevation.title: WorkoutMetricKind.elevation.color,
-        ]
-    }
-
-    private func toggle(_ kind: WorkoutMetricKind) {
-        if selectedKinds.contains(kind), selectedKinds.count == 1 {
-            selected = []
-            return
+    private func nearestPoints(to date: Date?,
+                               in points: [WorkoutTimelineChartPoint],
+                               kinds: [WorkoutMetricKind]) -> [WorkoutTimelineChartPoint] {
+        guard let date else { return [] }
+        return kinds.compactMap { kind in
+            points.filter { $0.kind == kind }
+                .min { abs($0.date.timeIntervalSince(date)) < abs($1.date.timeIntervalSince(date)) }
         }
-        if selected.contains(kind) {
-            selected.remove(kind)
+    }
+
+    private func toggle(_ kind: WorkoutMetricKind, current: [WorkoutMetricKind]) {
+        if current.contains(kind) {
+            guard current.count > 1 else { return }
+            selectedKinds = current.filter { $0 != kind }
         } else {
-            selected.insert(kind)
+            selectedKinds = current + [kind]
         }
     }
 
-    private func normalizedPoints(for kind: WorkoutMetricKind) -> [WorkoutTimelineChartPoint] {
-        let values = rawValues(for: kind)
-        guard !values.isEmpty else { return [] }
-        let raw = values.map(\.value)
-        let minValue = raw.min() ?? 0
-        let maxValue = raw.max() ?? minValue
-        let span = max(maxValue - minValue, 0.0001)
-        return values.map { item in
-            WorkoutTimelineChartPoint(date: item.date,
-                                      kind: kind,
-                                      normalized: (item.value - minValue) / span,
-                                      displayValue: displayValue(item.value, for: kind))
-        }
+    private func timelineDomain(for points: [WorkoutTimelineChartPoint]) -> ClosedRange<Date> {
+        let dates = points.map(\.date)
+        let start = dates.min() ?? Date()
+        let end = dates.max() ?? start.addingTimeInterval(1)
+        return start...(end > start ? end : start.addingTimeInterval(1))
+    }
+
+    private func visibleTimelineDuration(for points: [WorkoutTimelineChartPoint]) -> TimeInterval {
+        let domain = timelineDomain(for: points)
+        let total = domain.upperBound.timeIntervalSince(domain.lowerBound)
+        return min(total, max(30, total / chartZoomLevel))
     }
 
     private func rawValues(for kind: WorkoutMetricKind) -> [WorkoutTimelineRawValue] {
@@ -445,6 +637,10 @@ struct WorkoutSampleTimelineChartView: View {
     }
 
     private var speedValues: [WorkoutTimelineSpeedValue] {
+        cachedSpeedValues
+    }
+
+    private static func makeSpeedValues(from samples: [WorkoutTimelineSample]) -> [WorkoutTimelineSpeedValue] {
         let route = samples
             .compactMap { sample -> (date: Date, location: CLLocation)? in
                 guard let date = sample.timestamp,
@@ -483,6 +679,30 @@ struct WorkoutSampleTimelineChartView: View {
             return "\(Int(value.rounded())) m"
         }
     }
+
+    private func axisValue(_ value: Double, for kind: WorkoutMetricKind) -> String {
+        switch kind {
+        case .pace:
+            return WorkoutUnits.pace(secondsPerKilometer: Int((value * 60).rounded()))
+        case .speed:
+            return compactAxisNumber(WorkoutUnits.speedValue(kmh: value), unit: WorkoutUnits.speedSymbol)
+        case .heartRate, .elevation:
+            return "\(Int(value.rounded()))"
+        }
+    }
+
+    private var normalizedAxisValues: [Double] {
+        [0, 0.5, 1]
+    }
+
+    private var colorScale: KeyValuePairs<String, Color> {
+        [
+            WorkoutMetricKind.pace.title: WorkoutMetricKind.pace.color,
+            WorkoutMetricKind.speed.title: WorkoutMetricKind.speed.color,
+            WorkoutMetricKind.heartRate.title: WorkoutMetricKind.heartRate.color,
+            WorkoutMetricKind.elevation.title: WorkoutMetricKind.elevation.color,
+        ]
+    }
 }
 
 private struct WorkoutTimelineRawValue {
@@ -496,9 +716,42 @@ private struct WorkoutTimelineSpeedValue {
 }
 
 private struct WorkoutTimelineChartPoint: Identifiable {
-    let id = UUID()
     let date: Date
     let kind: WorkoutMetricKind
     let normalized: Double
     let displayValue: String
+
+    var id: String { "\(kind.rawValue)-\(date.timeIntervalSinceReferenceDate)" }
+}
+
+private struct WorkoutMetricScaleDomain {
+    let lowerBound: Double
+    let upperBound: Double
+
+    init(values: [Double]) {
+        let minimum = values.min() ?? 0
+        let maximum = values.max() ?? minimum
+        if maximum - minimum < 0.0001 {
+            let padding = max(abs(minimum) * 0.05, 0.5)
+            lowerBound = minimum - padding
+            upperBound = maximum + padding
+        } else {
+            lowerBound = minimum
+            upperBound = maximum
+        }
+    }
+
+    func normalized(_ value: Double) -> Double {
+        (value - lowerBound) / (upperBound - lowerBound)
+    }
+
+    func rawValue(at normalized: Double) -> Double {
+        lowerBound + ((upperBound - lowerBound) * normalized)
+    }
+}
+
+private func compactAxisNumber(_ value: Double, unit: String? = nil) -> String {
+    let number = compactChartAxisNumber(value)
+    guard let unit, !unit.isEmpty else { return number }
+    return "\(number) \(unit)"
 }

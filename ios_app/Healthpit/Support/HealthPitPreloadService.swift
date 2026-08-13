@@ -21,14 +21,13 @@ actor HealthPitPreloadService {
         isRunning = true
         defer { isRunning = false }
 
-        try? await health.requestAuthorization()
+        await health.prepareForBackgroundWork()
 
         async let dashboardMetrics: Void = refreshDashboardMetrics()
         async let sleepDay = try? health.fetchSleep(in: .day)
         async let sleepWeek = try? health.fetchSleep(in: .week)
         async let sleepMonth = try? health.fetchSleep(in: .month)
         async let imports: Int? = try? BridgeSyncService.shared.downloadImportedWorkouts()
-        async let localSummaries: [LocalWorkout] = LocalWorkoutStore.shared.loadSummaries()
 
         if let sessions = await sleepDay {
             await SleepCacheStore.shared.save(sessions, range: .day)
@@ -41,7 +40,10 @@ actor HealthPitPreloadService {
         }
         _ = await dashboardMetrics
         _ = await imports
-        _ = await localSummaries
+        // Do not warm this cache before the bridge download has completed.
+        // Otherwise the first workout screen can observe the old GymPit copy
+        // without its exercises and keep showing it for the whole view life.
+        _ = await LocalWorkoutStore.shared.loadSummaries()
     }
 
     /// Lokaler Abgleich für Pull-to-refresh: nur Apple Health lesen und lokale
@@ -51,7 +53,7 @@ actor HealthPitPreloadService {
         isRunning = true
         defer { isRunning = false }
 
-        try? await health.requestAuthorization()
+        await health.prepareForBackgroundWork()
 
         async let dashboardMetrics: Void = refreshDashboardMetrics()
         async let sleepCaches: Void = refreshSleepCaches()

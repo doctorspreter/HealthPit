@@ -19,6 +19,8 @@ struct MetricDetailView: View {
     @State private var stats: [DailyStatistic] = []
     @State private var isLoading = false
     @State private var showingValues = false
+    @State private var selectedChartDate: Date?
+    @State private var chartZoomLevel = 1.0
 
     var body: some View {
         ScrollView {
@@ -86,11 +88,15 @@ struct MetricDetailView: View {
                                    description: Text("Für diesen Zeitraum liegen keine Werte vor."))
                 .frame(maxWidth: .infinity, minHeight: 220)
         } else {
+            let renderedPoints = metric.aggregation == .cumulativeSum
+                ? scaledPoints
+                : chartSampledValues(scaledPoints)
+            let showsPointSymbols = renderedPoints.count <= 60
             VStack(alignment: .leading, spacing: 8) {
                 Text("Verlauf")
                     .font(.headline)
                 Chart {
-                    ForEach(scaledPoints) { point in
+                    ForEach(renderedPoints) { point in
                         if metric.aggregation == .cumulativeSum {
                             BarMark(
                                 x: .value("Datum", point.date, unit: range.chartComponent),
@@ -102,20 +108,29 @@ struct MetricDetailView: View {
                                 x: .value("Datum", point.date, unit: range.chartComponent),
                                 y: .value(metric.title, point.value)
                             )
-                            .foregroundStyle(metric.category.tint.opacity(0.18))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [metric.category.tint.opacity(0.34), metric.category.tint.opacity(0.03)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
 
                             LineMark(
                                 x: .value("Datum", point.date, unit: range.chartComponent),
                                 y: .value(metric.title, point.value)
                             )
                             .foregroundStyle(metric.category.tint)
-                            .interpolationMethod(.catmullRom)
+                            .interpolationMethod(showsPointSymbols ? .catmullRom : .linear)
+                            .lineStyle(StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
 
-                            PointMark(
-                                x: .value("Datum", point.date, unit: range.chartComponent),
-                                y: .value(metric.title, point.value)
-                            )
-                            .foregroundStyle(metric.category.tint)
+                            if showsPointSymbols {
+                                PointMark(
+                                    x: .value("Datum", point.date, unit: range.chartComponent),
+                                    y: .value(metric.title, point.value)
+                                )
+                                .foregroundStyle(metric.category.tint)
+                            }
                         }
                     }
 
@@ -127,8 +142,59 @@ struct MetricDetailView: View {
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
                         }
+
+                    if let selectedPoint {
+                        RuleMark(x: .value("Ausgewählt", selectedPoint.date))
+                            .foregroundStyle(.secondary.opacity(0.7))
+                            .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+
+                        PointMark(
+                            x: .value("Ausgewählt", selectedPoint.date),
+                            y: .value(metric.title, selectedPoint.value)
+                        )
+                        .foregroundStyle(metric.category.tint)
+                        .symbolSize(80)
+                    }
                 }
                 .frame(height: 240)
+                .chartXScale(domain: chartDateInterval.start...chartDateInterval.end)
+                .chartXVisibleDomain(length: chartVisibleDuration)
+                .chartScrollableAxes(.horizontal)
+                .chartTapSelection(value: $selectedChartDate)
+                .chartPinchZoom($chartZoomLevel)
+                .chartXAxis {
+                    AxisMarks(values: .automatic(desiredCount: 5)) { _ in
+                        AxisGridLine()
+                        AxisTick()
+                        AxisValueLabel()
+                            .font(.caption2)
+                    }
+                }
+                .chartYAxis {
+                    AxisMarks(position: .leading, values: .automatic(desiredCount: 4)) { value in
+                        AxisGridLine()
+                        AxisTick()
+                        AxisValueLabel {
+                            if let number = value.as(Double.self) {
+                                Text(compactChartAxisNumber(number))
+                                    .font(.caption2)
+                            } else if let number = value.as(Int.self) {
+                                Text(number.formatted())
+                                    .font(.caption2)
+                            }
+                        }
+                    }
+                }
+                .modernChartSurface(tint: metric.category.tint)
+
+                if let selectedPoint {
+                    ChartSelectedValue(
+                        title: selectedPoint.date.formatted(chartSelectionDateFormat),
+                        values: [(metric.category.tint, formattedScaled(selectedPoint.value))]
+                    )
+                }
+
+                ChartGestureHint()
             }
         }
     }
@@ -250,6 +316,42 @@ struct MetricDetailView: View {
         return values.reduce(0, +) / Double(values.count)
     }
 
+    private var chartDateInterval: DateInterval {
+        range.dateInterval(referenceDate: referenceDate)
+    }
+
+    private var chartVisibleDuration: TimeInterval {
+        max(minimumChartDuration, chartDateInterval.duration / chartZoomLevel)
+    }
+
+    private var minimumChartDuration: TimeInterval {
+        switch range {
+        case .day: return 3 * 60 * 60
+        case .week: return 24 * 60 * 60
+        case .month: return 3 * 24 * 60 * 60
+        case .year: return 31 * 24 * 60 * 60
+        }
+    }
+
+    private var selectedPoint: DailyStatistic? {
+        guard let selectedChartDate else { return nil }
+        return scaledPoints.min {
+            abs($0.date.timeIntervalSince(selectedChartDate))
+                < abs($1.date.timeIntervalSince(selectedChartDate))
+        }
+    }
+
+    private var chartSelectionDateFormat: Date.FormatStyle {
+        switch range {
+        case .day:
+            return .dateTime.weekday(.abbreviated).hour().minute()
+        case .week, .month:
+            return .dateTime.weekday(.abbreviated).day().month()
+        case .year:
+            return .dateTime.month(.wide).year()
+        }
+    }
+
     private var dailyAverageValue: Double {
         let total = scaledPoints.map(\.value).reduce(0, +)
         return total / Double(daysForAverage)
@@ -273,6 +375,8 @@ struct MetricDetailView: View {
     private func load() async {
         isLoading = true
         defer { isLoading = false }
+        selectedChartDate = nil
+        chartZoomLevel = 1
         stats = (try? await health.fetchStatistics(for: metric, in: range, referenceDate: referenceDate)) ?? []
     }
 

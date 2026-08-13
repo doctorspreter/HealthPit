@@ -55,6 +55,9 @@ final class HealthKitManager: @unchecked Sendable {
     private let log = Logger(subsystem: "HealthPit", category: "HealthKit")
     private let authorizationCoordinator = HealthAuthorizationCoordinator()
 
+    /// Gemerkt, dass der Freigabedialog schon einmal beantwortet wurde.
+    private static let didRequestKey = "healthAuthorizationRequested"
+
     private init() {}
 
     enum SampleQueryScope {
@@ -82,22 +85,80 @@ final class HealthKitManager: @unchecked Sendable {
             throw HealthError.healthDataUnavailable
         }
         try await authorizationCoordinator.requestOnce {
+            // Steht nichts mehr aus, darf der Systemdialog auch nicht mehr
+            // angestossen werden: iOS zeigt sonst bei jedem Start ein Blatt,
+            // das ueber dem gerade offenen Hinweis liegt und dort haengen
+            // bleibt.
+            guard await self.hasPendingAuthorizationRequest(
+                toShare: HealthKitTypes.shareTypes,
+                read: HealthKitTypes.readTypes
+            ) else { return }
             try await self.performAuthorizationRequest()
         }
     }
 
-    /// Ob der Freigabedialog noch aussteht.
+    /// Bereitet Hintergrundarbeit vor, ohne je den Systemdialog zu zeigen.
+    ///
+    /// Vorladen und Aktualisieren laufen beim Start los — genau dann, wenn
+    /// womoeglich schon ein anderes Blatt offen ist. Ein Freigabedialog
+    /// daneben ist nicht bedienbar. Fehlt die Freigabe, bleiben die Abfragen
+    /// eben leer; gefragt wird ueber die Kachel auf der Startseite.
+    func prepareForBackgroundWork() async {
+        guard isHealthDataAvailable else { return }
+        guard await !needsAuthorizationRequest() else { return }
+        await UnitPreference.refreshFromAppleHealth(store: healthStore)
+    }
+
+    /// Ob der Freigabedialog für die *Lesetypen* noch aussteht.
     ///
     /// Bei reinem Lesezugriff verrät iOS nicht, ob zugestimmt wurde — wohl aber,
     /// ob überhaupt schon gefragt wurde. Genau das braucht die Startseite, um
     /// die Kachel für die erneute Anfrage einzublenden.
+    ///
+    /// Die Schreibtypen bleiben hier bewusst aussen vor: sie wachsen mit jeder
+    /// Fassung (zuletzt die Zyklustypen), und ein neu hinzugekommener
+    /// Schreibtyp wuerde die Kachel wieder einblenden, obwohl das Lesen laengst
+    /// freigegeben ist. Um Schreibrechte wird dort gebeten, wo geschrieben wird.
     func needsAuthorizationRequest() async -> Bool {
         guard isHealthDataAvailable else { return false }
+        if UserDefaults.standard.bool(forKey: Self.didRequestKey) { return false }
+
+        guard await hasPendingAuthorizationRequest(toShare: [], read: HealthKitTypes.readTypes) else {
+            markAuthorizationRequested()
+            return false
+        }
+
+        // Der Status meldet auch dann noch "offen", wenn nur ein einzelner Typ
+        // nie im Dialog stand — etwa einer, der erst mit dieser Fassung
+        // dazugekommen ist. Kommen Werte an, ist die Freigabe da, und die
+        // Kachel haette nichts zu melden.
+        if await hasReadableData() {
+            markAuthorizationRequested()
+            return false
+        }
+        return true
+    }
+
+    /// Ob sich ueberhaupt ein Wert lesen laesst — der einzige verlaessliche
+    /// Beweis fuer erteilten Lesezugriff, den iOS herausgibt.
+    private func hasReadableData() async -> Bool {
+        for metric in HealthMetric.all.prefix(8) {
+            if let latest = try? await latestValue(for: metric), latest.value != 0 {
+                return true
+            }
+        }
+        return (try? await fetchAllWorkouts(limit: 1))?.isEmpty == false
+    }
+
+    private func markAuthorizationRequested() {
+        UserDefaults.standard.set(true, forKey: Self.didRequestKey)
+    }
+
+    private func hasPendingAuthorizationRequest(toShare share: Set<HKSampleType>,
+                                                read: Set<HKObjectType>) async -> Bool {
+        guard isHealthDataAvailable else { return false }
         do {
-            let status = try await healthStore.statusForAuthorizationRequest(
-                toShare: HealthKitTypes.shareTypes,
-                read: HealthKitTypes.readTypes
-            )
+            let status = try await healthStore.statusForAuthorizationRequest(toShare: share, read: read)
             return status == .shouldRequest
         } catch {
             log.error("Autorisierungsstatus nicht ermittelbar: \(error.localizedDescription)")
@@ -112,6 +173,10 @@ final class HealthKitManager: @unchecked Sendable {
         do {
             try await healthStore.requestAuthorization(toShare: shareTypes, read: types)
             log.info("requestAuthorization zurückgekehrt (Dialog beantwortet).")
+            // Der Dialog stand einmal — danach hat die Kachel auf der
+            // Startseite nichts mehr zu suchen, egal wie der Nutzer entschieden
+            // hat. Was fehlt, zeigen die Empty-States.
+            markAuthorizationRequested()
             // Erst jetzt darf nach den bevorzugten Einheiten gefragt werden –
             // ohne Autorisierung liefert preferredUnits nichts Brauchbares.
             await UnitPreference.refreshFromAppleHealth(store: healthStore)
@@ -127,7 +192,7 @@ final class HealthKitManager: @unchecked Sendable {
     /// zusammen mit den Datentypen, die Healthpit bei ihnen gefunden hat.
     func discoverDataSources() async throws -> [HealthSourceDescriptor] {
         guard isHealthDataAvailable else { throw HealthError.healthDataUnavailable }
-        try await requestAuthorization()
+        await prepareForBackgroundWork()
 
         var names: [String: String] = [:]
         var dataPoints: [String: Set<String>] = [:]
@@ -402,6 +467,127 @@ final class HealthKitManager: @unchecked Sendable {
             }
 
             store.execute(query)
+        }
+    }
+
+    /// Reads the complete permitted history in the shape Home Assistant's
+    /// hourly long-term statistics importer expects.
+    func fetchHourlyHistory(for metric: HealthMetric,
+                            referenceDate now: Date = .now) async throws -> [HealthMetricHistoryPoint] {
+        guard isHealthDataAvailable else { throw HealthError.healthDataUnavailable }
+        guard let firstDate = try await earliestSampleDate(for: metric) else { return [] }
+
+        var utc = Calendar(identifier: .gregorian)
+        utc.timeZone = TimeZone(secondsFromGMT: 0)!
+        guard let start = utc.dateInterval(of: .hour, for: firstDate)?.start,
+              let end = utc.date(byAdding: .hour, value: 1,
+                                 to: utc.dateInterval(of: .hour, for: now)?.start ?? now) else {
+            return []
+        }
+
+        let type = metric.quantityType
+        let basePredicate = HKQuery.predicateForSamples(withStart: start,
+                                                        end: end,
+                                                        options: .strictStartDate)
+        let scope = try await configuredScope(basePredicate: basePredicate,
+                                              sampleType: type,
+                                              dataPointID: metric.id)
+        guard case .predicate(let predicate) = scope else { return [] }
+
+        let options: HKStatisticsOptions = switch metric.aggregation {
+        case .cumulativeSum:
+            .cumulativeSum
+        case .discreteAverage:
+            [.discreteAverage, .discreteMin, .discreteMax]
+        }
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKStatisticsCollectionQuery(quantityType: type,
+                                                    quantitySamplePredicate: predicate,
+                                                    options: options,
+                                                    anchorDate: start,
+                                                    intervalComponents: DateComponents(hour: 1))
+            query.initialResultsHandler = { _, collection, error in
+                if let error {
+                    continuation.resume(throwing: HealthError.queryFailed(underlying: error))
+                    return
+                }
+                guard let collection else {
+                    continuation.resume(returning: [])
+                    return
+                }
+
+                let localCalendar = Calendar.healthApp
+                var cumulativeTotal = 0.0
+                var dailyTotal = 0.0
+                var currentDay: Date?
+                var result: [HealthMetricHistoryPoint] = []
+
+                collection.enumerateStatistics(from: start, to: end) { statistics, _ in
+                    switch metric.aggregation {
+                    case .cumulativeSum:
+                        guard let quantity = statistics.sumQuantity(),
+                              quantity.is(compatibleWith: metric.unit) else { return }
+                        let value = quantity.doubleValue(for: metric.unit)
+                        let day = localCalendar.startOfDay(for: statistics.startDate)
+                        if currentDay != day {
+                            currentDay = day
+                            dailyTotal = 0
+                        }
+                        dailyTotal += value
+                        cumulativeTotal += value
+                        result.append(HealthMetricHistoryPoint(date: statistics.startDate,
+                                                               state: dailyTotal,
+                                                               sum: cumulativeTotal,
+                                                               mean: nil,
+                                                               minimum: nil,
+                                                               maximum: nil))
+                    case .discreteAverage:
+                        guard let average = statistics.averageQuantity(),
+                              average.is(compatibleWith: metric.unit) else { return }
+                        let mean = average.doubleValue(for: metric.unit)
+                        let minimum = statistics.minimumQuantity()
+                            .flatMap { $0.is(compatibleWith: metric.unit) ? $0.doubleValue(for: metric.unit) : nil }
+                            ?? mean
+                        let maximum = statistics.maximumQuantity()
+                            .flatMap { $0.is(compatibleWith: metric.unit) ? $0.doubleValue(for: metric.unit) : nil }
+                            ?? mean
+                        result.append(HealthMetricHistoryPoint(date: statistics.startDate,
+                                                               state: nil,
+                                                               sum: nil,
+                                                               mean: mean,
+                                                               minimum: minimum,
+                                                               maximum: maximum))
+                    }
+                }
+                continuation.resume(returning: result)
+            }
+            healthStore.execute(query)
+        }
+    }
+
+    private func earliestSampleDate(for metric: HealthMetric) async throws -> Date? {
+        let type = metric.quantityType
+        let basePredicate = HKQuery.predicateForSamples(withStart: .distantPast,
+                                                        end: .now,
+                                                        options: .strictStartDate)
+        let scope = try await configuredScope(basePredicate: basePredicate,
+                                              sampleType: type,
+                                              dataPointID: metric.id)
+        guard case .predicate(let predicate) = scope else { return nil }
+        let sort = [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(sampleType: type,
+                                      predicate: predicate,
+                                      limit: 1,
+                                      sortDescriptors: sort) { _, samples, error in
+                if let error {
+                    continuation.resume(throwing: HealthError.queryFailed(underlying: error))
+                    return
+                }
+                continuation.resume(returning: samples?.first?.startDate)
+            }
+            healthStore.execute(query)
         }
     }
 

@@ -19,7 +19,9 @@ extension HealthKitManager {
     func fetchCycleOverview(monthsBack: Int = 12,
                             referenceDate now: Date = .now) async throws -> CycleOverview {
         guard isHealthDataAvailable else { throw HealthError.healthDataUnavailable }
-        try await requestAuthorization()
+        // Reines Lesen fragt nicht: der Systemdialog schoebe sich sonst beim
+        // Start ungefragt hoch, weil die Uebersicht dort mitgeladen wird.
+        await prepareForBackgroundWork()
 
         let calendar = Calendar.healthApp
         let start = calendar.date(byAdding: .month, value: -monthsBack, to: now) ?? now

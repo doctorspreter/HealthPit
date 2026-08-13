@@ -28,6 +28,8 @@ struct WorkoutListView: View {
     @State private var isLoading = false
     @State private var showingImporter = false
     @State private var showingManualWorkout = false
+    @State private var undatedImport: WorkoutFileImport?
+    @State private var queuedUndatedImports: [WorkoutFileImport] = []
     @State private var itemPendingDeletion: UnifiedWorkout?
     @State private var showingDeleteConfirmation = false
     @State private var showingSyncStatus = false
@@ -36,6 +38,21 @@ struct WorkoutListView: View {
 
     var body: some View {
         List {
+            Section {
+                ProfessionalPageHero(
+                    eyebrow: range.title,
+                    title: "Training",
+                    subtitle: "Einheiten, Belastung und Fortschritt in einer klaren Trainingsübersicht.",
+                    symbol: "figure.run.circle.fill",
+                    tint: .green,
+                    value: items.isEmpty ? "–" : "\(items.count)",
+                    detail: items.count == 1 ? "Einheit" : "Einheiten"
+                )
+                .listRowInsets(EdgeInsets(top: 8, leading: 18, bottom: 8, trailing: 18))
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+            }
+
             if showingSyncStatus {
                 SyncRefreshStatusView()
                     .listRowSeparator(.hidden)
@@ -47,7 +64,11 @@ struct WorkoutListView: View {
                     ForEach(TimeRange.allCases) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
-                .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
+                .padding(5)
+                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+                .listRowInsets(EdgeInsets(top: 8, leading: 18, bottom: 8, trailing: 18))
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
             }
 
             WorkoutRangeOverview(range: range,
@@ -62,8 +83,22 @@ struct WorkoutListView: View {
                         showingDeleteConfirmation = true
                     }
                 } label: {
-                    Label("Sportarten", systemImage: "figure.mixed.cardio")
+                    HStack(spacing: 12) {
+                        Image(systemName: "figure.mixed.cardio")
+                            .foregroundStyle(.green)
+                            .frame(width: 36, height: 36)
+                            .background(.green.opacity(0.12), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Sportarten").font(.subheadline.weight(.semibold))
+                            Text("Alle Einheiten nach Disziplin").font(.caption2).foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(14)
+                    .professionalCard(tint: .green)
                 }
+                .listRowInsets(EdgeInsets(top: 5, leading: 18, bottom: 8, trailing: 18))
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
             }
 
             if isLoading {
@@ -72,6 +107,7 @@ struct WorkoutListView: View {
                 ContentUnavailableView("Keine Workouts",
                                        systemImage: "figure.run",
                                        description: Text("Im gewählten Zeitraum sind keine Workouts vorhanden."))
+                    .listRowBackground(Color.clear)
             } else {
                 ForEach(items) { item in
                     NavigationLink {
@@ -79,7 +115,12 @@ struct WorkoutListView: View {
                                                  records: [])
                     } label: {
                         UnifiedWorkoutRow(item: item, records: [])
+                            .padding(14)
+                            .professionalCard(tint: .green)
                     }
+                    .listRowInsets(EdgeInsets(top: 5, leading: 18, bottom: 5, trailing: 18))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
                     .swipeActions {
                         Button(role: .destructive) {
                             itemPendingDeletion = item
@@ -91,6 +132,9 @@ struct WorkoutListView: View {
                 }
             }
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .professionalPageBackground(tint: .green)
         .navigationTitle("Workouts")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -125,6 +169,16 @@ struct WorkoutListView: View {
                 }
             }
         }
+        .sheet(item: $undatedImport, onDismiss: presentNextUndatedImport) { imported in
+            UndatedWorkoutImportView(imported: imported,
+                                     workouts: allTimeItems) { workout in
+                Task {
+                    await LocalWorkoutStore.shared.save(workout)
+                    _ = try? await BridgeSyncService.shared.uploadLocalWorkouts()
+                    await loadCached()
+                }
+            }
+        }
         .fileImporter(isPresented: $showingImporter,
                       allowedContentTypes: importTypes,
                       allowsMultipleSelection: true) { result in
@@ -133,8 +187,10 @@ struct WorkoutListView: View {
         .task {
             guard !hasLoadedData else { return }
             await loadCached()
+            await refreshImportedWorkouts()
         }
         .refreshable {
+            await refreshImportedWorkouts()
             await refreshLocalAppleHealthRange()
             SyncRefreshStatusStore.markLocalRefresh()
         }
@@ -206,6 +262,15 @@ struct WorkoutListView: View {
         showingSyncStatus = true
     }
 
+    /// Home Assistant carries the rich GymPit copy with exercises and sets.
+    /// Apple Health only supplies the workout summary, so a local HealthKit
+    /// refresh alone cannot make a strength workout complete.
+    private func refreshImportedWorkouts() async {
+        _ = try? await BridgeSyncService.shared.downloadImportedWorkouts()
+        localWorkouts = await LocalWorkoutStore.shared.loadSummaries()
+        rebuildItems(allTimeHealth: await HealthWorkoutCacheStore.shared.loadAllTime())
+    }
+
     private func refreshLocalAppleHealthRange() async {
         isLoading = items.isEmpty
         if let fresh = try? await health.fetchWorkouts(in: range, referenceDate: referenceDate) {
@@ -241,15 +306,44 @@ struct WorkoutListView: View {
 
     private func importFiles(_ result: Result<[URL], Error>) async {
         guard case .success(let urls) = result else { return }
+        var savedDatedWorkout = false
         for url in urls {
             let access = url.startAccessingSecurityScopedResource()
             defer { if access { url.stopAccessingSecurityScopedResource() } }
-            if let workout = try? WorkoutFileImporter.importWorkout(from: url) {
-                await LocalWorkoutStore.shared.save(workout)
+            if let imported = try? WorkoutFileImporter.analyze(from: url) {
+                if imported.containsDate {
+                    await LocalWorkoutStore.shared.save(imported.workout)
+                    savedDatedWorkout = true
+                } else {
+                    queuedUndatedImports.append(imported)
+                }
             }
         }
-        _ = try? await BridgeSyncService.shared.uploadLocalWorkouts()
+        if savedDatedWorkout {
+            _ = try? await BridgeSyncService.shared.uploadLocalWorkouts()
+        }
         await loadCached()
+        if !queuedUndatedImports.isEmpty {
+            await loadAllWorkoutCandidatesForImport()
+        }
+        presentNextUndatedImport()
+    }
+
+    private func loadAllWorkoutCandidatesForImport() async {
+        if let fresh = try? await health.fetchAllWorkouts(), !fresh.isEmpty {
+            let cacheable = fresh.filter(\.isEligibleForLocalHealthCache)
+            await HealthWorkoutCacheStore.shared.saveAllTime(cacheable)
+            allTimeHealthWorkouts = cacheable
+        } else {
+            allTimeHealthWorkouts = await HealthWorkoutCacheStore.shared.loadAllTime()
+        }
+        localWorkouts = await LocalWorkoutStore.shared.loadSummaries()
+        rebuildItems(allTimeHealth: allTimeHealthWorkouts)
+    }
+
+    private func presentNextUndatedImport() {
+        guard undatedImport == nil, !queuedUndatedImports.isEmpty else { return }
+        undatedImport = queuedUndatedImports.removeFirst()
     }
 
     private func deleteWorkout(_ item: UnifiedWorkout) async {
@@ -580,6 +674,8 @@ enum UnifiedWorkoutBuilder {
 
     private nonisolated static func qualityScore(_ workout: LocalWorkout) -> Double {
         var score = workout.duration
+        score += Double(workout.exercises.count) * 10_000
+        score += Double(workout.exercises.flatMap(\.sets).count) * 1_000
         if let distance = workout.distanceKm { score += distance * 100 }
         score += Double(workout.route.count)
         if workout.averageHeartRate != nil { score += 500 }
@@ -773,32 +869,55 @@ struct LocalWorkoutDetailLoaderView: View {
 
 struct StrengthExerciseDetailView: View {
     let exercise: StrengthExerciseAggregate
+    @State private var selectedChartDate: Date?
+    @State private var chartZoomLevel = 1.0
 
     var body: some View {
-        List {
+        let points = weightPoints
+        let highlightedPoint = selectedChartPoint(in: points)
+        let chartDomain = strengthChartDomain(for: points)
+        let showsPointSymbols = points.count <= 60
+        return List {
             Section {
                 if exercise.points.isEmpty {
                     ContentUnavailableView("Noch kein Verlauf",
                                            systemImage: "chart.line.uptrend.xyaxis",
                                            description: Text("Für diese Übung gibt es noch keine Trainingspunkte."))
                 } else {
-                    Chart(exercise.points) { point in
-                        if let weight = point.weightKg, weight > 0 {
-                            LineMark(x: .value("Training", point.date),
-                                     y: .value("Bestgewicht", weight))
-                                .foregroundStyle(HealthCategory.workouts.tint)
-                                .interpolationMethod(.catmullRom)
-                            PointMark(x: .value("Training", point.date),
-                                      y: .value("Bestgewicht", weight))
-                                .foregroundStyle(HealthCategory.workouts.tint)
-                                .annotation(position: .top) {
-                                    Text(formatKg(weight))
-                                        .font(.caption2.bold())
-                                        .foregroundStyle(.secondary)
+                    Chart {
+                        ForEach(points) { point in
+                            if let weight = point.weightKg {
+                                LineMark(x: .value("Training", point.date),
+                                         y: .value("Bestgewicht", weight))
+                                    .foregroundStyle(HealthCategory.workouts.tint)
+                                    .interpolationMethod(showsPointSymbols ? .catmullRom : .linear)
+                                if showsPointSymbols {
+                                    PointMark(x: .value("Training", point.date),
+                                              y: .value("Bestgewicht", weight))
+                                        .foregroundStyle(HealthCategory.workouts.tint)
                                 }
+
+                                if point.id == highlightedPoint?.id {
+                                    PointMark(x: .value("Ausgewählt", point.date),
+                                              y: .value("Bestgewicht", weight))
+                                        .foregroundStyle(HealthCategory.workouts.tint)
+                                        .symbolSize(80)
+                                }
+                            }
+                        }
+
+                        if let highlightedPoint {
+                            RuleMark(x: .value("Ausgewählt", highlightedPoint.date))
+                                .foregroundStyle(.secondary.opacity(0.7))
+                                .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
                         }
                     }
                     .frame(height: 230)
+                    .chartXScale(domain: chartDomain)
+                    .chartXVisibleDomain(length: strengthChartVisibleDuration(for: chartDomain))
+                    .chartScrollableAxes(.horizontal)
+                    .chartTapSelection(value: $selectedChartDate)
+                    .chartPinchZoom($chartZoomLevel)
                     .chartXAxis {
                         AxisMarks(values: .automatic(desiredCount: 4)) { _ in
                             AxisGridLine()
@@ -808,13 +927,31 @@ struct StrengthExerciseDetailView: View {
                         }
                     }
                     .chartYAxis {
-                        AxisMarks(values: .automatic(desiredCount: 4)) { _ in
+                        AxisMarks(values: .automatic(desiredCount: 4)) { value in
                             AxisGridLine()
                             AxisTick()
-                            AxisValueLabel()
-                                .font(.caption2)
+                            AxisValueLabel {
+                                if let number = value.as(Double.self) {
+                                    Text(compactChartAxisNumber(number))
+                                        .font(.caption2)
+                                } else if let number = value.as(Int.self) {
+                                    Text(number.formatted())
+                                        .font(.caption2)
+                                }
+                            }
                         }
                     }
+                    .modernChartSurface(tint: HealthCategory.workouts.tint)
+
+                    if let selectedChartPoint = highlightedPoint, let weight = selectedChartPoint.weightKg {
+                        ChartSelectedValue(
+                            title: selectedChartPoint.date.formatted(.dateTime.weekday(.abbreviated).day().month().year()),
+                            values: [(HealthCategory.workouts.tint, formatKg(weight))]
+                        )
+                    }
+
+                    ChartGestureHint()
+
                     Label("Bestgewicht pro Training", systemImage: "chart.line.uptrend.xyaxis")
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -849,6 +986,30 @@ struct StrengthExerciseDetailView: View {
         }
         .navigationTitle(exercise.name)
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var weightPoints: [StrengthExercisePoint] {
+        exercise.points.filter { ($0.weightKg ?? 0) > 0 }
+    }
+
+    private func selectedChartPoint(in points: [StrengthExercisePoint]) -> StrengthExercisePoint? {
+        guard let selectedChartDate else { return nil }
+        return points.min {
+            abs($0.date.timeIntervalSince(selectedChartDate))
+                < abs($1.date.timeIntervalSince(selectedChartDate))
+        }
+    }
+
+    private func strengthChartDomain(for points: [StrengthExercisePoint]) -> ClosedRange<Date> {
+        let start = points.map(\.date).min() ?? Date()
+        let last = points.map(\.date).max() ?? start
+        let end = Calendar.healthApp.date(byAdding: .day, value: 1, to: last) ?? last.addingTimeInterval(86_400)
+        return start...end
+    }
+
+    private func strengthChartVisibleDuration(for domain: ClosedRange<Date>) -> TimeInterval {
+        let total = domain.upperBound.timeIntervalSince(domain.lowerBound)
+        return min(total, max(86_400, total / chartZoomLevel))
     }
 
     private func stat(_ title: String, _ value: String) -> some View {
