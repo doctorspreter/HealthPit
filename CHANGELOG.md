@@ -1,5 +1,17 @@
 # Änderungsprotokoll
 
+## Home Assistant 2.3.1
+
+### Fixed
+
+- **The integration failed to set up.** The storage upgrade was handed to
+  Home Assistant's `Store` as a `migrate_func` keyword, which that class does
+  not take — setup ended in `TypeError` and the integration never loaded. The
+  migration now lives in a `Store` subclass overriding `_async_migrate_func`,
+  which is the documented hook. A test reads the source and fails if the wrong
+  hook ever comes back.
+
+
 ## Home Assistant 2.3.0
 
 ### Added

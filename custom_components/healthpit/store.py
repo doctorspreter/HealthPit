@@ -27,27 +27,38 @@ from .workout_merge import unify_workouts
 _LOGGER = logging.getLogger(__name__)
 
 
-async def _async_migrate(
-    old_major_version: int, old_minor_version: int, old_data: dict[str, Any]
-) -> dict[str, Any]:
-    """Carry stored values over to the metric-id model.
+class HealthPitStorage(Store[dict[str, Any]]):
+    """Home Assistant's store with our own upgrade step.
 
-    Nothing is deleted and no key changes: the old sensor id stays the storage
-    key, so Home Assistant keeps the entity and its recorded history. The
-    canonical id is added next to it.
+    Migrations are done by overriding this method — the base class takes no
+    callback, and passing one silently looked fine until Home Assistant
+    refused the keyword at setup.
     """
-    if old_major_version >= 2:
-        return old_data
-    summary = transfer_summary(old_data)
-    migrated = upgrade_storage(old_data)
-    _LOGGER.info(
-        "HealthPit storage upgraded to the metric registry: "
-        "%s values (%s without a known metric id), %s workouts",
-        summary["metrics"],
-        summary["unresolved"],
-        summary["workouts"],
-    )
-    return migrated
+
+    async def _async_migrate_func(
+        self,
+        old_major_version: int,
+        old_minor_version: int,
+        old_data: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Carry stored values over to the metric-id model.
+
+        Nothing is deleted and no key changes: the old sensor id stays the
+        storage key, so Home Assistant keeps the entity and its recorded
+        history. The canonical id is added next to it.
+        """
+        if old_major_version >= 2:
+            return old_data
+        summary = transfer_summary(old_data)
+        migrated = upgrade_storage(old_data)
+        _LOGGER.info(
+            "HealthPit storage upgraded to the metric registry: "
+            "%s values (%s without a known metric id), %s workouts",
+            summary["metrics"],
+            summary["unresolved"],
+            summary["workouts"],
+        )
+        return migrated
 
 
 def _empty_user(name: str) -> dict[str, Any]:
@@ -59,12 +70,8 @@ class HealthPitStore:
 
     def __init__(self, hass: HomeAssistant) -> None:
         self._hass = hass
-        self._store: Store[dict[str, Any]] = Store(
-            hass,
-            STORAGE_VERSION,
-            STORAGE_KEY,
-            private=True,
-            migrate_func=_async_migrate,
+        self._store: Store[dict[str, Any]] = HealthPitStorage(
+            hass, STORAGE_VERSION, STORAGE_KEY, private=True
         )
         self._users: dict[str, dict[str, Any]] = {}
 
