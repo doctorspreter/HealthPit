@@ -242,7 +242,7 @@ class HealthPitStore:
 
     def exercise_values(self, user_id: str) -> list[dict[str, Any]]:
         """Everything stored per exercise – the basis for the sensors."""
-        bucket = self._data.get("users", {}).get(user_id) or {}
+        bucket = self._users.get(user_id) or {}
         return sorted(
             (bucket.get("exercise_values") or {}).values(),
             key=lambda item: (str(item.get("exercise_id") or ""), item.get("metric_id", "")),
