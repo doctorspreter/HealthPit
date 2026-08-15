@@ -21,6 +21,14 @@ struct BridgeMetricPayload: Encodable {
     let deviceClass: String?
     let stateClass: String?
     let displayPrecision: Int?
+    /// Die zentrale Kennung aus dem Katalog (`ACT_STEPS`).
+    ///
+    /// `id` bleibt die Sensorkennung, die die App immer geschickt hat – sie
+    /// ist in Home Assistant der Speicherschluessel, und eine Aenderung wuerde
+    /// dort Entitaets-IDs samt Historie kosten. Die kanonische Kennung reist
+    /// daneben mit; ohne sie muesste die Integration sie aus einer Tabelle
+    /// erraten.
+    var metricID: String? = nil
 
     enum CodingKeys: String, CodingKey {
         case id, category, title, value, unit, aggregation, icon
@@ -28,16 +36,44 @@ struct BridgeMetricPayload: Encodable {
         case deviceClass = "device_class"
         case stateClass = "state_class"
         case displayPrecision = "display_precision"
+        case metricID = "metric_id"
+    }
+}
+
+/// Welche Fassung des Datenmodells die App spricht.
+///
+/// 1 = nur die Sensorkennung, die Integration leitet die Metrik-ID ab.
+/// 2 = die App schickt die kanonische Kennung selbst mit.
+enum BridgeModelVersion {
+    static let current = 2
+}
+
+extension BridgeMetricPayload {
+    /// Ergaenzt die kanonische Kennung aus der Zuordnungstabelle.
+    ///
+    /// An einer Stelle statt an jedem Bauplatz: Die Nutzlast entsteht an rund
+    /// zehn Stellen, und eine vergessene waere ein Wert, der in Home Assistant
+    /// ohne Kennung ankommt.
+    func withCanonicalID() -> BridgeMetricPayload {
+        var copy = self
+        copy.metricID = BridgeMetricMapping.metricID(forBridgeID: id)?.rawValue
+        return copy
     }
 }
 
 struct BridgeBatchPayload: Encodable {
     let deviceID: String
     let metrics: [BridgeMetricPayload]
+    /// 2 = die Werte tragen ihre kanonische Kennung selbst bei sich.
+    ///
+    /// Fehlt das Feld, haelt die Integration die App fuer die alte Fassung,
+    /// leitet die Kennung aus einer Tabelle ab und meldet das als Hinweis.
+    let modelVersion: Int
 
     enum CodingKeys: String, CodingKey {
         case deviceID = "device_id"
         case metrics
+        case modelVersion = "model_version"
     }
 }
 
@@ -634,7 +670,8 @@ final class BridgeSyncService {
         var endpoint = credentials.baseURL
         endpoint.append(path: credentials.apiPath("health/batch"))
         let payload = BridgeBatchPayload(deviceID: credentials.deviceID,
-                                         metrics: metrics)
+                                         metrics: metrics.map { $0.withCanonicalID() },
+                                         modelVersion: BridgeModelVersion.current)
         var request = authorizedRequest(url: endpoint,
                                         method: "POST",
                                         credentials: credentials)
