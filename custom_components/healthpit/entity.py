@@ -52,7 +52,12 @@ def category_device_info(
     This changes no entity ID. In Home Assistant the device is separate from
     the entity ID, so history and automations survive the regrouping.
     """
-    name = CATEGORY_NAMES.get(category, category.title())
+    # Der Name traegt den Anwender mit: „Peter Body“, nicht „Body“. Bei zwei
+    # Personen im Haushalt stuenden sonst zwei Geraete gleichen Namens
+    # nebeneinander, und Home Assistant leitet aus dem Geraetenamen auch die
+    # Entitaets-IDs ab – aus sensor.body_weight wuerde sensor.body_weight_2.
+    area = CATEGORY_NAMES.get(category, category.title())
+    name = f"{coordinator.store.user_name(user_id) or 'Healthpit'} {area}"
     return DeviceInfo(
         identifiers={(DOMAIN, f"{user_id}_{category}")},
         name=name,
@@ -71,9 +76,10 @@ def exercise_device_info(
     45 kg on the abductor, then 80 on the leg press. As a device per exercise
     each history line means one thing.
     """
+    person = coordinator.store.user_name(user_id) or "Healthpit"
     return DeviceInfo(
         identifiers={(DOMAIN, f"{user_id}_exercise_{exercise_id}")},
-        name=name or exercise_id,
+        name=f"{person} {name or exercise_id}",
         manufacturer="Healthpit",
         model="Exercise",
         via_device=(DOMAIN, f"{user_id}_workouts"),
