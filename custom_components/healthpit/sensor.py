@@ -8,12 +8,14 @@ from urllib.parse import quote
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import API_BASE, DOMAIN
 from .coordinator import HealthPitCoordinator
 from .entity import (
     category_device_info,
+    user_device_info,
     exercise_device_info,
     HealthPitUserEntity,
 )
@@ -29,7 +31,22 @@ async def async_setup_entry(
     coordinator: HealthPitCoordinator = hass.data[DOMAIN]
     known: set[str] = set()
 
+    def _ensure_devices() -> None:
+        """Create the user device before anything points at it.
+
+        The area devices name the user device as their ``via_device``. If that
+        parent does not exist yet, Home Assistant refuses the child — and with
+        it the entity, which is why the history import then answered 409: the
+        sensor it was looking for had never been created.
+        """
+        registry = dr.async_get(hass)
+        for user_id in coordinator.user_ids():
+            registry.async_get_or_create(
+                config_entry_id=entry.entry_id, **user_device_info(coordinator, user_id)
+            )
+
     def _new_entities() -> list[SensorEntity]:
+        _ensure_devices()
         entities: list[SensorEntity] = []
         for user_id in coordinator.user_ids():
             entities.extend(_new_metric_sensors(coordinator, user_id, known))
