@@ -717,3 +717,89 @@
 "Ziel %@ (%@)" = "%@目标（%@）";
 "%@ erreicht" = "%@完成度";
 "Tages-, Wochen- und Monatsziele festlegen" = "设置每日、每周和每月目标";
+
+/* Erststart: Übernahme und Erstimport */
+"Vorhandene Daten werden übernommen …" = "正在接管现有数据 …";
+"Daten werden übernommen" = "正在导入数据";
+"Das passiert nur beim ersten Mal." = "这只会发生一次。";
+"Zeitraum wird ermittelt …" = "正在确定时间范围 …";
+"Lese %@ …" = "正在读取 %@ …";
+"Lese Schlaf …" = "正在读取睡眠 …";
+"Lese Trainings …" = "正在读取锻炼 …";
+
+/* Restliche Lücken der Vorfassung */
+"%lld Workouts vorbereitet." = "已准备 %lld 次锻炼。";
+"Sicherungsformat" = "备份格式";
+"Zeile %lld" = "第 %lld 行";
+
+/* Startseite und Einstellungen */
+"Alle Einheiten nach Disziplin" = "按项目查看全部训练";
+"Darstellung" = "外观";
+"Daten & Verbindung" = "数据与连接";
+"Dein Tag auf einen Blick" = "一览你的一天";
+"Deine Bereiche" = "你的板块";
+"Diese drei Werte stehen in der Kachel „Dein Tag auf einen Blick“ auf der Startseite." = "这三个数值会显示在主屏幕的“一览你的一天”卡片中。";
+"Startkachel" = "主屏卡片";
+"Tippe auf einen Bereich für Details und Trends" = "轻点板块查看详情与趋势";
+"Ziel" = "目标";
+
+/* Begrüßung auf der Startseite */
+"Guten Morgen" = "早上好";
+"Guten Tag" = "下午好";
+"Guten Abend" = "晚上好";
+"Stark: Dein Schrittziel ist für heute erreicht." = "不错：今天的步数目标已达成。";
+"Noch %lld Schritte bis zu deinem Tagesziel." = "距离今日目标还差 %lld 步。";
+"Deine wichtigsten Werte erscheinen hier, sobald Apple Health aktualisiert wurde." = "“健康”更新后，你的主要数值会显示在这里。";
+
+/* Überschriften der Bildschirme */
+"Schlaf & Erholung" = "睡眠与恢复";
+"Phasen, Dauer und Qualität verständlich zusammengefasst." = "阶段、时长与质量，一目了然。";
+"Home Assistant und Synchronisierung" = "Home Assistant 与同步";
+"Apple Health und Importe priorisieren" = "优先级：健康与导入";
+"Doppelte Trainings erkennen" = "识别重复锻炼";
+"Exportieren und wiederherstellen" = "导出与恢复";
+"Tages-, Wochen- und Monatsziele festlegen" = "设定每日、每周与每月目标";
+"Bereiche, Reihenfolge und Größen" = "板块、顺序与大小";
+"Darstellung persönlich anpassen" = "按个人喜好调整显示";
+"Manuell, GPX/TCX und GymPit" = "手动、GPX/TCX 与 GymPit";
+"Deine Trends" = "你的趋势";
+"Aktuelle Werte und persönliche Verläufe" = "当前数值与个人走势";
+"Aktuelle Werte gegenüber deinem 3-Monats-Schnitt" = "当前数值与三个月均值对比";
+"Letzte 14 Tage im Vergleich zu deinem Normalwert" = "最近 14 天与你的常态对比";
+"Deine Rekorde" = "你的纪录";
+"Bestleistungen" = "最佳成绩";
+"Alle Bestleistungen" = "全部最佳成绩";
+"Deine stärksten aktuellen Leistungen" = "你近期最好的表现";
+"Filtere deine persönlichen Bestleistungen" = "筛选你的最佳成绩";
+"Chronologisch nach dem neuesten Rekord" = "按最新纪录排序";
+"Noch keine Rekorde" = "暂无纪录";
+"Fortschritt, der sichtbar bleibt – über alle Sportarten und Zeiträume." = "跨项目、跨时段，进步始终可见。";
+"Einheiten, Belastung und Fortschritt in einer klaren Trainingsübersicht." = "训练概览：课次、负荷与进步一目了然。";
+"Bewegung, Belastung und deine Entwicklung auf einen Blick." = "运动、负荷与个人发展一览。";
+"Dein Zyklus" = "你的周期";
+"Gesundheitsbereich" = "健康板块";
+"Diese Werte wurden bisher nicht erfasst" = "这些数值尚未记录";
+"Noch ohne Daten" = "暂无数据";
+"Letzte lokale Aktualisierung" = "上次本地刷新";
+
+/* Letzte Lücken */
+"Dauer" = "时长";
+"Effizienz" = "效率";
+"Min Puls" = "最低心率";
+"Persönliche Bestleistungen" = "个人最佳";
+"Schritte heute" = "今日步数";
+"Sprache & Einheiten" = "语言与单位";
+"Unverbindliche Orientierung deiner Körperwerte" = "身体数值的参考区间，仅供参考";
+"Verlauf, Blutung und Symptome diskret und übersichtlich dokumentiert." = "周期、出血与症状，清晰而私密地记录。";
+"Verteilung der erfassten Nacht" = "所记录夜晚的分布";
+"Zyklusgesundheit" = "周期健康";
+"aktueller Zyklus" = "当前周期";
+"Ø/Tag" = "日均";
+
+/* Beschriftungen aus SwiftUI-Bausteinen */
+"App" = "App";
+"Port" = "端口";
+"Daten exportieren" = "导出数据";
+"Daten importieren" = "导入数据";
+"Mit zwei Fingern zoomen · Wischen zum Verschieben · Tippen für Wert" = "双指缩放 · 滑动平移 · 轻点查看数值";
+"Vergleich mit den vorherigen 90 Tagen" = "与此前 90 天对比";

@@ -29,6 +29,7 @@ from .duplicates import describe_decisions, find_candidates
 from .history import async_import_history, async_import_metric_history
 from .route import as_geojson, as_gpx, as_svg, route_points
 from .payload import (
+    normalize_metric_values,
     PayloadError,
     normalize_health_batch,
     normalize_metric_history_batch,
@@ -150,14 +151,24 @@ class HealthPitWorkoutImportView(HomeAssistantView):
     async def post(self, request: web.Request) -> web.Response:
         coordinator = _coordinator(request)
         user_id, user_name = _user(request)
+        body = await _json_body(request)
         try:
-            device_id, workouts = normalize_workout_batch(await _json_body(request))
+            device_id, workouts = normalize_workout_batch(body)
         except PayloadError as err:
             return _bad_request(err)
 
         result = coordinator.store.upsert_workouts(
             user_id, user_name, device_id, workouts
         )
+        # Ab Modellfassung 2 liegen die Messwerte bereits unter HealthPits
+        # Kennungen bei. Sie werden getrennt abgelegt, damit je Uebung eigene
+        # Sensoren entstehen koennen – ein einzelner „Satzgewicht“-Sensor
+        # spraenge sonst mit jedem Satz auf eine andere Uebung.
+        values = normalize_metric_values(body)
+        if values:
+            result["values"] = coordinator.store.upsert_exercise_values(
+                user_id, user_name, device_id, values
+            )
         coordinator.async_handle_push()
         return web.json_response({"accepted": len(workouts), **result})
 

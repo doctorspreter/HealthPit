@@ -36,13 +36,13 @@ struct OnboardingView: View {
                 }
 
                 VStack(spacing: 10) {
-                    Text("HealthPit")
+                    Text(L10n.string("HealthPit"))
                         .font(.system(.largeTitle, design: .rounded, weight: .bold))
 
-                    Text("Deine Gesundheit. Deine Daten.")
+                    Text(L10n.string("Deine Gesundheit. Deine Daten."))
                         .font(.title3.weight(.semibold))
 
-                    Text("HealthPit liest deine Werte aus Apple Health und synchronisiert sie direkt mit deinem Home Assistant — ohne Umweg über fremde Server.")
+                    Text(L10n.string("HealthPit liest deine Werte aus Apple Health und synchronisiert sie direkt mit deinem Home Assistant — ohne Umweg über fremde Server."))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -62,7 +62,7 @@ struct OnboardingView: View {
             } label: {
                 HStack {
                     if isRequesting { ProgressView().tint(.white) }
-                    Text("Mit Apple Health verbinden")
+                    Text(L10n.string("Mit Apple Health verbinden"))
                 }
                 .frame(maxWidth: .infinity)
                 .padding()

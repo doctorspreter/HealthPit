@@ -717,3 +717,89 @@
 "Ziel %@ (%@)" = "%@ goal (%@)";
 "%@ erreicht" = "%@ reached";
 "Tages-, Wochen- und Monatsziele festlegen" = "Set daily, weekly and monthly goals";
+
+/* Erststart: Übernahme und Erstimport */
+"Vorhandene Daten werden übernommen …" = "Taking over existing data …";
+"Daten werden übernommen" = "Importing data";
+"Das passiert nur beim ersten Mal." = "This happens only once.";
+"Zeitraum wird ermittelt …" = "Working out the time range …";
+"Lese %@ …" = "Reading %@ …";
+"Lese Schlaf …" = "Reading sleep …";
+"Lese Trainings …" = "Reading workouts …";
+
+/* Restliche Lücken der Vorfassung */
+"%lld Workouts vorbereitet." = "%lld workouts prepared.";
+"Sicherungsformat" = "Backup format";
+"Zeile %lld" = "Row %lld";
+
+/* Startseite und Einstellungen */
+"Alle Einheiten nach Disziplin" = "All sessions by discipline";
+"Darstellung" = "Appearance";
+"Daten & Verbindung" = "Data & connection";
+"Dein Tag auf einen Blick" = "Your day at a glance";
+"Deine Bereiche" = "Your areas";
+"Diese drei Werte stehen in der Kachel „Dein Tag auf einen Blick“ auf der Startseite." = "These three values appear in the \"Your day at a glance\" tile on the home screen.";
+"Startkachel" = "Home tile";
+"Tippe auf einen Bereich für Details und Trends" = "Tap an area for details and trends";
+"Ziel" = "Goal";
+
+/* Begrüßung auf der Startseite */
+"Guten Morgen" = "Good morning";
+"Guten Tag" = "Good afternoon";
+"Guten Abend" = "Good evening";
+"Stark: Dein Schrittziel ist für heute erreicht." = "Nice: you have hit your step goal for today.";
+"Noch %lld Schritte bis zu deinem Tagesziel." = "%lld steps to go until your daily goal.";
+"Deine wichtigsten Werte erscheinen hier, sobald Apple Health aktualisiert wurde." = "Your key values appear here once Apple Health has been updated.";
+
+/* Überschriften der Bildschirme */
+"Schlaf & Erholung" = "Sleep & recovery";
+"Phasen, Dauer und Qualität verständlich zusammengefasst." = "Phases, duration and quality, clearly summarised.";
+"Home Assistant und Synchronisierung" = "Home Assistant and syncing";
+"Apple Health und Importe priorisieren" = "Prioritise Apple Health and imports";
+"Doppelte Trainings erkennen" = "Spot duplicate workouts";
+"Exportieren und wiederherstellen" = "Export and restore";
+"Tages-, Wochen- und Monatsziele festlegen" = "Set daily, weekly and monthly goals";
+"Bereiche, Reihenfolge und Größen" = "Areas, order and sizes";
+"Darstellung persönlich anpassen" = "Adjust the presentation to your liking";
+"Manuell, GPX/TCX und GymPit" = "Manual, GPX/TCX and GymPit";
+"Deine Trends" = "Your trends";
+"Aktuelle Werte und persönliche Verläufe" = "Current values and personal trends";
+"Aktuelle Werte gegenüber deinem 3-Monats-Schnitt" = "Current values against your three-month average";
+"Letzte 14 Tage im Vergleich zu deinem Normalwert" = "The last 14 days compared with your usual level";
+"Deine Rekorde" = "Your records";
+"Bestleistungen" = "Personal bests";
+"Alle Bestleistungen" = "All personal bests";
+"Deine stärksten aktuellen Leistungen" = "Your strongest recent performances";
+"Filtere deine persönlichen Bestleistungen" = "Filter your personal bests";
+"Chronologisch nach dem neuesten Rekord" = "In order of the most recent record";
+"Noch keine Rekorde" = "No records yet";
+"Fortschritt, der sichtbar bleibt – über alle Sportarten und Zeiträume." = "Progress that stays visible — across every sport and period.";
+"Einheiten, Belastung und Fortschritt in einer klaren Trainingsübersicht." = "Sessions, load and progress in one clear training overview.";
+"Bewegung, Belastung und deine Entwicklung auf einen Blick." = "Movement, load and your development at a glance.";
+"Dein Zyklus" = "Your cycle";
+"Gesundheitsbereich" = "Health area";
+"Diese Werte wurden bisher nicht erfasst" = "These values have not been recorded yet";
+"Noch ohne Daten" = "No data yet";
+"Letzte lokale Aktualisierung" = "Last local refresh";
+
+/* Letzte Lücken */
+"Dauer" = "Duration";
+"Effizienz" = "Efficiency";
+"Min Puls" = "Min heart rate";
+"Persönliche Bestleistungen" = "Personal bests";
+"Schritte heute" = "Steps today";
+"Sprache & Einheiten" = "Language & units";
+"Unverbindliche Orientierung deiner Körperwerte" = "A rough guide to your body values, nothing more";
+"Verlauf, Blutung und Symptome diskret und übersichtlich dokumentiert." = "Course, bleeding and symptoms, documented discreetly and clearly.";
+"Verteilung der erfassten Nacht" = "How the recorded night breaks down";
+"Zyklusgesundheit" = "Cycle health";
+"aktueller Zyklus" = "current cycle";
+"Ø/Tag" = "avg/day";
+
+/* Beschriftungen aus SwiftUI-Bausteinen */
+"App" = "App";
+"Port" = "Port";
+"Daten exportieren" = "Export data";
+"Daten importieren" = "Import data";
+"Mit zwei Fingern zoomen · Wischen zum Verschieben · Tippen für Wert" = "Pinch to zoom · swipe to pan · tap for the value";
+"Vergleich mit den vorherigen 90 Tagen" = "Compared with the previous 90 days";

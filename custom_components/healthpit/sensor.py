@@ -12,7 +12,11 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import API_BASE, DOMAIN
 from .coordinator import HealthPitCoordinator
-from .entity import HealthPitUserEntity
+from .entity import (
+    category_device_info,
+    exercise_device_info,
+    HealthPitUserEntity,
+)
 from .precision import rounded_value, suggested_precision
 
 
@@ -30,6 +34,7 @@ async def async_setup_entry(
         for user_id in coordinator.user_ids():
             entities.extend(_new_metric_sensors(coordinator, user_id, known))
             entities.extend(_new_workout_sensors(coordinator, user_id, known))
+            entities.extend(_new_exercise_sensors(coordinator, user_id, known))
             route_key = f"{user_id}:route"
             if route_key not in known:
                 known.add(route_key)
@@ -87,6 +92,119 @@ def _new_workout_sensors(
     return entities
 
 
+def _new_exercise_sensors(
+    coordinator: HealthPitCoordinator,
+    user_id: str,
+    known: set[str],
+) -> list[SensorEntity]:
+    """One sensor per exercise and value.
+
+    Entities appear for exercises that actually have data — training fifteen
+    machines gives about sixty sensors, not one for every entry in the
+    catalogue.
+    """
+    entities: list[SensorEntity] = []
+    for value in coordinator.store.exercise_values(user_id):
+        exercise_id = str(value.get("exercise_id") or "")
+        metric_id = str(value.get("metric_id") or "")
+        if not metric_id:
+            continue
+        key = f"{user_id}:exercise:{exercise_id}:{metric_id}"
+        if key in known:
+            continue
+        known.add(key)
+        entities.append(
+            HealthPitExerciseSensor(coordinator, user_id, exercise_id, metric_id)
+        )
+    return entities
+
+
+class HealthPitExerciseSensor(HealthPitUserEntity, SensorEntity):
+    """A value that belongs to one exercise – weight, reps, volume, RPE."""
+
+    def __init__(
+        self,
+        coordinator: HealthPitCoordinator,
+        user_id: str,
+        exercise_id: str,
+        metric_id: str,
+    ) -> None:
+        super().__init__(coordinator, user_id)
+        self._exercise_id = exercise_id
+        self._metric_id = metric_id
+        self._attr_unique_id = f"{user_id}_exercise_{exercise_id}_{metric_id}"
+        self._attr_device_info = (
+            exercise_device_info(coordinator, user_id, exercise_id, self._exercise_name())
+            if exercise_id
+            else category_device_info(coordinator, user_id, "workouts")
+        )
+
+    def _value(self) -> dict[str, Any] | None:
+        for item in self.coordinator.store.exercise_values(self._user_id):
+            if (
+                str(item.get("exercise_id") or "") == self._exercise_id
+                and item.get("metric_id") == self._metric_id
+            ):
+                return item
+        return None
+
+    def _exercise_name(self) -> str:
+        value = self._value() or {}
+        return str(value.get("exercise_name") or self._exercise_id)
+
+    @property
+    def name(self) -> str | None:
+        # Der Geraetename traegt schon die Uebung; hier steht nur noch, welcher
+        # Wert es ist.
+        return METRIC_LABELS.get(self._metric_id, self._metric_id)
+
+    @property
+    def native_value(self) -> Any:
+        value = self._value()
+        if value is None:
+            return None
+        for key in ("value", "text", "boolean"):
+            if key in value:
+                return value[key]
+        return None
+
+    @property
+    def native_unit_of_measurement(self) -> str | None:
+        value = self._value() or {}
+        return UNIT_SYMBOLS.get(str(value.get("unit") or ""))
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        value = self._value() or {}
+        return {
+            "metric_id": self._metric_id,
+            "exercise_id": self._exercise_id,
+            "exercise": value.get("exercise_name"),
+            "set_index": value.get("set_index"),
+            "measured_at": value.get("end"),
+        }
+
+
+# Beschriftungen der Kraftwerte. Englisch und fest, wie die Geraetenamen.
+METRIC_LABELS = {
+    "WRK_SET_WEIGHT": "Weight",
+    "WRK_SET_REPS": "Repetitions",
+    "WRK_SET_VOLUME": "Volume",
+    "WRK_SET_RPE": "RPE",
+    "WRK_SET_TYPE": "Set type",
+    "WRK_SET_IS_PERSONAL_RECORD": "Personal record",
+    "WRK_EXERCISE": "Exercise",
+    "WRK_EQUIPMENT_SEAT": "Seat",
+    "WRK_EQUIPMENT_BACKREST": "Backrest",
+    "WRK_EQUIPMENT_HANDLE": "Handle",
+    "WRK_EQUIPMENT_RANGE": "Range",
+    "WRK_DURATION": "Duration",
+    "WRK_ENERGY": "Energy",
+}
+
+UNIT_SYMBOLS = {"KG": "kg", "CNT": "", "SCORE": "", "S": "s", "KCAL": "kcal", "M": "m"}
+
+
 class HealthPitMetricSensor(HealthPitUserEntity, SensorEntity):
     """A single Apple Health metric exposed as a Home Assistant sensor."""
 
@@ -103,6 +221,10 @@ class HealthPitMetricSensor(HealthPitUserEntity, SensorEntity):
         self._category = category
         self._device_id = device_id
         self._attr_unique_id = f"{user_id}_{device_id}_{category}_{metric_id}"
+        # Nach Bereich gruppiert statt alles in einer langen Liste. Die
+        # unique_id bleibt unveraendert, damit bestehende Entitaeten ihre ID
+        # und ihre Historie behalten.
+        self._attr_device_info = category_device_info(coordinator, user_id, category)
 
     def _item(self) -> dict[str, Any] | None:
         items = (self._user_data.get("by_category") or {}).get(self._category, [])
@@ -187,6 +309,7 @@ class HealthPitWorkoutSensor(HealthPitUserEntity, SensorEntity):
         super().__init__(coordinator, user_id)
         self._descriptor_key = descriptor_key
         self._attr_unique_id = f"{user_id}_workout_{descriptor_key}"
+        self._attr_device_info = category_device_info(coordinator, user_id, "workouts")
 
     def _descriptor(self) -> dict[str, Any] | None:
         return next(

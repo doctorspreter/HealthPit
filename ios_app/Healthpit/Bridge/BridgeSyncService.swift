@@ -1091,7 +1091,7 @@ final class BridgeSyncService {
             .filter { [.manual, .gpx, .tcx].contains($0.source) }
         guard !workouts.isEmpty else { return 0 }
         let enrichedWorkouts = await enrichedForUpload(workouts)
-        await LocalWorkoutStore.shared.saveMany(enrichedWorkouts)
+        await ManualWorkoutWriter.saveMany(enrichedWorkouts)
         return try await uploadWorkouts(enrichedWorkouts, credentials: credentials)
     }
 
@@ -1300,7 +1300,7 @@ final class BridgeSyncService {
             let responseBody = try decoder.decode(BridgeImportedWorkoutListResponse.self, from: data)
             downloaded.append(contentsOf: responseBody.workouts.compactMap(LocalWorkout.init))
         }
-        await LocalWorkoutStore.shared.saveMany(downloaded)
+        await ManualWorkoutWriter.saveMany(downloaded)
 
         // Frueher wurde hier alles wieder hochgeladen, was lokal lag, aber nicht
         // zurueckkam: gegenueber der Bridge war eine Luecke ein Verlust, den nur

@@ -32,7 +32,7 @@ struct ProfessionalDashboardHero: View {
                     Text(greeting)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.white.opacity(0.72))
-                    Text("Dein Tag auf einen Blick")
+                    Text(L10n.string("Dein Tag auf einen Blick"))
                         .font(.system(.title2, design: .rounded, weight: .bold))
                         .foregroundStyle(.white)
                     Text(insightText)
@@ -61,7 +61,7 @@ struct ProfessionalDashboardHero: View {
                     VStack(spacing: 0) {
                         Text("\(Int((progress * 100).rounded())) %")
                             .font(.system(.headline, design: .rounded, weight: .bold))
-                        Text("Ziel")
+                        Text(L10n.string("Ziel"))
                             .font(.caption2)
                             .foregroundStyle(.white.opacity(0.7))
                     }
@@ -130,16 +130,19 @@ struct ProfessionalDashboardHero: View {
     }
 
     private var insightText: String {
-        if steps >= stepGoal { return "Stark: Dein Schrittziel ist für heute erreicht." }
-        if steps > 0 { return "Noch \(max(0, Int(stepGoal.rounded()) - Int(steps.rounded())).formatted()) Schritte bis zu deinem Tagesziel." }
-        return "Deine wichtigsten Werte erscheinen hier, sobald Apple Health aktualisiert wurde."
+        if steps >= stepGoal { return L10n.string("Stark: Dein Schrittziel ist für heute erreicht.") }
+        if steps > 0 {
+            let remaining = max(0, Int(stepGoal.rounded()) - Int(steps.rounded()))
+            return L10n.format("Noch %lld Schritte bis zu deinem Tagesziel.", Int64(remaining))
+        }
+        return L10n.string("Deine wichtigsten Werte erscheinen hier, sobald Apple Health aktualisiert wurde.")
     }
 
     private var greeting: String {
         switch Calendar.current.component(.hour, from: .now) {
-        case 5..<12: return "Guten Morgen"
-        case 12..<18: return "Guten Tag"
-        default: return "Guten Abend"
+        case 5..<12: return L10n.string("Guten Morgen")
+        case 12..<18: return L10n.string("Guten Tag")
+        default: return L10n.string("Guten Abend")
         }
     }
 
@@ -147,7 +150,7 @@ struct ProfessionalDashboardHero: View {
         heroMetrics = DashboardHeroSettings.metrics()
         // Das Schrittziel im Ring braucht den Schrittwert, auch wenn Schritte
         // gar nicht mehr in der Kachel stehen.
-        let ids = Set(heroMetrics.map(\.id) + [stepsMetric?.id].compactMap { $0 })
-        values = await DashboardMetricCacheStore.shared.loadEntries(metricIDs: Array(ids))
+        let metrics = heroMetrics + [stepsMetric].compactMap { $0 }
+        values = await HealthQuery.shared.headlineValues(for: metrics)
     }
 }

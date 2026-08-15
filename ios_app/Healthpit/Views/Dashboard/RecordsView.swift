@@ -43,13 +43,13 @@ struct RecordsView: View {
                     VStack(alignment: .leading, spacing: 12) {
                         ProfessionalSectionHeader(title: "Sportart",
                                                   subtitle: "Filtere deine persönlichen Bestleistungen")
-                    Picker("Sportart", selection: $selectedSport) {
+                    Picker(L10n.string("Sportart"), selection: $selectedSport) {
                         ForEach(sportOptions, id: \.self) { sport in
                             Text(L10n.string(sport)).tag(sport)
                         }
                     }
                     .pickerStyle(.menu)
-                    Text("Rekorde beziehen sich immer auf die komplette verfügbare Zeit.")
+                    Text(L10n.string("Rekorde beziehen sich immer auf die komplette verfügbare Zeit."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     }
@@ -80,7 +80,7 @@ struct RecordsView: View {
                         Button {
                             visibleRecordLimit += 10
                         } label: {
-                            Label("Weitere anzeigen", systemImage: "chevron.down")
+                            Label(L10n.string("Weitere anzeigen"), systemImage: "chevron.down")
                                 .frame(maxWidth: .infinity)
                                 .padding(14)
                                 .professionalCard(tint: .orange)
@@ -93,7 +93,7 @@ struct RecordsView: View {
             .padding(.bottom, 32)
         }
         .professionalPageBackground(tint: .orange)
-        .navigationTitle("Rekorde")
+        .navigationTitle(L10n.string("Rekorde"))
         .navigationBarTitleDisplayMode(.inline)
         .refreshable {
             await refreshRecords()
@@ -128,7 +128,7 @@ struct RecordsView: View {
                         .frame(width: 38, height: 38)
                         .background(newest.tint.opacity(0.14), in: Circle())
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Rekord")
+                        Text(L10n.string("Rekord"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         Text(L10n.format("%@ · %@", newest.localizedTitle, newest.localizedValue))
@@ -264,19 +264,13 @@ struct RecordsView: View {
     }
 
     private func loadRecordWorkouts() async {
-        async let health = HealthWorkoutCacheStore.shared.loadAllTime()
-        async let local = LocalWorkoutStore.shared.loadSummaries()
-
-        let healthWorkouts = await health
-        let localWorkouts = await local
-
         let defaults = UserDefaults.standard
-        let hiddenHealth = Set((defaults.string(forKey: BridgeSettings.hiddenHealthWorkoutIDsKey) ?? "").split(separator: ",").map(String.init))
-
-        recordWorkouts = UnifiedWorkoutBuilder.build(
-            health: healthWorkouts.filter { !hiddenHealth.contains($0.uuid.uuidString) },
-            local: localWorkouts
-        )
+        let hiddenHealth = Set((defaults.string(forKey: BridgeSettings.hiddenHealthWorkoutIDsKey) ?? "")
+            .split(separator: ",").map(String.init))
+        recordWorkouts = await HealthQuery.shared.unifiedWorkouts().filter { workout in
+            guard let uuid = workout.health?.uuid.uuidString else { return true }
+            return !hiddenHealth.contains(uuid)
+        }
     }
 
     private func workout(for record: WorkoutRecord) -> UnifiedWorkout? {

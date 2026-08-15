@@ -23,7 +23,7 @@ struct CycleDetailView: View {
     var body: some View {
         Group {
             if isLoading {
-                ProgressView("Lade …")
+                ProgressView(L10n.string("Lade …"))
             } else {
                 List {
                     Section {
@@ -103,9 +103,9 @@ struct CycleDetailView: View {
         } else {
             Section {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Noch keine Zyklusdaten")
+                    Text(L10n.string("Noch keine Zyklusdaten"))
                         .font(.subheadline.bold())
-                    Text("HealthPit zeigt hier, was in Apple Health steht. Über „+“ lassen sich eigene Einträge anlegen; sie werden nach Apple Health zurückgeschrieben.")
+                    Text(L10n.string("HealthPit zeigt hier, was in Apple Health steht. Über „+“ lassen sich eigene Einträge anlegen; sie werden nach Apple Health zurückgeschrieben."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -219,7 +219,7 @@ struct CycleDetailView: View {
     @ViewBuilder
     private var cyclesSection: some View {
         if !overview.cycles.isEmpty {
-            Section("Zyklen") {
+            Section(L10n.string("Zyklen")) {
                 ForEach(overview.cycles.reversed()) { cycle in
                     HStack {
                         VStack(alignment: .leading, spacing: 3) {
@@ -235,7 +235,7 @@ struct CycleDetailView: View {
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         } else {
-                            Text("läuft")
+                            Text(L10n.string("läuft"))
                                 .font(.caption)
                                 .foregroundStyle(HealthCategory.cycle.tint)
                         }
@@ -248,7 +248,7 @@ struct CycleDetailView: View {
     @ViewBuilder
     private var eventsSection: some View {
         if !overview.events.isEmpty {
-            Section("Ereignisse") {
+            Section(L10n.string("Ereignisse")) {
                 ForEach(Array(overview.events.prefix(30))) { event in
                     HStack {
                         Image(systemName: event.kind.systemImage)
@@ -270,7 +270,7 @@ struct CycleDetailView: View {
                         Button(role: .destructive) {
                             Task { await delete(event) }
                         } label: {
-                            Label("Löschen", systemImage: "trash")
+                            Label(L10n.string("Löschen"), systemImage: "trash")
                         }
                     }
                 }
@@ -378,42 +378,42 @@ struct CycleDayEditorView: View {
         NavigationStack {
             Form {
                 Section {
-                    LabeledContent("Tag") {
+                    LabeledContent(L10n.string("Tag")) {
                         Text(date.formatted(.dateTime.weekday(.wide).day().month().year()))
                     }
                 }
 
-                Section("Blutung") {
-                    Picker("Stärke", selection: $flow) {
+                Section(L10n.string("Blutung")) {
+                    Picker(L10n.string("Stärke"), selection: $flow) {
                         ForEach(MenstrualFlow.selectable) { level in
                             Text(level.title).tag(level)
                         }
                     }
                     .pickerStyle(.segmented)
 
-                    Toggle("Erster Tag des Zyklus", isOn: $isCycleStart)
+                    Toggle(L10n.string("Erster Tag des Zyklus"), isOn: $isCycleStart)
                         .disabled(!flow.isBleeding)
 
-                    Text("„Keine Blutung“ entfernt einen zuvor in HealthPit angelegten Eintrag für diesen Tag.")
+                    Text(L10n.string("„Keine Blutung“ entfernt einen zuvor in HealthPit angelegten Eintrag für diesen Tag."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
-                Section("Weitere Einträge") {
-                    Picker("Ovulationstest", selection: $ovulationResult) {
+                Section(L10n.string("Weitere Einträge")) {
+                    Picker(L10n.string("Ovulationstest"), selection: $ovulationResult) {
                         ForEach(ovulationOptions, id: \.value) { option in
                             Text(L10n.string(option.title)).tag(option.value)
                         }
                     }
-                    Toggle("Zwischenblutung", isOn: $hasIntermenstrualBleeding)
-                    Text("Diese beiden Einträge werden ergänzt, nicht ersetzt – ein bereits gespeicherter Eintrag bleibt bestehen.")
+                    Toggle(L10n.string("Zwischenblutung"), isOn: $hasIntermenstrualBleeding)
+                    Text(L10n.string("Diese beiden Einträge werden ergänzt, nicht ersetzt – ein bereits gespeicherter Eintrag bleibt bestehen."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
                 if let existing, !existing.isOwnEntry {
                     Section {
-                        Text("Der vorhandene Eintrag stammt aus einer anderen App. HealthPit ändert ihn nicht, sondern legt einen eigenen Eintrag daneben an.")
+                        Text(L10n.string("Der vorhandene Eintrag stammt aus einer anderen App. HealthPit ändert ihn nicht, sondern legt einen eigenen Eintrag daneben an."))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -426,7 +426,7 @@ struct CycleDayEditorView: View {
                         } label: {
                             HStack {
                                 if isDeleting { ProgressView() }
-                                Text("Eintrag löschen")
+                                Text(L10n.string("Eintrag löschen"))
                             }
                         }
                         .disabled(isDeleting || isSaving)
@@ -441,17 +441,17 @@ struct CycleDayEditorView: View {
                     }
                 }
             }
-            .navigationTitle("Zyklus-Eintrag")
+            .navigationTitle(L10n.string("Zyklus-Eintrag"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Abbrechen") { dismiss() }
+                    Button(L10n.string("Abbrechen")) { dismiss() }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         Task { await save() }
                     } label: {
-                        if isSaving { ProgressView() } else { Text("Sichern") }
+                        if isSaving { ProgressView() } else { Text(L10n.string("Sichern")) }
                     }
                     .disabled(isSaving)
                 }

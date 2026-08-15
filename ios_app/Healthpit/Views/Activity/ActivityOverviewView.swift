@@ -46,7 +46,7 @@ struct ActivityOverviewView: View {
             .padding(.bottom, 32)
         }
         .professionalPageBackground(tint: .orange)
-        .navigationTitle("Aktivität")
+        .navigationTitle(L10n.string("Aktivität"))
         .navigationBarTitleDisplayMode(.inline)
         .task { await loadCached() }
         .refreshable {
@@ -58,7 +58,7 @@ struct ActivityOverviewView: View {
                 ActivityGoalSettingsView()
                     .toolbar {
                         ToolbarItem(placement: .confirmationAction) {
-                            Button("Fertig") { isEditingGoals = false }
+                            Button(L10n.string("Fertig")) { isEditingGoals = false }
                         }
                     }
             }
@@ -108,7 +108,7 @@ struct ActivityOverviewView: View {
                     trendCard(trend)
                 }
             }
-            Label("Vergleich mit den vorherigen 90 Tagen", systemImage: "clock.arrow.circlepath")
+            Label(L10n.string("Vergleich mit den vorherigen 90 Tagen"), systemImage: "clock.arrow.circlepath")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
@@ -128,7 +128,7 @@ struct ActivityOverviewView: View {
         NavigationLink {
             CategoryMetricListView(category: .activity)
         } label: {
-            Label("Alle Aktivitätswerte", systemImage: "list.bullet")
+            Label(L10n.string("Alle Aktivitätswerte"), systemImage: "list.bullet")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.primary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -288,24 +288,24 @@ struct ActivityOverviewView: View {
     }
 
     private func loadCached() async {
-        today = await DashboardMetricCacheStore.shared.load(metricIDs: primaryMetrics.map(\.id))
-        loaded = true
-        await reloadGoals()
+        await reload()
     }
 
     private func refreshLive() async {
+        // Erst Neues aus Apple Health in die Datenbank holen, dann von dort
+        // lesen – auch hier nur eine Wahrheit.
+        _ = try? await HealthPitBootstrap.shared.refresh()
+        await reload()
+    }
+
+    private func reload() async {
         let windows = trendWindows()
+        let query = HealthQuery.shared
         for metric in primaryMetrics {
-            async let current = try? health.currentValue(for: metric)
-            async let stats = try? health.fetchStatistics(for: metric,
-                                                          interval: windows.full,
-                                                          anchorDate: windows.full.start,
-                                                          bucket: DateComponents(day: 1))
-            today[metric.id] = await current ?? 0
-            trendStats[metric.id] = await stats ?? []
+            today[metric.id] = await query.latestValue(for: metric)?.value ?? 0
+            trendStats[metric.id] = await query.dailyValues(for: metric, in: windows.full)
         }
-        sleepTrendSessions = (try? await health.fetchSleep(interval: windows.full)) ?? []
-        await DashboardMetricCacheStore.shared.save(values: today)
+        sleepTrendSessions = await query.nights(in: windows.full)
         loaded = true
         await reloadGoals()
     }

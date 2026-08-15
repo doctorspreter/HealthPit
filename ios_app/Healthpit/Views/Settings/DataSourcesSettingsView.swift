@@ -44,20 +44,20 @@ struct DataSourcesSettingsView: View {
                                   tint: .green)
                 }
             } header: {
-                Text("Schnittstellen")
+                Text(L10n.string("Schnittstellen"))
             } footer: {
-                Text("Die Einstellungen werden auf diesem iPhone gespeichert. Zur Bridge gelangen nur Werte aus aktivierten Quellen.")
+                Text(L10n.string("Die Einstellungen werden auf diesem iPhone gespeichert. Zur Bridge gelangen nur Werte aus aktivierten Quellen."))
             }
 
-            Section("Erkannte Apple-Health-Quellen") {
+            Section(L10n.string("Erkannte Apple-Health-Quellen")) {
                 if isLoading && sources.isEmpty {
                     HStack {
                         Spacer()
-                        ProgressView("Quellen werden gesucht …")
+                        ProgressView(L10n.string("Quellen werden gesucht …"))
                         Spacer()
                     }
                 } else if sources.isEmpty {
-                    ContentUnavailableView("Keine Quellen gefunden",
+                    ContentUnavailableView(L10n.string("Keine Quellen gefunden"),
                                            systemImage: "tray",
                                            description: Text(loadMessage ?? L10n.string("Apple Health enthält noch keine freigegebenen Datenquellen.")))
                 } else {
@@ -74,7 +74,7 @@ struct DataSourcesSettingsView: View {
                 }
             }
 
-            Section("Auf diesem iPhone") {
+            Section(L10n.string("Auf diesem iPhone")) {
                 NavigationLink {
                     LocalDataSourcesSettingsView()
                 } label: {
@@ -84,30 +84,30 @@ struct DataSourcesSettingsView: View {
                                   tint: .orange)
                 }
 
-                Button("Alle lokalen App-Daten löschen", role: .destructive) {
+                Button(L10n.string("Alle lokalen App-Daten löschen"), role: .destructive) {
                     showingDeleteLocalConfirmation = true
                 }
             }
         }
-        .navigationTitle("Datenquellen")
+        .navigationTitle(L10n.string("Datenquellen"))
         .navigationBarTitleDisplayMode(.inline)
         .task { await loadSources() }
         .refreshable { await loadSources() }
-        .confirmationDialog("Alle lokalen App-Daten löschen?",
+        .confirmationDialog(L10n.string("Alle lokalen App-Daten löschen?"),
                             isPresented: $showingDeleteLocalConfirmation,
                             titleVisibility: .visible) {
-            Button("Lokale Daten löschen", role: .destructive) {
+            Button(L10n.string("Lokale Daten löschen"), role: .destructive) {
                 Task { await deleteLocalData() }
             }
-            Button("Abbrechen", role: .cancel) {}
+            Button(L10n.string("Abbrechen"), role: .cancel) {}
         } message: {
-            Text("Manuelle und importierte Trainings sowie lokale Zwischenspeicher werden gelöscht. Apple Health und die Docker-Bridge bleiben unverändert.")
+            Text(L10n.string("Manuelle und importierte Trainings sowie lokale Zwischenspeicher werden gelöscht. Apple Health und die Docker-Bridge bleiben unverändert."))
         }
-        .alert("Datenquellen", isPresented: Binding(
+        .alert(L10n.string("Datenquellen"), isPresented: Binding(
             get: { actionMessage != nil },
             set: { if !$0 { actionMessage = nil } }
         )) {
-            Button("OK", role: .cancel) {}
+            Button(L10n.string("OK"), role: .cancel) {}
         } message: {
             Text(actionMessage ?? "")
         }
@@ -157,12 +157,12 @@ private struct BridgeDataSharingSettingsView: View {
     var body: some View {
         List {
             Section {
-                LabeledContent("Freigegeben") {
+                LabeledContent(L10n.string("Freigegeben")) {
                     Text("\(enabledIDs.count) / \(BridgeDataTypeDescriptor.all.count)")
                         .monospacedDigit()
                 }
             } footer: {
-                Text("Nur ausgewählte Daten werden bei neuen Synchronisierungen an Home Assistant übertragen. Bereits übertragene Daten bleiben unverändert.")
+                Text(L10n.string("Nur ausgewählte Daten werden bei neuen Synchronisierungen an Home Assistant übertragen. Bereits übertragene Daten bleiben unverändert."))
             }
 
             if groupedDataTypes.isEmpty {
@@ -179,14 +179,14 @@ private struct BridgeDataSharingSettingsView: View {
                 }
             }
         }
-        .navigationTitle("Datenfreigabe")
+        .navigationTitle(L10n.string("Datenfreigabe"))
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $searchText, prompt: "Daten durchsuchen")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    Button("Alle auswählen") { setAll(enabled: true) }
-                    Button("Alle abwählen") { setAll(enabled: false) }
+                    Button(L10n.string("Alle auswählen")) { setAll(enabled: true) }
+                    Button(L10n.string("Alle abwählen")) { setAll(enabled: false) }
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }
@@ -272,23 +272,23 @@ private struct HealthSourceSettingsView: View {
     var body: some View {
         List {
             Section {
-                Toggle("Daten dieser Quelle verwenden", isOn: Binding(
+                Toggle(L10n.string("Daten dieser Quelle verwenden"), isOn: Binding(
                     get: { sourceEnabled },
                     set: setSourceEnabled
                 ))
             } footer: {
-                Text("Wenn die Quelle deaktiviert ist, werden ihre Werte auf dem Dashboard, in Diagrammen und bei der Bridge-Synchronisierung nicht berücksichtigt.")
+                Text(L10n.string("Wenn die Quelle deaktiviert ist, werden ihre Werte auf dem Dashboard, in Diagrammen und bei der Bridge-Synchronisierung nicht berücksichtigt."))
             }
 
             if let stepCountID = HealthMetric.stepCount?.id,
                source.dataPointIDs.contains(stepCountID) {
                 Section {
-                    Toggle("Schritte dieser Quelle verwenden", isOn: binding(for: stepCountID))
+                    Toggle(L10n.string("Schritte dieser Quelle verwenden"), isOn: binding(for: stepCountID))
                         .disabled(!sourceEnabled)
                 } header: {
-                    Text("Doppelte Schritte vermeiden")
+                    Text(L10n.string("Doppelte Schritte vermeiden"))
                 } footer: {
-                    Text("Deaktiviere diesen Schalter zum Beispiel bei Huawei, wenn dieselben Schritte zusätzlich vom iPhone oder der Apple Watch kommen.")
+                    Text(L10n.string("Deaktiviere diesen Schalter zum Beispiel bei Huawei, wenn dieselben Schritte zusätzlich vom iPhone oder der Apple Watch kommen."))
                 }
             }
 
@@ -312,7 +312,7 @@ private struct HealthSourceSettingsView: View {
             }
 
             Section {
-                Button("Auswahl zurücksetzen") {
+                Button(L10n.string("Auswahl zurücksetzen")) {
                     sourceEnabled = true
                     HealthDataSourceSettings.setSource(source.id, enabled: true)
                     for id in source.dataPointIDs {
@@ -373,55 +373,55 @@ private struct AppleHealthWriteSettingsView: View {
     var body: some View {
         Form {
             Section {
-                Toggle("Trainings", isOn: $writeWorkouts)
-                Toggle("Aktive Kalorien", isOn: $writeEnergy)
+                Toggle(L10n.string("Trainings"), isOn: $writeWorkouts)
+                Toggle(L10n.string("Aktive Kalorien"), isOn: $writeEnergy)
                     .disabled(!writeWorkouts)
-                Toggle("Geh- und Laufdistanz", isOn: $writeWalkingDistance)
+                Toggle(L10n.string("Geh- und Laufdistanz"), isOn: $writeWalkingDistance)
                     .disabled(!writeWorkouts)
-                Toggle("Raddistanz", isOn: $writeCyclingDistance)
+                Toggle(L10n.string("Raddistanz"), isOn: $writeCyclingDistance)
                     .disabled(!writeWorkouts)
             } header: {
-                Text("HealthPit darf schreiben")
+                Text(L10n.string("HealthPit darf schreiben"))
             } footer: {
-                Text("Diese Schalter gelten für neue Exporte. Bereits vorhandene Daten bleiben unverändert.")
+                Text(L10n.string("Diese Schalter gelten für neue Exporte. Bereits vorhandene Daten bleiben unverändert."))
             }
 
             Section {
-                Button("Health-App-Berechtigungen öffnen") {
+                Button(L10n.string("Health-App-Berechtigungen öffnen")) {
                     if let url = URL(string: "x-apple-health://") {
                         UIApplication.shared.open(url)
                     }
                 }
             } footer: {
-                Text("Leserechte verwaltet iOS in der Health-App. HealthPit kann sie aus Datenschutzgründen nicht selbst anzeigen oder erweitern.")
+                Text(L10n.string("Leserechte verwaltet iOS in der Health-App. HealthPit kann sie aus Datenschutzgründen nicht selbst anzeigen oder erweitern."))
             }
 
             Section {
-                Button("Von HealthPit geschriebene Daten löschen", role: .destructive) {
+                Button(L10n.string("Von HealthPit geschriebene Daten löschen"), role: .destructive) {
                     showingDeleteConfirmation = true
                 }
                 .disabled(isDeleting)
 
                 if isDeleting { ProgressView() }
             } footer: {
-                Text("Es werden nur Daten gelöscht, die HealthPit selbst in Apple Health gespeichert hat. Daten von Huawei, Apple Watch oder anderen Apps bleiben erhalten.")
+                Text(L10n.string("Es werden nur Daten gelöscht, die HealthPit selbst in Apple Health gespeichert hat. Daten von Huawei, Apple Watch oder anderen Apps bleiben erhalten."))
             }
         }
-        .navigationTitle("Apple Health")
+        .navigationTitle(L10n.string("Apple Health"))
         .navigationBarTitleDisplayMode(.inline)
-        .confirmationDialog("HealthPit-Daten aus Apple Health löschen?",
+        .confirmationDialog(L10n.string("HealthPit-Daten aus Apple Health löschen?"),
                             isPresented: $showingDeleteConfirmation,
                             titleVisibility: .visible) {
-            Button("Aus Apple Health löschen", role: .destructive) {
+            Button(L10n.string("Aus Apple Health löschen"), role: .destructive) {
                 Task { await deleteWrittenData() }
             }
-            Button("Abbrechen", role: .cancel) {}
+            Button(L10n.string("Abbrechen"), role: .cancel) {}
         }
-        .alert("Apple Health", isPresented: Binding(
+        .alert(L10n.string("Apple Health"), isPresented: Binding(
             get: { message != nil },
             set: { if !$0 { message = nil } }
         )) {
-            Button("OK", role: .cancel) {}
+            Button(L10n.string("OK"), role: .cancel) {}
         } message: {
             Text(message ?? "")
         }
@@ -457,33 +457,33 @@ private struct LocalDataSourcesSettingsView: View {
                     Button(role: .destructive) {
                         sourcePendingDeletion = source
                     } label: {
-                        Label("\(source.displayName)-Trainings löschen", systemImage: "trash")
+                        Label(L10n.string("\(source.displayName)-Trainings löschen"), systemImage: "trash")
                     }
                 }
             } footer: {
-                Text("Gelöscht werden die lokal auf diesem iPhone gespeicherten Kopien. Daten in Apple Health oder der Docker-Bridge werden nicht verändert.")
+                Text(L10n.string("Gelöscht werden die lokal auf diesem iPhone gespeicherten Kopien. Daten in Apple Health oder der Docker-Bridge werden nicht verändert."))
             }
         }
-        .navigationTitle("Lokale Daten")
+        .navigationTitle(L10n.string("Lokale Daten"))
         .navigationBarTitleDisplayMode(.inline)
-        .confirmationDialog("Lokale Trainings löschen?",
+        .confirmationDialog(L10n.string("Lokale Trainings löschen?"),
                             isPresented: Binding(
                                 get: { sourcePendingDeletion != nil },
                                 set: { if !$0 { sourcePendingDeletion = nil } }
                             ),
                             titleVisibility: .visible) {
             if let sourcePendingDeletion {
-                Button("\(sourcePendingDeletion.displayName) löschen", role: .destructive) {
+                Button(L10n.string("\(sourcePendingDeletion.displayName) löschen"), role: .destructive) {
                     Task { await delete(sourcePendingDeletion) }
                 }
             }
-            Button("Abbrechen", role: .cancel) {}
+            Button(L10n.string("Abbrechen"), role: .cancel) {}
         }
-        .alert("Lokale Daten", isPresented: Binding(
+        .alert(L10n.string("Lokale Daten"), isPresented: Binding(
             get: { message != nil },
             set: { if !$0 { message = nil } }
         )) {
-            Button("OK", role: .cancel) {}
+            Button(L10n.string("OK"), role: .cancel) {}
         } message: {
             Text(message ?? "")
         }

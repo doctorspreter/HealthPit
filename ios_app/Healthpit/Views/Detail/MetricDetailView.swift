@@ -25,7 +25,7 @@ struct MetricDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Picker("Zeitraum", selection: $range) {
+                Picker(L10n.string("Zeitraum"), selection: $range) {
                     ForEach(TimeRange.allCases) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
@@ -55,7 +55,7 @@ struct MetricDetailView: View {
             VStack(spacing: 4) {
                 Text(periodLabel)
                     .font(.subheadline.bold())
-                DatePicker("Datum", selection: $referenceDate, displayedComponents: .date)
+                DatePicker(L10n.string("Datum"), selection: $referenceDate, displayedComponents: .date)
                     .labelsHidden()
                     .datePickerStyle(.compact)
             }
@@ -83,9 +83,9 @@ struct MetricDetailView: View {
             ProgressView()
                 .frame(maxWidth: .infinity, minHeight: 220)
         } else if scaledPoints.isEmpty {
-            ContentUnavailableView("Keine Daten",
+            ContentUnavailableView(L10n.string("Keine Daten"),
                                    systemImage: "chart.xyaxis.line",
-                                   description: Text("Für diesen Zeitraum liegen keine Werte vor."))
+                                   description: Text(L10n.string("Für diesen Zeitraum liegen keine Werte vor.")))
                 .frame(maxWidth: .infinity, minHeight: 220)
         } else {
             let renderedPoints = metric.aggregation == .cumulativeSum
@@ -93,7 +93,7 @@ struct MetricDetailView: View {
                 : chartSampledValues(scaledPoints)
             let showsPointSymbols = renderedPoints.count <= 60
             VStack(alignment: .leading, spacing: 8) {
-                Text("Verlauf")
+                Text(L10n.string("Verlauf"))
                     .font(.headline)
                 Chart {
                     ForEach(renderedPoints) { point in
@@ -377,7 +377,8 @@ struct MetricDetailView: View {
         defer { isLoading = false }
         selectedChartDate = nil
         chartZoomLevel = 1
-        stats = (try? await health.fetchStatistics(for: metric, in: range, referenceDate: referenceDate)) ?? []
+        stats = await HealthQuery.shared.dailyValues(for: metric,
+                                                     in: range.dateInterval(referenceDate: referenceDate))
     }
 
     private var loadKey: String {

@@ -33,21 +33,21 @@ struct UndatedWorkoutImportView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("Aus der Datei erkannt") {
-                    LabeledContent("Datei", value: imported.workout.title)
-                    Picker("Sportart", selection: $selectedSport) {
+                Section(L10n.string("Aus der Datei erkannt")) {
+                    LabeledContent(L10n.string("Datei"), value: imported.workout.title)
+                    Picker(L10n.string("Sportart"), selection: $selectedSport) {
                         ForEach(selectableSports, id: \.self) { sport in
                             Text(L10n.string(sport)).tag(sport)
                         }
                     }
                     if let distance = imported.workout.distanceKm {
-                        LabeledContent("Distanz", value: WorkoutUnits.distance(km: distance, fractionDigits: 2))
+                        LabeledContent(L10n.string("Distanz"), value: WorkoutUnits.distance(km: distance, fractionDigits: 2))
                     }
-                    LabeledContent("Streckenpunkte", value: "\(imported.workout.route.count)")
+                    LabeledContent(L10n.string("Streckenpunkte"), value: "\(imported.workout.route.count)")
                     if let heartRate = imported.workout.averageHeartRate {
-                        LabeledContent("Ø Puls", value: "\(Int(heartRate.rounded())) bpm")
+                        LabeledContent(L10n.string("Ø Puls"), value: "\(Int(heartRate.rounded())) bpm")
                     }
-                    Text("Die Datei enthält kein Datum. Wähle das passende Training oder lege ein neues mit den erkannten Daten an.")
+                    Text(L10n.string("Die Datei enthält kein Datum. Wähle das passende Training oder lege ein neues mit den erkannten Daten an."))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -56,15 +56,15 @@ struct UndatedWorkoutImportView: View {
                     Button {
                         showingManualWorkout = true
                     } label: {
-                        Label("Neues Training manuell erstellen", systemImage: "plus.circle")
+                        Label(L10n.string("Neues Training manuell erstellen"), systemImage: "plus.circle")
                     }
                 }
 
-                Section("Zu vorhandenem Training hinzufügen") {
+                Section(L10n.string("Zu vorhandenem Training hinzufügen")) {
                     if filteredWorkouts.isEmpty {
-                        ContentUnavailableView("Keine passenden Trainings",
+                        ContentUnavailableView(L10n.string("Keine passenden Trainings"),
                                                systemImage: "figure.run",
-                                               description: Text("Lege stattdessen ein neues Training an."))
+                                               description: Text(L10n.string("Lege stattdessen ein neues Training an.")))
                     } else {
                         ForEach(filteredWorkouts) { item in
                             Button {
@@ -94,11 +94,11 @@ struct UndatedWorkoutImportView: View {
                 }
             }
             .searchable(text: $searchText, prompt: "Training suchen")
-            .navigationTitle("GPX ohne Datum")
+            .navigationTitle(L10n.string("GPX ohne Datum"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Abbrechen") { dismiss() }
+                    Button(L10n.string("Abbrechen")) { dismiss() }
                 }
             }
             .sheet(isPresented: $showingManualWorkout, onDismiss: {

@@ -204,6 +204,50 @@ class HealthPitStore:
         self._schedule_save()
         return {"created": created, "updated": updated}
 
+    def upsert_exercise_values(
+        self,
+        user_id: str,
+        user_name: str,
+        device_id: str,
+        values: list[dict[str, Any]],
+    ) -> dict[str, int]:
+        """Keep the latest value per exercise and metric.
+
+        Stored under ``exercise|metric``, so each combination is exactly one
+        sensor: the weight on the abductor is its own history line, separate
+        from the leg press. Values without an exercise belong to the workout
+        as a whole and are kept under an empty exercise.
+
+        Only the latest value is kept, not every set. The long-term history is
+        Home Assistant's job — its recorder keeps what the sensor reported.
+        """
+        bucket = self._bucket(user_id, user_name)
+        stored = bucket.setdefault("exercise_values", {})
+        now = dt_util.utcnow().isoformat()
+        written = 0
+        for value in values:
+            exercise = str(value.get("exercise_id") or "")
+            key = f"{device_id}|{exercise}|{value['metric_id']}"
+            previous = stored.get(key)
+            # Ein aelterer Wert darf einen neueren nicht ueberschreiben; die
+            # Reihenfolge im Stapel sagt nichts ueber die Zeit.
+            if previous and value.get("end") and previous.get("end"):
+                if str(value["end"]) < str(previous["end"]):
+                    continue
+            stored[key] = {**value, "device_id": device_id, "updated_at": now}
+            written += 1
+        _trim(stored, MAX_WORKOUTS_PER_USER * 20, key="updated_at")
+        self._schedule_save()
+        return {"written": written}
+
+    def exercise_values(self, user_id: str) -> list[dict[str, Any]]:
+        """Everything stored per exercise – the basis for the sensors."""
+        bucket = self._data.get("users", {}).get(user_id) or {}
+        return sorted(
+            (bucket.get("exercise_values") or {}).values(),
+            key=lambda item: (str(item.get("exercise_id") or ""), item.get("metric_id", "")),
+        )
+
     def delete_workout(
         self,
         user_id: str,

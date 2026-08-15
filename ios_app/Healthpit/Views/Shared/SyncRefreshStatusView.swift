@@ -115,7 +115,7 @@ struct SyncRefreshStatusView: View {
                 Text(date, format: .dateTime.day().month().hour().minute())
                     .foregroundStyle(.primary)
             } else {
-                Text("Noch nie")
+                Text(L10n.string("Noch nie"))
             }
         }
         .accessibilityElement(children: .combine)

@@ -398,7 +398,7 @@ struct WorkoutSampleTimelineChartView: View {
         let secondaryKind = kinds.dropFirst().first
         if !points.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
-                Text("Alle Messwerte")
+                Text(L10n.string("Alle Messwerte"))
                     .font(.headline)
                 metricPicker(activeKinds: kinds)
                 axisAssignment(primary: primaryKind, secondary: secondaryKind)

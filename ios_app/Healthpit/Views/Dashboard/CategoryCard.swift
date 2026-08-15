@@ -245,7 +245,7 @@ struct CategoryCard: View {
     }
 
     private func load() async {
-        values = await DashboardMetricCacheStore.shared.loadEntries(metricIDs: headlineMetrics.map(\.id))
+        values = await HealthQuery.shared.headlineValues(for: headlineMetrics)
         loaded = true
     }
 }
@@ -292,12 +292,11 @@ struct WorkoutCard: View {
     }
 
     private func load() async {
-        async let recent = HealthWorkoutCacheStore.shared.latestWorkout()
-        let all = await HealthWorkoutCacheStore.shared.loadAllTime()
+        let all = await HealthQuery.shared.workouts()
         let calendar = Calendar.healthApp
         let start = calendar.date(byAdding: .day, value: -6, to: calendar.startOfDay(for: .now)) ?? .now
         lastSevenDays = all.filter { $0.start >= start }
-        latestWorkout = (await recent) ?? all.first
+        latestWorkout = all.first
         loaded = true
     }
 
@@ -305,7 +304,7 @@ struct WorkoutCard: View {
         VStack(alignment: .leading, spacing: 1) {
             Text(loaded ? "–" : "…")
                 .font(size == .small ? .callout.bold() : .title3.bold())
-            Text("letztes Workout")
+            Text(L10n.string("letztes Workout"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -326,7 +325,7 @@ struct WorkoutCard: View {
 
     private func latestWorkoutBlock(_ workout: WorkoutSummary, prominent: Bool) -> some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text("Zuletzt")
+            Text(L10n.string("Zuletzt"))
                 .font(.caption2.bold())
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
@@ -358,7 +357,7 @@ struct WorkoutCard: View {
         let avgPerDay = totalDuration / 7
 
         return VStack(alignment: .leading, spacing: 6) {
-            Text("Letzte 7 Tage")
+            Text(L10n.string("Letzte 7 Tage"))
                 .font(.caption2.bold())
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
@@ -396,7 +395,7 @@ struct WorkoutCard: View {
         let calendar = Calendar.healthApp
         let today = calendar.startOfDay(for: .now)
         let formatter = DateFormatter()
-        formatter.locale = L10n.locale
+        formatter.locale = .autoupdatingCurrent
         formatter.setLocalizedDateFormatFromTemplate("EEEEE")
 
         return (0..<7).compactMap { offset in
@@ -465,7 +464,10 @@ struct SleepCard: View {
     }
 
     private func load() async {
-        lastNight = await SleepCacheStore.shared.load(range: .day).first
+        // Die Nacht kommt aus der Datenbank. Vorher stand hier ein
+        // Zwischenspeicher, der für vergangene Tage nie wieder geschrieben
+        // wurde – ein einmal falsch abgelegter Wert blieb dort für immer.
+        lastNight = await HealthQuery.shared.nights(in: TimeRange.day.dateInterval()).first
         loaded = true
     }
 
@@ -477,7 +479,7 @@ struct SleepCard: View {
                 .minimumScaleFactor(size == .small ? 0.8 : 0.65)
                 .fixedSize(horizontal: false, vertical: true)
             if showLabel {
-                Text("letzte Nacht")
+                Text(L10n.string("letzte Nacht"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -535,7 +537,7 @@ struct RecordsCard: View {
                         if records.count > 1 {
                             Divider()
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("Auch stark")
+                                Text(L10n.string("Auch stark"))
                                     .font(.caption2.bold())
                                     .foregroundStyle(.secondary)
                                     .textCase(.uppercase)
@@ -655,7 +657,7 @@ struct CycleCard: View {
                 .minimumScaleFactor(size == .small ? 0.8 : 0.65)
                 .fixedSize(horizontal: false, vertical: true)
             if showLabel {
-                Text("aktueller Zyklustag")
+                Text(L10n.string("aktueller Zyklustag"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

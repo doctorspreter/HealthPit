@@ -18,7 +18,7 @@ struct ActivityGoalSettingsView: View {
         List {
             Section {
                 if goals.isEmpty {
-                    Text("Noch keine Ziele. Lege eines an – zum Beispiel gelaufene Kilometer im Monat.")
+                    Text(L10n.string("Noch keine Ziele. Lege eines an – zum Beispiel gelaufene Kilometer im Monat."))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 } else {
@@ -33,7 +33,7 @@ struct ActivityGoalSettingsView: View {
                     .onDelete(perform: delete)
                 }
             } header: {
-                Text("Deine Ziele")
+                Text(L10n.string("Deine Ziele"))
             } footer: {
                 Text("Bis zu \(ActivityGoalStore.maximumRingCount) Ziele erscheinen als Ring auf der Aktivitätsseite, alle weiteren als Balken. Jedes Ziel geht als Zielwert und als Erfüllungsgrad in Prozent an Home Assistant.")
             }
@@ -49,26 +49,26 @@ struct ActivityGoalSettingsView: View {
                     .pickerStyle(.navigationLink)
                 }
             } header: {
-                Text("Startkachel")
+                Text(L10n.string("Startkachel"))
             } footer: {
-                Text("Diese drei Werte stehen in der Kachel „Dein Tag auf einen Blick“ auf der Startseite.")
+                Text(L10n.string("Diese drei Werte stehen in der Kachel „Dein Tag auf einen Blick“ auf der Startseite."))
             }
 
             Section {
                 Button {
                     isAddingGoal = true
                 } label: {
-                    Label("Ziel hinzufügen", systemImage: "plus.circle.fill")
+                    Label(L10n.string("Ziel hinzufügen"), systemImage: "plus.circle.fill")
                 }
                 Button(role: .destructive) {
                     ActivityGoalStore.resetToDefaults()
                     reload()
                 } label: {
-                    Label("Auf Standardziele zurücksetzen", systemImage: "arrow.counterclockwise")
+                    Label(L10n.string("Auf Standardziele zurücksetzen"), systemImage: "arrow.counterclockwise")
                 }
             }
         }
-        .navigationTitle("Ziele")
+        .navigationTitle(L10n.string("Ziele"))
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $editedGoal) { goal in
             ActivityGoalEditor(goal: goal) { reload() }
@@ -149,8 +149,8 @@ struct ActivityGoalEditor: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Messwert") {
-                    Picker("Messwert", selection: $metricID) {
+                Section(L10n.string("Messwert")) {
+                    Picker(L10n.string("Messwert"), selection: $metricID) {
                         ForEach(ActivityGoalStore.selectableMetrics) { candidate in
                             Text(candidate.title).tag(candidate.id)
                         }
@@ -158,8 +158,8 @@ struct ActivityGoalEditor: View {
                     .pickerStyle(.navigationLink)
                 }
 
-                Section("Zeitraum") {
-                    Picker("Zeitraum", selection: $period) {
+                Section(L10n.string("Zeitraum")) {
+                    Picker(L10n.string("Zeitraum"), selection: $period) {
                         ForEach(GoalPeriod.allCases) { candidate in
                             Text(candidate.title).tag(candidate)
                         }
@@ -167,12 +167,12 @@ struct ActivityGoalEditor: View {
                     .pickerStyle(.segmented)
                 }
 
-                Section("Zielwert") {
+                Section(L10n.string("Zielwert")) {
                     targetEditor
                 }
 
                 Section {
-                    Toggle("Als Ring anzeigen", isOn: $showsAsRing)
+                    Toggle(L10n.string("Als Ring anzeigen"), isOn: $showsAsRing)
                 } footer: {
                     Text("Höchstens \(ActivityGoalStore.maximumRingCount) Ziele werden als Ring gezeigt. Kommt eines dazu, weicht das älteste in die Balkenliste.")
                 }
@@ -181,10 +181,10 @@ struct ActivityGoalEditor: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Abbrechen") { dismiss() }
+                    Button(L10n.string("Abbrechen")) { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Sichern") { save() }
+                    Button(L10n.string("Sichern")) { save() }
                         .disabled(metric == nil || displayTarget <= 0)
                 }
             }
@@ -214,7 +214,7 @@ struct ActivityGoalEditor: View {
             }
             .padding(.vertical, 2)
         } else {
-            Text("Bitte zuerst einen Messwert wählen.")
+            Text(L10n.string("Bitte zuerst einen Messwert wählen."))
                 .foregroundStyle(.secondary)
         }
     }

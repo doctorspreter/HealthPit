@@ -57,7 +57,7 @@ extension HealthMetric {
     func formattedDisplayValue(_ value: Double) -> String {
         let digits = fractionDigits
         let nf = NumberFormatter()
-        nf.locale = L10n.locale
+        nf.locale = .autoupdatingCurrent
         nf.numberStyle = .decimal
         nf.maximumFractionDigits = digits
         nf.minimumFractionDigits = 0

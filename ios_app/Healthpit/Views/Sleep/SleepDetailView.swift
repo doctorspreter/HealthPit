@@ -54,7 +54,7 @@ struct SleepDetailView: View {
             VStack(alignment: .leading, spacing: 24) {
                 sleepHero
 
-                Picker("Zeitraum", selection: $range) {
+                Picker(L10n.string("Zeitraum"), selection: $range) {
                     ForEach([TimeRange.day, .week, .month, .year]) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
@@ -86,7 +86,7 @@ struct SleepDetailView: View {
             .padding(.bottom, 32)
         }
         .professionalPageBackground(tint: .indigo)
-        .navigationTitle("Schlaf")
+        .navigationTitle(L10n.string("Schlaf"))
         .navigationBarTitleDisplayMode(.inline)
         .task(id: loadKey) { await load() }
     }
@@ -117,7 +117,7 @@ struct SleepDetailView: View {
             VStack(spacing: 4) {
                 Text(periodLabel)
                     .font(.subheadline.bold())
-                DatePicker("Datum", selection: $referenceDate, displayedComponents: .date)
+                DatePicker(L10n.string("Datum"), selection: $referenceDate, displayedComponents: .date)
                     .labelsHidden()
                     .datePickerStyle(.compact)
             }
@@ -141,7 +141,7 @@ struct SleepDetailView: View {
     private var sleepHeadline: some View {
         let s = averageSleep
         return VStack(alignment: .leading, spacing: 10) {
-            Text("Durchschnittlicher Schlaf")
+            Text(L10n.string("Durchschnittlicher Schlaf"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Text(s.asleep.hoursMinutes)
@@ -176,9 +176,9 @@ struct SleepDetailView: View {
                     }
                 }
             } else {
-                ContentUnavailableView("Keine Schlafdaten",
+                ContentUnavailableView(L10n.string("Keine Schlafdaten"),
                                        systemImage: "bed.double",
-                                       description: Text("Für die letzte Nacht liegen keine Schlafdaten vor."))
+                                       description: Text(L10n.string("Für die letzte Nacht liegen keine Schlafdaten vor.")))
             }
         }
     }
@@ -228,7 +228,7 @@ struct SleepDetailView: View {
     private var averageSummary: some View {
         let s = averageSleep
         return VStack(alignment: .leading, spacing: 8) {
-            Text("Durchschnitt im gewählten Zeitraum")
+            Text(L10n.string("Durchschnitt im gewählten Zeitraum"))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             summaryCards(s, showAveragePrefix: true)
@@ -275,7 +275,7 @@ struct SleepDetailView: View {
     private func hypnogram(_ s: SleepSession) -> some View {
         let selectedSegment = selectedSleepSegment(in: s)
         return VStack(alignment: .leading, spacing: 8) {
-            Text("Letzte Nacht").font(.headline)
+            Text(L10n.string("Letzte Nacht")).font(.headline)
             Chart {
                 ForEach(s.segments) { seg in
                     BarMark(
@@ -346,7 +346,7 @@ struct SleepDetailView: View {
 
     private var nightlyStacked: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Phasen pro Nacht").font(.headline)
+            Text(L10n.string("Phasen pro Nacht")).font(.headline)
             Chart {
                 ForEach(sessionsForCharts) { s in
                     ForEach(SleepStage.allCases.filter { $0 != .awake }) { stage in
@@ -474,13 +474,10 @@ struct SleepDetailView: View {
         selectedNightDate = nil
         hypnogramZoomLevel = 1
         nightlyZoomLevel = 1
-        sessions = await SleepCacheStore.shared.load(range: range, referenceDate: referenceDate)
-        isLoading = sessions.isEmpty
-        let fresh = (try? await health.fetchSleep(in: range, referenceDate: referenceDate)) ?? sessions
-        sessions = fresh
-        if !fresh.isEmpty {
-            await SleepCacheStore.shared.save(fresh, range: range, referenceDate: referenceDate)
-        }
+        // Aus der Datenbank, nicht aus Apple Health: Dort liegen die Nächte
+        // schon nach Quelle getrennt, und die Abfrage nimmt je Nacht die
+        // aussagekräftigste Aufzeichnung.
+        sessions = await HealthQuery.shared.nights(in: range.dateInterval(referenceDate: referenceDate))
         isLoading = false
     }
 

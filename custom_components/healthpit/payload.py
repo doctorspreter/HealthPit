@@ -9,6 +9,8 @@ three modes without knowing where the data came from.
 
 from __future__ import annotations
 
+import re
+
 from datetime import datetime, timezone
 from math import isfinite
 from typing import Any
@@ -54,6 +56,10 @@ LINK_ACTIONS = {"merge", "separate"}
 
 MAX_METRICS_PER_BATCH = 500
 MAX_WORKOUTS_PER_BATCH = 1000
+# Ein Training mit 20 Uebungen a 5 Saetzen kommt auf rund 700 Werte;
+# darueber hinaus stimmt etwas nicht.
+MAX_VALUES_PER_BATCH = 5000
+_CANONICAL_METRIC_ID = re.compile(r"^[A-Z]{3}_[A-Z0-9_]+$")
 MAX_EXERCISES_PER_WORKOUT = 500
 MAX_SETS_PER_EXERCISE = 1000
 MAX_ROUTE_POINTS = 20000
@@ -553,6 +559,48 @@ def normalize_workout(raw: Any, *, device_id: str) -> dict[str, Any]:
         "route_points": len(route),
         "route_points_total": len(full_route),
     }
+
+
+def normalize_metric_values(raw: Any) -> list[dict[str, Any]]:
+    """Read the canonical values a workout batch carries alongside.
+
+    From model version 2 on, GymPit no longer sends its own field names but
+    the identifiers from HealthPit's catalogue — ``WRK_SET_WEIGHT`` instead of
+    ``weight_kg``. Nothing has to be translated here, only checked.
+
+    Values that make no sense are dropped, not guessed at: a set weight
+    without a unit could be kilograms or pounds, and picking one would put an
+    invented number into the database.
+    """
+    if not isinstance(raw, dict):
+        return []
+    values = raw.get("values")
+    if not isinstance(values, list):
+        return []
+
+    accepted: list[dict[str, Any]] = []
+    for item in values[:MAX_VALUES_PER_BATCH]:
+        if not isinstance(item, dict):
+            continue
+        metric_id = str(item.get("metric_id") or "").strip().upper()
+        if not metric_id or not _CANONICAL_METRIC_ID.match(metric_id):
+            continue
+        entry: dict[str, Any] = {
+            "metric_id": metric_id,
+            "unit": (str(item.get("unit")).strip().upper() if item.get("unit") else None),
+            "start": item.get("start"),
+            "end": item.get("end"),
+        }
+        for key in ("value", "text", "boolean"):
+            if item.get(key) is not None:
+                entry[key] = item[key]
+        if not {"value", "text", "boolean"} & entry.keys():
+            continue
+        for key in ("exercise_id", "exercise_name", "set_index"):
+            if item.get(key) is not None:
+                entry[key] = item[key]
+        accepted.append(entry)
+    return accepted
 
 
 def normalize_workout_batch(raw: Any) -> tuple[str, list[dict[str, Any]]]:

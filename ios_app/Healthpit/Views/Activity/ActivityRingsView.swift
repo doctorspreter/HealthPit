@@ -62,7 +62,7 @@ struct ActivityRingsView: View {
         return VStack(spacing: 1) {
             Text("\(done)/\(ringGoals.count)")
                 .font(.system(.title3, design: .rounded, weight: .bold))
-            Text("Ziele")
+            Text(L10n.string("Ziele"))
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
@@ -112,7 +112,7 @@ struct ActivityGoalSummary: View {
             }
 
             Button(action: onEditGoals) {
-                Label("Ziele verwalten", systemImage: "target")
+                Label(L10n.string("Ziele verwalten"), systemImage: "target")
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
@@ -130,9 +130,9 @@ struct ActivityGoalSummary: View {
             Image(systemName: "target")
                 .font(.title2)
                 .foregroundStyle(.orange)
-            Text("Noch keine Ziele")
+            Text(L10n.string("Noch keine Ziele"))
                 .font(.subheadline.weight(.semibold))
-            Text("Lege fest, was du dir für Tag, Woche, Monat oder Jahr vornimmst.")
+            Text(L10n.string("Lege fest, was du dir für Tag, Woche, Monat oder Jahr vornimmst."))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

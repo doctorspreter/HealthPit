@@ -60,7 +60,7 @@ struct WorkoutListView: View {
             }
 
             Section {
-                Picker("Zeitraum", selection: $range) {
+                Picker(L10n.string("Zeitraum"), selection: $range) {
                     ForEach(TimeRange.allCases) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
@@ -89,8 +89,8 @@ struct WorkoutListView: View {
                             .frame(width: 36, height: 36)
                             .background(.green.opacity(0.12), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Sportarten").font(.subheadline.weight(.semibold))
-                            Text("Alle Einheiten nach Disziplin").font(.caption2).foregroundStyle(.secondary)
+                            Text(L10n.string("Sportarten")).font(.subheadline.weight(.semibold))
+                            Text(L10n.string("Alle Einheiten nach Disziplin")).font(.caption2).foregroundStyle(.secondary)
                         }
                     }
                     .padding(14)
@@ -104,9 +104,9 @@ struct WorkoutListView: View {
             if isLoading {
                 HStack { Spacer(); ProgressView(); Spacer() }
             } else if items.isEmpty {
-                ContentUnavailableView("Keine Workouts",
+                ContentUnavailableView(L10n.string("Keine Workouts"),
                                        systemImage: "figure.run",
-                                       description: Text("Im gewählten Zeitraum sind keine Workouts vorhanden."))
+                                       description: Text(L10n.string("Im gewählten Zeitraum sind keine Workouts vorhanden.")))
                     .listRowBackground(Color.clear)
             } else {
                 ForEach(items) { item in
@@ -126,7 +126,7 @@ struct WorkoutListView: View {
                             itemPendingDeletion = item
                             showingDeleteConfirmation = true
                         } label: {
-                            Label("Löschen", systemImage: "trash")
+                            Label(L10n.string("Löschen"), systemImage: "trash")
                         }
                     }
                 }
@@ -135,7 +135,7 @@ struct WorkoutListView: View {
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .professionalPageBackground(tint: .green)
-        .navigationTitle("Workouts")
+        .navigationTitle(L10n.string("Workouts"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -143,17 +143,17 @@ struct WorkoutListView: View {
                     Button {
                         showingImporter = true
                     } label: {
-                        Label("GPX/TCX importieren", systemImage: "square.and.arrow.down")
+                        Label(L10n.string("GPX/TCX importieren"), systemImage: "square.and.arrow.down")
                     }
                     Button {
                         Task { await refreshCurrentRange() }
                     } label: {
-                        Label("Aktualisieren", systemImage: "arrow.triangle.2.circlepath")
+                        Label(L10n.string("Aktualisieren"), systemImage: "arrow.triangle.2.circlepath")
                     }
                     Button {
                         showingManualWorkout = true
                     } label: {
-                        Label("Training manuell", systemImage: "plus")
+                        Label(L10n.string("Training manuell"), systemImage: "plus")
                     }
                 } label: {
                     Image(systemName: "ellipsis.circle")
@@ -163,7 +163,7 @@ struct WorkoutListView: View {
         .sheet(isPresented: $showingManualWorkout) {
             ManualWorkoutView { workout in
                 Task {
-                    await LocalWorkoutStore.shared.save(workout)
+                    await ManualWorkoutWriter.save(workout)
                     _ = try? await BridgeSyncService.shared.uploadLocalWorkouts()
                     await loadCached()
                 }
@@ -173,7 +173,7 @@ struct WorkoutListView: View {
             UndatedWorkoutImportView(imported: imported,
                                      workouts: allTimeItems) { workout in
                 Task {
-                    await LocalWorkoutStore.shared.save(workout)
+                    await ManualWorkoutWriter.save(workout)
                     _ = try? await BridgeSyncService.shared.uploadLocalWorkouts()
                     await loadCached()
                 }
@@ -215,14 +215,14 @@ struct WorkoutListView: View {
             }
         )
         .onDisappear { showingSyncStatus = false }
-        .confirmationDialog("Workout entfernen?",
+        .confirmationDialog(L10n.string("Workout entfernen?"),
                             isPresented: $showingDeleteConfirmation,
                             titleVisibility: .visible,
                             presenting: itemPendingDeletion) { item in
-            Button("Entfernen", role: .destructive) {
+            Button(L10n.string("Entfernen"), role: .destructive) {
                 Task { await deleteWorkout(item) }
             }
-            Button("Abbrechen", role: .cancel) {}
+            Button(L10n.string("Abbrechen"), role: .cancel) {}
         } message: { item in
             Text(deleteWarning(for: item))
         }
@@ -230,16 +230,20 @@ struct WorkoutListView: View {
 
     private func loadCached() async {
         isLoading = items.isEmpty
-        async let allTimeHealth = HealthWorkoutCacheStore.shared.loadAllTime()
-        async let cachedLocal = LocalWorkoutStore.shared.loadSummaries()
-        let completeHealth = await allTimeHealth
-        healthWorkouts = completeHealth.isEmpty
-            ? await HealthWorkoutCacheStore.shared.load(range: range, referenceDate: referenceDate)
-            : []
-        localWorkouts = await cachedLocal
-        rebuildItems(allTimeHealth: completeHealth)
+        await reloadFromDatabase()
         hasLoadedData = true
         isLoading = false
+    }
+
+    /// Alles aus der Datenbank. Dort liegt jedes Training genau einmal –
+    /// selbst angelegte, aus Apple Health und ueber die Bridge importierte.
+    private func reloadFromDatabase() async {
+        allTimeItems = await HealthQuery.shared.unifiedWorkouts()
+            .filter { workout in
+                guard let uuid = workout.health?.uuid.uuidString else { return true }
+                return !hiddenHealthWorkoutIDs.contains(uuid)
+            }
+        filterItemsForSelectedRange()
     }
 
     private func refreshCurrentRange() async {
@@ -247,16 +251,10 @@ struct WorkoutListView: View {
         async let syncCount: Int? = try? BridgeSyncService.shared.syncNow()
 
         _ = await syncCount
-        if let freshHealth = try? await health.fetchWorkouts(in: range, referenceDate: referenceDate) {
-            let cacheableHealth = freshHealth.filter(\.isEligibleForLocalHealthCache)
-            await HealthWorkoutCacheStore.shared.save(cacheableHealth, range: range, referenceDate: referenceDate)
-            await HealthWorkoutCacheStore.shared.mergeAllTime(cacheableHealth)
-            healthWorkouts = cacheableHealth
-        } else {
-            healthWorkouts = await HealthWorkoutCacheStore.shared.load(range: range, referenceDate: referenceDate)
-        }
-        localWorkouts = await LocalWorkoutStore.shared.loadSummaries()
-        rebuildItems(allTimeHealth: await HealthWorkoutCacheStore.shared.loadAllTime())
+        // Erst Neues aus Apple Health in die Datenbank holen, dann von dort
+        // lesen. Zwei Schritte, aber nur eine Wahrheit.
+        _ = try? await HealthPitBootstrap.shared.refresh()
+        await reloadFromDatabase()
         isLoading = false
         SyncRefreshStatusStore.markLocalRefresh()
         showingSyncStatus = true
@@ -267,22 +265,13 @@ struct WorkoutListView: View {
     /// refresh alone cannot make a strength workout complete.
     private func refreshImportedWorkouts() async {
         _ = try? await BridgeSyncService.shared.downloadImportedWorkouts()
-        localWorkouts = await LocalWorkoutStore.shared.loadSummaries()
-        rebuildItems(allTimeHealth: await HealthWorkoutCacheStore.shared.loadAllTime())
+        await reloadFromDatabase()
     }
 
     private func refreshLocalAppleHealthRange() async {
         isLoading = items.isEmpty
-        if let fresh = try? await health.fetchWorkouts(in: range, referenceDate: referenceDate) {
-            let cacheableHealth = fresh.filter(\.isEligibleForLocalHealthCache)
-            await HealthWorkoutCacheStore.shared.save(cacheableHealth, range: range, referenceDate: referenceDate)
-            await HealthWorkoutCacheStore.shared.mergeAllTime(cacheableHealth)
-            healthWorkouts = cacheableHealth
-        } else {
-            healthWorkouts = await HealthWorkoutCacheStore.shared.load(range: range, referenceDate: referenceDate)
-        }
-        localWorkouts = await LocalWorkoutStore.shared.loadSummaries()
-        rebuildItems(allTimeHealth: await HealthWorkoutCacheStore.shared.loadAllTime())
+        _ = try? await HealthPitBootstrap.shared.refresh()
+        await reloadFromDatabase()
         isLoading = false
     }
 
@@ -312,7 +301,7 @@ struct WorkoutListView: View {
             defer { if access { url.stopAccessingSecurityScopedResource() } }
             if let imported = try? WorkoutFileImporter.analyze(from: url) {
                 if imported.containsDate {
-                    await LocalWorkoutStore.shared.save(imported.workout)
+                    await ManualWorkoutWriter.save(imported.workout)
                     savedDatedWorkout = true
                 } else {
                     queuedUndatedImports.append(imported)
@@ -330,15 +319,7 @@ struct WorkoutListView: View {
     }
 
     private func loadAllWorkoutCandidatesForImport() async {
-        if let fresh = try? await health.fetchAllWorkouts(), !fresh.isEmpty {
-            let cacheable = fresh.filter(\.isEligibleForLocalHealthCache)
-            await HealthWorkoutCacheStore.shared.saveAllTime(cacheable)
-            allTimeHealthWorkouts = cacheable
-        } else {
-            allTimeHealthWorkouts = await HealthWorkoutCacheStore.shared.loadAllTime()
-        }
-        localWorkouts = await LocalWorkoutStore.shared.loadSummaries()
-        rebuildItems(allTimeHealth: allTimeHealthWorkouts)
+        await reloadFromDatabase()
     }
 
     private func presentNextUndatedImport() {
@@ -880,9 +861,9 @@ struct StrengthExerciseDetailView: View {
         return List {
             Section {
                 if exercise.points.isEmpty {
-                    ContentUnavailableView("Noch kein Verlauf",
+                    ContentUnavailableView(L10n.string("Noch kein Verlauf"),
                                            systemImage: "chart.line.uptrend.xyaxis",
-                                           description: Text("Für diese Übung gibt es noch keine Trainingspunkte."))
+                                           description: Text(L10n.string("Für diese Übung gibt es noch keine Trainingspunkte.")))
                 } else {
                     Chart {
                         ForEach(points) { point in
@@ -952,7 +933,7 @@ struct StrengthExerciseDetailView: View {
 
                     ChartGestureHint()
 
-                    Label("Bestgewicht pro Training", systemImage: "chart.line.uptrend.xyaxis")
+                    Label(L10n.string("Bestgewicht pro Training"), systemImage: "chart.line.uptrend.xyaxis")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -967,7 +948,7 @@ struct StrengthExerciseDetailView: View {
                 }
             }
 
-            Section("Verlauf") {
+            Section(L10n.string("Verlauf")) {
                 ForEach(exercise.points.sorted { $0.date > $1.date }) { point in
                     HStack {
                         VStack(alignment: .leading, spacing: 3) {

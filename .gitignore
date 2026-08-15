@@ -22,7 +22,11 @@ ios_app/**/*.xcworkspace/xcuserdata/
 Xcode/
 homeassistant_apps/
 
-# Sandbox copies of the app used for experiments. They carry their own Xcode
-# projects and build output and have no place in this repository.
+# Working copies of the app used for experiments. They carry their own Xcode
+# projects and build output and have no place in this repository, while the
+# Python tests next to them do belong here.
+tests/healthpit_datamodel/
+tests/HealthPitHuawei/
 sandbox/
 testordner/
+tests/healthpit_v2/

@@ -28,7 +28,7 @@ struct WorkoutRecord: Identifiable, Sendable {
     var localizedSubtitle: String {
         guard !id.contains("-exercise-") else { return subtitle }
         let formatter = DateFormatter()
-        formatter.locale = L10n.locale
+        formatter.locale = .autoupdatingCurrent
         formatter.dateStyle = .short
         formatter.timeStyle = .none
         return formatter.string(from: date)

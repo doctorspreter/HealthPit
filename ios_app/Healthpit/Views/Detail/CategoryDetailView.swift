@@ -83,7 +83,7 @@ struct CategoryMetricListView: View {
                 .padding(.horizontal, 18)
                 .padding(.bottom, 32)
             } else {
-                ProgressView("Lade …")
+                ProgressView(L10n.string("Lade …"))
                     .frame(maxWidth: .infinity, minHeight: 320)
             }
         }
@@ -192,14 +192,11 @@ struct MetricRow: View {
                 .foregroundStyle(.tertiary)
         }
         .task {
-            if metric.aggregation == .discreteAverage {
-                let latest = try? await health.latestValue(for: metric)
-                value = latest?.value
-                latestDate = latest?.date
-            } else {
-                value = try? await health.currentValue(for: metric)
-                latestDate = nil
-            }
+            let latest = await HealthQuery.shared.latestValue(for: metric)
+            value = latest?.value
+            // Summenmetriken (Schritte, Kalorien) tragen den Tag, kein
+            // Messdatum – dort bleibt die Zeitangabe leer wie bisher.
+            latestDate = metric.aggregation == .discreteAverage ? latest?.date : nil
             loaded = true
         }
     }

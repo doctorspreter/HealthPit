@@ -83,7 +83,7 @@ struct BridgeSettingsView: View {
                                                   symbol: "externaldrive.fill",
                                                   tint: .indigo)
                     }
-                } header: { Text("Daten & Verbindung") }
+                } header: { Text(L10n.string("Daten & Verbindung")) }
 
                 Section {
                     NavigationLink {
@@ -110,10 +110,10 @@ struct BridgeSettingsView: View {
                                                   symbol: "globe.europe.africa.fill",
                                                   tint: .pink)
                     }
-                } header: { Text("Darstellung") }
+                } header: { Text(L10n.string("Darstellung")) }
 
-                Section("App") {
-                    LabeledContent("Version") {
+                Section(L10n.string("App")) {
+                    LabeledContent(L10n.string("Version")) {
                         Text(appVersionText)
                     }
                 }
@@ -140,7 +140,7 @@ struct BridgeSettingsView: View {
             ) { result in
                 Task { await restoreBackup(from: result) }
             }
-            .navigationTitle("Einstellungen")
+            .navigationTitle(L10n.string("Einstellungen"))
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 homeAssistantToken = KeychainStore.string(for: BridgeSettings.homeAssistantTokenKey)
@@ -157,7 +157,7 @@ struct BridgeSettingsView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Fertig") { dismiss() }
+                    Button(L10n.string("Fertig")) { dismiss() }
                 }
             }
         }
@@ -167,14 +167,14 @@ struct BridgeSettingsView: View {
 
     private var connectionScreen: some View {
         Form {
-                Section("Home Assistant") {
-                    TextField("Lokale Adresse", text: $localHost)
+                Section(L10n.string("Home Assistant")) {
+                    TextField(L10n.string("Lokale Adresse"), text: $localHost)
                         .textInputAutocapitalization(.never)
                         .keyboardType(.URL)
                         .autocorrectionDisabled()
-                    TextField("Port", text: $localPort)
+                    TextField(L10n.string("Port"), text: $localPort)
                         .keyboardType(.numberPad)
-                    TextField("Externe Adresse (optional)", text: $baseURL)
+                    TextField(L10n.string("Externe Adresse (optional)"), text: $baseURL)
                         .textInputAutocapitalization(.never)
                         .keyboardType(.URL)
                         .autocorrectionDisabled()
@@ -194,7 +194,7 @@ struct BridgeSettingsView: View {
                         Button(role: .destructive) {
                             disconnectBridge()
                         } label: {
-                            Text("Verbindung trennen")
+                            Text(L10n.string("Verbindung trennen"))
                         }
                     }
                     if !connectionStatus.isEmpty {
@@ -207,16 +207,16 @@ struct BridgeSettingsView: View {
                     }
                 }
 
-                Section("Synchronisierung") {
-                    Toggle("Synchronisierung aktiv", isOn: $syncEnabled)
-                    Picker("Intervall", selection: $syncInterval) {
-                        Text("30 Minuten").tag(1800.0)
-                        Text("1 Stunde").tag(3600.0)
-                        Text("3 Stunden").tag(10800.0)
-                        Text("6 Stunden").tag(21600.0)
+                Section(L10n.string("Synchronisierung")) {
+                    Toggle(L10n.string("Synchronisierung aktiv"), isOn: $syncEnabled)
+                    Picker(L10n.string("Intervall"), selection: $syncInterval) {
+                        Text(L10n.string("30 Minuten")).tag(1800.0)
+                        Text(L10n.string("1 Stunde")).tag(3600.0)
+                        Text(L10n.string("3 Stunden")).tag(10800.0)
+                        Text(L10n.string("6 Stunden")).tag(21600.0)
                     }
                     if lastSyncDate > .distantPast {
-                        LabeledContent("Letzter Sync") {
+                        LabeledContent(L10n.string("Letzter Sync")) {
                             Text(lastSyncDate, format: .dateTime.day().month().hour().minute())
                         }
                     }
@@ -228,7 +228,7 @@ struct BridgeSettingsView: View {
                     } label: {
                         HStack {
                             if isSyncing { ProgressView() }
-                            Text("Jetzt synchronisieren")
+                            Text(L10n.string("Jetzt synchronisieren"))
                         }
                     }
                     .disabled(isSyncing || isFullSyncing || isImportingHistory || !syncEnabled)
@@ -238,7 +238,7 @@ struct BridgeSettingsView: View {
                     } label: {
                         HStack {
                             if isFullSyncing { ProgressView() }
-                            Text("Apple-Health-Workouts komplett neu laden")
+                            Text(L10n.string("Apple-Health-Workouts komplett neu laden"))
                         }
                     }
                     .disabled(isSyncing || isFullSyncing || isImportingHistory || !syncEnabled)
@@ -253,25 +253,25 @@ struct BridgeSettingsView: View {
                     }
                 }
 
-                Section("Langzeitdaten in Home Assistant") {
+                Section(L10n.string("Langzeitdaten in Home Assistant")) {
                     Button {
                         Task { await importHistory() }
                     } label: {
                         HStack {
                             if isImportingHistory { ProgressView() }
-                            Text("Bisherige Daten integrieren")
+                            Text(L10n.string("Bisherige Daten integrieren"))
                         }
                     }
                     // Der einmalige Import ist bewusst auch bei deaktiviertem
                     // Hintergrund-Sync verfügbar.
                     .disabled(isSyncing || isFullSyncing || isImportingHistory)
 
-                    Text("Integriere auch die Daten, die vor der Verbindung mit Home Assistant aufgezeichnet wurden. Die Übertragung erfolgt einmalig und kann mehrere Minuten dauern.")
+                    Text(L10n.string("Integriere auch die Daten, die vor der Verbindung mit Home Assistant aufgezeichnet wurden. Die Übertragung erfolgt einmalig und kann mehrere Minuten dauern."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
                     HStack(alignment: .top, spacing: 12) {
-                        Text("Status")
+                        Text(L10n.string("Status"))
                         Spacer(minLength: 12)
                         historyImportStatus
                             .multilineTextAlignment(.trailing)
@@ -292,60 +292,60 @@ struct BridgeSettingsView: View {
                     }
                 }
         }
-        .navigationTitle("Verbindung")
+        .navigationTitle(L10n.string("Verbindung"))
         .navigationBarTitleDisplayMode(.inline)
-        .alert("Bisherige Daten integrieren?", isPresented: $isShowingHistoryImportPrompt) {
-            Button("Jetzt integrieren") {
+        .alert(L10n.string("Bisherige Daten integrieren?"), isPresented: $isShowingHistoryImportPrompt) {
+            Button(L10n.string("Jetzt integrieren")) {
                 Task { await importHistory() }
             }
-            Button("Später", role: .cancel) {}
+            Button(L10n.string("Später"), role: .cancel) {}
         } message: {
-            Text("Möchtest du auch die Daten, die vor der Verbindung aufgezeichnet wurden, in Home Assistant integrieren? Du kannst dies auch später in den Einstellungen nachholen.")
+            Text(L10n.string("Möchtest du auch die Daten, die vor der Verbindung aufgezeichnet wurden, in Home Assistant integrieren? Du kannst dies auch später in den Einstellungen nachholen."))
         }
     }
 
     @ViewBuilder
     private var historyImportStatus: some View {
         if isImportingHistory {
-            Text("Übertragung läuft …")
+            Text(L10n.string("Übertragung läuft …"))
                 .foregroundStyle(.secondary)
         } else if historyImportFailed {
-            Label("Integration fehlgeschlagen – erneut versuchen", systemImage: "exclamationmark.triangle.fill")
+            Label(L10n.string("Integration fehlgeschlagen – erneut versuchen"), systemImage: "exclamationmark.triangle.fill")
                 .foregroundStyle(.red)
         } else if lastHistoryImportDate > .distantPast {
-            Label("Alle bisherigen Daten wurden integriert", systemImage: "checkmark.circle.fill")
+            Label(L10n.string("Alle bisherigen Daten wurden integriert"), systemImage: "checkmark.circle.fill")
                 .foregroundStyle(.green)
         } else {
-            Text("Noch nicht integriert")
+            Text(L10n.string("Noch nicht integriert"))
                 .foregroundStyle(.secondary)
         }
     }
 
     private var backupScreen: some View {
         Form {
-                Section("Datensicherung") {
+                Section(L10n.string("Datensicherung")) {
                     Button {
                         Task { await prepareBackup() }
                     } label: {
-                        Label("Daten exportieren", systemImage: "square.and.arrow.up")
+                        Label(L10n.string("Daten exportieren"), systemImage: "square.and.arrow.up")
                     }
                     Button {
                         isImportingBackup = true
                     } label: {
-                        Label("Daten importieren", systemImage: "square.and.arrow.down")
+                        Label(L10n.string("Daten importieren"), systemImage: "square.and.arrow.down")
                     }
                     if !backupStatus.isEmpty {
                         Text(backupStatus)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-                    Text("Die Sicherung enthält alle lokalen Workouts als JSON-Datei. Beim Import wird nichts gelöscht, nur ergänzt und aktualisiert. Zugangsdaten sind aus Sicherheitsgründen nicht enthalten und müssen nach einer Wiederherstellung neu eingetragen werden.")
+                    Text(L10n.string("Die Sicherung enthält alle lokalen Workouts als JSON-Datei. Beim Import wird nichts gelöscht, nur ergänzt und aktualisiert. Zugangsdaten sind aus Sicherheitsgründen nicht enthalten und müssen nach einer Wiederherstellung neu eingetragen werden."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
         }
-        .navigationTitle("Datensicherung")
+        .navigationTitle(L10n.string("Datensicherung"))
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -355,36 +355,36 @@ struct BridgeSettingsView: View {
                                           sizesRaw: $dashboardSizesRaw,
                                           hiddenRaw: $dashboardHiddenRaw)
         }
-        .navigationTitle("Startseite")
+        .navigationTitle(L10n.string("Startseite"))
         .navigationBarTitleDisplayMode(.inline)
     }
 
     private var appearanceScreen: some View {
         Form {
-                Section("Sprache") {
-                    Picker("App-Sprache", selection: $appLanguageRawValue) {
+                Section(L10n.string("Sprache")) {
+                    Picker(L10n.string("App-Sprache"), selection: $appLanguageRawValue) {
                         ForEach(AppLanguage.allCases) { language in
                             Text(language.title).tag(language.rawValue)
                         }
                     }
-                    Text("Beim Sprachwechsel wird die Oberfläche neu gestartet. Systemstandard verwendet die in iOS bevorzugte Sprache.")
+                    Text(L10n.string("Beim Sprachwechsel wird die Oberfläche neu gestartet. Systemstandard verwendet die in iOS bevorzugte Sprache."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
-                Section("Maßeinheiten") {
-                    Picker("Einheiten", selection: $measurementSystemRawValue) {
+                Section(L10n.string("Maßeinheiten")) {
+                    Picker(L10n.string("Einheiten"), selection: $measurementSystemRawValue) {
                         ForEach(MeasurementSystemSetting.allCases) { system in
                             Text(system.title).tag(system.rawValue)
                         }
                     }
-                    Text("„Wie in Apple Health“ übernimmt die Einheiten aus der Health-App. An die Bridge werden weiterhin metrische Werte geschickt, damit bestehende Home-Assistant-Sensoren ihre Historie behalten.")
+                    Text(L10n.string("„Wie in Apple Health“ übernimmt die Einheiten aus der Health-App. An die Bridge werden weiterhin metrische Werte geschickt, damit bestehende Home-Assistant-Sensoren ihre Historie behalten."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
         }
-        .navigationTitle("Sprache und Einheiten")
+        .navigationTitle(L10n.string("Sprache und Einheiten"))
         .navigationBarTitleDisplayMode(.inline)
     }
 

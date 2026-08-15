@@ -45,9 +45,9 @@ struct DashboardView: View {
 
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Deine Bereiche")
+                            Text(L10n.string("Deine Bereiche"))
                                 .font(.title3.bold())
-                            Text("Tippe auf einen Bereich fuer Details und Trends")
+                            Text(L10n.string("Tippe auf einen Bereich für Details und Trends"))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -79,7 +79,7 @@ struct DashboardView: View {
                                endPoint: .center)
                     .ignoresSafeArea()
             )
-            .navigationTitle("HealthPit")
+            .navigationTitle(L10n.string("HealthPit"))
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Button {
@@ -105,11 +105,11 @@ struct DashboardView: View {
             .sheet(isPresented: $showingSettings) {
                 BridgeSettingsView()
             }
-            .alert("Synchronisierung", isPresented: Binding(
+            .alert(L10n.string("Synchronisierung"), isPresented: Binding(
                 get: { syncMessage != nil },
                 set: { if !$0 { syncMessage = nil } }
             )) {
-                Button("OK", role: .cancel) {}
+                Button(L10n.string("OK"), role: .cancel) {}
             } message: {
                 Text(syncMessage ?? "")
             }

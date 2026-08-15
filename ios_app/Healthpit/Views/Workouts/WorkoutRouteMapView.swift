@@ -46,11 +46,11 @@ struct WorkoutRouteMapView: View {
             NavigationStack {
                 routeMap
                     .ignoresSafeArea(edges: .bottom)
-                    .navigationTitle("Karte")
+                    .navigationTitle(L10n.string("Karte"))
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .topBarTrailing) {
-                            Button("Fertig") { showingFullMap = false }
+                            Button(L10n.string("Fertig")) { showingFullMap = false }
                         }
                     }
             }

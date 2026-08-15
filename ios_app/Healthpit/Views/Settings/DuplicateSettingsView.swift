@@ -18,7 +18,7 @@ struct DuplicateSettingsView: View {
     var body: some View {
         List {
             Section {
-                Text("Zwei Aufzeichnungen derselben Einheit entstehen, wenn mehrere Quellen dasselbe Training melden. Hier entscheidest du, was zusammengehört.")
+                Text(L10n.string("Zwei Aufzeichnungen derselben Einheit entstehen, wenn mehrere Quellen dasselbe Training melden. Hier entscheidest du, was zusammengehört."))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -27,13 +27,13 @@ struct DuplicateSettingsView: View {
                 Section {
                     HStack(spacing: 10) {
                         ProgressView()
-                        Text("Wird geprüft ...")
+                        Text(L10n.string("Wird geprüft ..."))
                             .foregroundStyle(.secondary)
                     }
                 }
             } else if report.candidates.isEmpty {
                 Section {
-                    Label("Keine Duplikate gefunden", systemImage: "checkmark.circle")
+                    Label(L10n.string("Keine Duplikate gefunden"), systemImage: "checkmark.circle")
                         .foregroundStyle(.secondary)
                 }
             } else {
@@ -45,14 +45,14 @@ struct DuplicateSettingsView: View {
             }
 
             if !report.decisions.isEmpty {
-                Section("Entschieden") {
+                Section(L10n.string("Entschieden")) {
                     ForEach(report.decisions) { decision in
                         decisionRow(decision)
                     }
                 }
             }
         }
-        .navigationTitle("Duplikate")
+        .navigationTitle(L10n.string("Duplikate"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -66,11 +66,11 @@ struct DuplicateSettingsView: View {
         }
         .refreshable { await load() }
         .task { await load() }
-        .alert("Duplikate", isPresented: Binding(
+        .alert(L10n.string("Duplikate"), isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
         )) {
-            Button("OK", role: .cancel) {}
+            Button(L10n.string("OK"), role: .cancel) {}
         } message: {
             Text(errorMessage ?? "")
         }
@@ -97,7 +97,7 @@ struct DuplicateSettingsView: View {
             if busyKeys.contains(candidate.id) {
                 HStack(spacing: 8) {
                     ProgressView()
-                    Text("Wird gespeichert ...")
+                    Text(L10n.string("Wird gespeichert ..."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -109,7 +109,7 @@ struct DuplicateSettingsView: View {
                         // Ohne Symbol und mit einer Zeile: „Zusammenfuehren"
                         // brach sonst mitten im Wort um, und in den laengeren
                         // Sprachen wird es nicht kuerzer.
-                        Text("Zusammenführen")
+                        Text(L10n.string("Zusammenführen"))
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
                             .frame(maxWidth: .infinity)
@@ -119,7 +119,7 @@ struct DuplicateSettingsView: View {
                     Button {
                         Task { await decide(candidate, .separate) }
                     } label: {
-                        Text("Getrennt lassen")
+                        Text(L10n.string("Getrennt lassen"))
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
                             .frame(maxWidth: .infinity)
@@ -160,7 +160,7 @@ struct DuplicateSettingsView: View {
             if busyKeys.contains(decision.id) {
                 ProgressView()
             } else {
-                Button("Zurücknehmen") {
+                Button(L10n.string("Zurücknehmen")) {
                     Task { await undo(decision) }
                 }
                 .font(.footnote)

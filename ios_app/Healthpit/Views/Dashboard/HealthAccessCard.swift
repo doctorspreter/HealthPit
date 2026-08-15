@@ -36,7 +36,7 @@ struct HealthAccessCard: View {
                 Image(systemName: "heart.text.square.fill")
                     .foregroundStyle(.red)
                 if size != .small {
-                    Text("Apple Health")
+                    Text(L10n.string("Apple Health"))
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -47,7 +47,7 @@ struct HealthAccessCard: View {
                 }
             }
 
-            Text("Zugriff erlauben")
+            Text(L10n.string("Zugriff erlauben"))
                 .font(size == .small ? .caption.weight(.semibold) : .headline)
                 .lineLimit(2)
                 .minimumScaleFactor(0.7)

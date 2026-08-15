@@ -268,9 +268,14 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Healthpit/Healthpit.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = Q3CD6ZPU9J;
 				ENABLE_PREVIEWS = YES;
+				EXCLUDED_SOURCE_FILE_NAMES = (
+					".smbdelete*",
+					"._*",
+					.DS_Store,
+				);
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Healthpit/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
@@ -302,9 +307,14 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Healthpit/Healthpit.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = Q3CD6ZPU9J;
 				ENABLE_PREVIEWS = YES;
+				EXCLUDED_SOURCE_FILE_NAMES = (
+					".smbdelete*",
+					"._*",
+					.DS_Store,
+				);
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Healthpit/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.6;

@@ -1,5 +1,35 @@
 # Änderungsprotokoll
 
+## Home Assistant 2.4.0
+
+### Added
+
+- **Values are grouped into devices.** Every user still has their device, but
+  their values now sit under areas below it — Body, Heart, Sleep, Activity,
+  Workouts. Entity IDs are untouched: in Home Assistant the device is separate
+  from the entity ID, so history and automations survive the regrouping.
+- **One device per exercise.** Strength values arrive per exercise now, so the
+  leg press has its own device with weight, repetitions, volume and RPE
+  underneath. A single "set weight" sensor would jump between exercises with
+  every set — 45 kg on the abductor, then 80 on the leg press — and its history
+  would be noise.
+- **Canonical values are accepted.** From app model version 2 the payload
+  carries HealthPit's own identifiers (`WRK_SET_WEIGHT` instead of
+  `weight_kg`). Nothing is translated on the way any more. Identifiers that are
+  not canonical are refused so the translation table cannot come back through
+  the side door.
+- Equipment settings (seat, backrest, handle, range) arrive as text sensors —
+  but only where they were actually set. GymPit no longer ships presets, so a
+  value that arrives is one the user chose.
+
+### Notes
+
+- Older app versions send no values at all. That is not an error; they keep
+  working exactly as before.
+- Only the latest value per exercise and metric is stored. The long-term
+  history is Home Assistant's job — its recorder keeps what the sensor
+  reported.
+
 ## Home Assistant 2.3.1
 
 ### Fixed

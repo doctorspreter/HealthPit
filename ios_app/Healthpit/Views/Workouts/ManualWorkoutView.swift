@@ -61,36 +61,36 @@ struct ManualWorkoutView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Training") {
-                    Picker("Sportart", selection: $sport) {
+                Section(L10n.string("Training")) {
+                    Picker(L10n.string("Sportart"), selection: $sport) {
                         ForEach(selectableSports, id: \.self) { Text(L10n.string($0)).tag($0) }
                     }
-                    TextField("Titel optional", text: $title)
-                    DatePicker("Start", selection: $start)
+                    TextField(L10n.string("Titel optional"), text: $title)
+                    DatePicker(L10n.string("Start"), selection: $start)
                     Stepper("\(Int(durationMinutes)) Minuten", value: $durationMinutes, in: 1...600, step: 5)
                 }
 
-                Section("Daten") {
+                Section(L10n.string("Daten")) {
                     TextField(L10n.string("Distanz") + " \(WorkoutUnits.distanceSymbol)", text: $distanceKm)
                         .keyboardType(.decimalPad)
-                    TextField("Kalorien", text: $energyKcal)
+                    TextField(L10n.string("Kalorien"), text: $energyKcal)
                         .keyboardType(.decimalPad)
-                    TextField("Ø Puls", text: $averageHeartRate)
+                    TextField(L10n.string("Ø Puls"), text: $averageHeartRate)
                         .keyboardType(.decimalPad)
-                    TextField("Max Puls", text: $maxHeartRate)
+                    TextField(L10n.string("Max Puls"), text: $maxHeartRate)
                         .keyboardType(.decimalPad)
-                    TextField("Notizen", text: $notes, axis: .vertical)
+                    TextField(L10n.string("Notizen"), text: $notes, axis: .vertical)
                 }
 
                 if draft == nil {
-                    Section("Wiederholung") {
-                        Picker("Rhythmus", selection: $repeatRule) {
+                    Section(L10n.string("Wiederholung")) {
+                        Picker(L10n.string("Rhythmus"), selection: $repeatRule) {
                             ForEach(WorkoutRepeatRule.allCases) { rule in
                                 Text(rule.title).tag(rule)
                             }
                         }
                         if repeatRule != .none {
-                            DatePicker("Bis", selection: $repeatEnd, in: start..., displayedComponents: .date)
+                            DatePicker(L10n.string("Bis"), selection: $repeatEnd, in: start..., displayedComponents: .date)
                             Text(repeatSummary)
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
@@ -99,10 +99,10 @@ struct ManualWorkoutView: View {
                 }
 
                 Section {
-                    Toggle("Zu Apple Health hinzufügen", isOn: $exportToAppleHealth)
+                    Toggle(L10n.string("Zu Apple Health hinzufügen"), isOn: $exportToAppleHealth)
                         .disabled(!appleHealthWorkoutWritingEnabled)
                     if !appleHealthWorkoutWritingEnabled {
-                        Text("Der Export ist unter Einstellungen > Datenquellen > Apple Health deaktiviert.")
+                        Text(L10n.string("Der Export ist unter Einstellungen > Datenquellen > Apple Health deaktiviert."))
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
@@ -134,11 +134,11 @@ struct ManualWorkoutView: View {
             .onChange(of: repeatEnd) { _, _ in
                 repeatEndTouched = true
             }
-            .navigationTitle("Training")
+            .navigationTitle(L10n.string("Training"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Abbrechen") { dismiss() }
+                    Button(L10n.string("Abbrechen")) { dismiss() }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -147,7 +147,7 @@ struct ManualWorkoutView: View {
                         if isSaving {
                             ProgressView()
                         } else {
-                            Text("Speichern")
+                            Text(L10n.string("Speichern"))
                         }
                     }
                     .disabled(isSaving)
@@ -285,13 +285,13 @@ struct LocalWorkoutDetailView: View {
                             if isExportingToAppleHealth {
                                 ProgressView()
                             }
-                            Label("Zu Apple Health hinzufügen", systemImage: "heart.badge.plus")
+                            Label(L10n.string("Zu Apple Health hinzufügen"), systemImage: "heart.badge.plus")
                         }
                     }
                     .disabled(isExportingToAppleHealth || !appleHealthWorkoutWritingEnabled)
 
                     if !appleHealthWorkoutWritingEnabled {
-                        Text("Der Export ist in den Datenquellen-Einstellungen deaktiviert.")
+                        Text(L10n.string("Der Export ist in den Datenquellen-Einstellungen deaktiviert."))
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
@@ -304,7 +304,7 @@ struct LocalWorkoutDetailView: View {
                 }
             }
 
-            Section("Karte") {
+            Section(L10n.string("Karte")) {
                 if routeMapPoints.count > 1 {
                     WorkoutRouteMapView(points: routeMapPoints, splits: splits, isCycling: isCycling)
                 }
@@ -327,7 +327,7 @@ struct LocalWorkoutDetailView: View {
                 }
             }
             if !records.isEmpty {
-                Section("Rekorde") {
+                Section(L10n.string("Rekorde")) {
                     ForEach(records) { record in
                         Label {
                             HStack {
@@ -348,7 +348,7 @@ struct LocalWorkoutDetailView: View {
                 }
             }
             if !workout.exercises.isEmpty {
-                Section("Übungen") {
+                Section(L10n.string("Übungen")) {
                     ForEach(workout.exercises) { exercise in
                         NavigationLink {
                             StrengthExerciseDetailView(exercise: StrengthExerciseAnalyzer.row(for: exercise,
@@ -379,12 +379,12 @@ struct LocalWorkoutDetailView: View {
                 }
             }
             if let tempo = tempoText {
-                Section("Tempo") {
+                Section(L10n.string("Tempo")) {
                     Label(tempo, systemImage: isCycling ? "speedometer" : "timer")
                 }
             }
             if !mergedHealthStats.isEmpty {
-                Section("Weitere Trainingswerte") {
+                Section(L10n.string("Weitere Trainingswerte")) {
                     ForEach(mergedHealthStats) { stat in
                         Label {
                             HStack {
@@ -399,12 +399,12 @@ struct LocalWorkoutDetailView: View {
                 }
             }
             if let weather = workout.weather, !weather.summary.isEmpty {
-                Section("Wetter") {
+                Section(L10n.string("Wetter")) {
                     Label(weather.summary, systemImage: "cloud.sun.fill")
                 }
             }
             if !splits.isEmpty {
-                Section("Trainingsverlauf") {
+                Section(L10n.string("Trainingsverlauf")) {
                     WorkoutSampleTimelineChartView(samples: timelineSamples,
                                                    heartRate: effectiveHeartRate,
                                                    isCycling: isCycling)
@@ -433,14 +433,14 @@ struct LocalWorkoutDetailView: View {
                     }
                 }
             } else if hasTimelineData {
-                Section("Messwerte") {
+                Section(L10n.string("Messwerte")) {
                     WorkoutSampleTimelineChartView(samples: timelineSamples,
                                                    heartRate: effectiveHeartRate,
                                                    isCycling: isCycling)
                 }
             }
             if let heartRate = effectiveHeartRate {
-                Section("Puls") {
+                Section(L10n.string("Puls")) {
                     HStack(spacing: 12) {
                         stat("Min", "\(Int(heartRate.minimum.rounded())) bpm")
                         stat("Ø", "\(Int(heartRate.average.rounded())) bpm")
@@ -448,23 +448,23 @@ struct LocalWorkoutDetailView: View {
                     }
                 }
             } else if isLoadingHeartRate {
-                Section("Puls") {
+                Section(L10n.string("Puls")) {
                     ProgressView()
                 }
             }
             if !workout.notes.isEmpty {
-                Section("Notizen") {
+                Section(L10n.string("Notizen")) {
                     Text(workout.notes)
                 }
             }
-            Section("Verletzung") {
-                Picker("Ort", selection: $injuryLocation) {
+            Section(L10n.string("Verletzung")) {
+                Picker(L10n.string("Ort"), selection: $injuryLocation) {
                     ForEach(injuryLocations, id: \.self) { Text($0.isEmpty ? L10n.string("Keine") : L10n.string($0)).tag($0) }
                 }
-                Picker("Schmerzart", selection: $injuryPainType) {
+                Picker(L10n.string("Schmerzart"), selection: $injuryPainType) {
                     ForEach(painTypes, id: \.self) { Text($0.isEmpty ? L10n.string("Keine") : L10n.string($0)).tag($0) }
                 }
-                Picker("Stärke", selection: $injurySeverity) {
+                Picker(L10n.string("Stärke"), selection: $injurySeverity) {
                     ForEach(0...10, id: \.self) { Text($0 == 0 ? "Keine" : "\($0) von 10").tag($0) }
                 }
                 Button {
@@ -473,13 +473,13 @@ struct LocalWorkoutDetailView: View {
                     if isSavingInjury {
                         ProgressView()
                     } else {
-                        Label("Verletzung speichern", systemImage: "bandage.fill")
+                        Label(L10n.string("Verletzung speichern"), systemImage: "bandage.fill")
                     }
                 }
                 .disabled(isSavingInjury)
             }
             if !effectiveRoute.isEmpty {
-                Section("Quellen") {
+                Section(L10n.string("Quellen")) {
                     Text("\(effectiveRoute.count) Routenpunkte gespeichert.")
                 }
             }
@@ -608,7 +608,7 @@ struct LocalWorkoutDetailView: View {
             updated.averageHeartRate = imported.workout.averageHeartRate ?? updated.averageHeartRate
             updated.maxHeartRate = imported.workout.maxHeartRate ?? updated.maxHeartRate
 
-            await LocalWorkoutStore.shared.save(updated)
+            await ManualWorkoutWriter.save(updated)
             savedWorkoutOverride = updated
             _ = try? await BridgeSyncService.shared.uploadLocalWorkouts()
             routeImportMessage = L10n.string("Karte wurde zum Training hinzugefügt.")
@@ -759,7 +759,7 @@ struct LocalWorkoutDetailView: View {
                                    painType: injuryPainType,
                                    severity: injurySeverity)
         updated.injury = injury.isEmpty ? nil : injury
-        await LocalWorkoutStore.shared.save(updated)
+        await ManualWorkoutWriter.save(updated)
         savedWorkoutOverride = updated
         _ = try? await BridgeSyncService.shared.uploadLocalWorkouts()
     }

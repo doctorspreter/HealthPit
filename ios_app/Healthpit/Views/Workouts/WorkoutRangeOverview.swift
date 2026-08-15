@@ -18,7 +18,7 @@ struct WorkoutRangeOverview: View {
     @State private var yearChartZoomLevel = 1.0
 
     var body: some View {
-        Section("Übersicht") {
+        Section(L10n.string("Übersicht")) {
             rangeHeader
             switch range {
             case .day:
@@ -36,7 +36,7 @@ struct WorkoutRangeOverview: View {
     @ViewBuilder
     private var sportOverview: some View {
         if !sportStats.isEmpty {
-            Text("Sportarten")
+            Text(L10n.string("Sportarten"))
                 .font(.subheadline.bold())
             ForEach(sportStats) { row in
                 NavigationLink {
@@ -84,7 +84,7 @@ struct WorkoutRangeOverview: View {
                     .font(.subheadline.bold())
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)
-                DatePicker("Datum", selection: $referenceDate, in: ...Date(), displayedComponents: .date)
+                DatePicker(L10n.string("Datum"), selection: $referenceDate, in: ...Date(), displayedComponents: .date)
                     .labelsHidden()
                     .datePickerStyle(.compact)
                     .controlSize(.small)
@@ -447,9 +447,9 @@ struct WorkoutSportListView: View {
     var body: some View {
         List {
             if sports.isEmpty {
-                ContentUnavailableView("Keine Sportarten",
+                ContentUnavailableView(L10n.string("Keine Sportarten"),
                                        systemImage: "figure.run",
-                                       description: Text("Es sind noch keine Workouts vorhanden."))
+                                       description: Text(L10n.string("Es sind noch keine Workouts vorhanden.")))
             } else {
                 ForEach(sports, id: \.self) { sport in
                     NavigationLink(sport) {
@@ -460,7 +460,7 @@ struct WorkoutSportListView: View {
                 }
             }
         }
-        .navigationTitle("Sportarten")
+        .navigationTitle(L10n.string("Sportarten"))
         .navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -526,7 +526,7 @@ struct WorkoutSportDetailView: View {
         let showsPointSymbols = points.count <= 60
         return List {
             Section {
-                Picker("Zeitraum", selection: $range) {
+                Picker(L10n.string("Zeitraum"), selection: $range) {
                     ForEach(WorkoutSportRange.allCases) { option in
                         Text(option.title).tag(option)
                     }
@@ -542,7 +542,7 @@ struct WorkoutSportDetailView: View {
                         }
                         .buttonStyle(.borderless)
 
-                        DatePicker("Datum",
+                        DatePicker(L10n.string("Datum"),
                                    selection: $referenceDate,
                                    in: ...Date(),
                                    displayedComponents: .date)
@@ -562,9 +562,9 @@ struct WorkoutSportDetailView: View {
 
             Section {
                 if points.isEmpty {
-                    ContentUnavailableView("Keine Daten",
+                    ContentUnavailableView(L10n.string("Keine Daten"),
                                            systemImage: "chart.line.uptrend.xyaxis",
-                                           description: Text("Für diese Sportart liegen noch keine Werte vor."))
+                                           description: Text(L10n.string("Für diese Sportart liegen noch keine Werte vor.")))
                 } else {
                     Chart {
                         ForEach(points) { point in
@@ -646,7 +646,7 @@ struct WorkoutSportDetailView: View {
             }
 
             if isStrength, !strengthRows.isEmpty {
-                Section("Maschinen & Übungen") {
+                Section(L10n.string("Maschinen & Übungen")) {
                     ForEach(strengthRows) { row in
                         NavigationLink {
                             StrengthExerciseDetailView(exercise: row)
@@ -664,7 +664,7 @@ struct WorkoutSportDetailView: View {
                 }
             }
 
-            Section("Trainings") {
+            Section(L10n.string("Trainings")) {
                 ForEach(visibleItems) { item in
                     NavigationLink {
                         UnifiedWorkoutDetailView(item: item,
@@ -676,7 +676,7 @@ struct WorkoutSportDetailView: View {
                         Button(role: .destructive) {
                             onDelete(item)
                         } label: {
-                            Label("Löschen", systemImage: "trash")
+                            Label(L10n.string("Löschen"), systemImage: "trash")
                         }
                     }
                 }

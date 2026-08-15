@@ -31,7 +31,7 @@ struct DashboardOrderSettingsSection: View {
     }
 
     var body: some View {
-        Section("Startseite") {
+        Section(L10n.string("Startseite")) {
             ForEach(visibleItems) { item in
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
@@ -65,7 +65,7 @@ struct DashboardOrderSettingsSection: View {
                         .accessibilityLabel(L10n.string("Kachel ausblenden"))
                     }
 
-                    Picker("Größe", selection: sizeBinding(for: item)) {
+                    Picker(L10n.string("Größe"), selection: sizeBinding(for: item)) {
                         ForEach(DashboardWidgetSize.allCases) { size in
                             Text(size.title).tag(size)
                         }
@@ -74,7 +74,7 @@ struct DashboardOrderSettingsSection: View {
                 }
             }
 
-            Button("Standard wiederherstellen") {
+            Button(L10n.string("Standard wiederherstellen")) {
                 orderRaw = DashboardItem.encode(DashboardItem.defaultOrder)
                 sizesRaw = ""
                 hiddenRaw = ""
@@ -82,7 +82,7 @@ struct DashboardOrderSettingsSection: View {
         }
 
         if !hiddenItems.isEmpty {
-            Section("Ausgeblendete Kacheln") {
+            Section(L10n.string("Ausgeblendete Kacheln")) {
                 ForEach(items.filter(hiddenItems.contains)) { item in
                     HStack {
                         Label(item.title, systemImage: item.systemImage)

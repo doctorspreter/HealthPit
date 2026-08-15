@@ -717,3 +717,89 @@
 "Ziel %@ (%@)" = "Objetivo %@ (%@)";
 "%@ erreicht" = "%@ alcanzado";
 "Tages-, Wochen- und Monatsziele festlegen" = "Definir objetivos diarios, semanales y mensuales";
+
+/* Erststart: Übernahme und Erstimport */
+"Vorhandene Daten werden übernommen …" = "Importando los datos existentes …";
+"Daten werden übernommen" = "Importando datos";
+"Das passiert nur beim ersten Mal." = "Esto solo ocurre la primera vez.";
+"Zeitraum wird ermittelt …" = "Determinando el período …";
+"Lese %@ …" = "Leyendo %@ …";
+"Lese Schlaf …" = "Leyendo el sueño …";
+"Lese Trainings …" = "Leyendo los entrenamientos …";
+
+/* Restliche Lücken der Vorfassung */
+"%lld Workouts vorbereitet." = "%lld entrenamientos preparados.";
+"Sicherungsformat" = "Formato de copia";
+"Zeile %lld" = "Fila %lld";
+
+/* Startseite und Einstellungen */
+"Alle Einheiten nach Disziplin" = "Todas las sesiones por disciplina";
+"Darstellung" = "Apariencia";
+"Daten & Verbindung" = "Datos y conexión";
+"Dein Tag auf einen Blick" = "Tu día de un vistazo";
+"Deine Bereiche" = "Tus áreas";
+"Diese drei Werte stehen in der Kachel „Dein Tag auf einen Blick“ auf der Startseite." = "Estos tres valores aparecen en el mosaico \"Tu día de un vistazo\" de la pantalla de inicio.";
+"Startkachel" = "Mosaico de inicio";
+"Tippe auf einen Bereich für Details und Trends" = "Toca un área para ver detalles y tendencias";
+"Ziel" = "Objetivo";
+
+/* Begrüßung auf der Startseite */
+"Guten Morgen" = "Buenos días";
+"Guten Tag" = "Buenas tardes";
+"Guten Abend" = "Buenas noches";
+"Stark: Dein Schrittziel ist für heute erreicht." = "Bien: has alcanzado tu objetivo de pasos de hoy.";
+"Noch %lld Schritte bis zu deinem Tagesziel." = "Te faltan %lld pasos para tu objetivo diario.";
+"Deine wichtigsten Werte erscheinen hier, sobald Apple Health aktualisiert wurde." = "Tus valores principales aparecerán aquí en cuanto Apple Health se actualice.";
+
+/* Überschriften der Bildschirme */
+"Schlaf & Erholung" = "Sueño y recuperación";
+"Phasen, Dauer und Qualität verständlich zusammengefasst." = "Fases, duración y calidad, resumidas con claridad.";
+"Home Assistant und Synchronisierung" = "Home Assistant y sincronización";
+"Apple Health und Importe priorisieren" = "Priorizar Apple Health e importaciones";
+"Doppelte Trainings erkennen" = "Detectar entrenamientos duplicados";
+"Exportieren und wiederherstellen" = "Exportar y restaurar";
+"Tages-, Wochen- und Monatsziele festlegen" = "Definir objetivos diarios, semanales y mensuales";
+"Bereiche, Reihenfolge und Größen" = "Áreas, orden y tamaños";
+"Darstellung persönlich anpassen" = "Ajusta la presentación a tu gusto";
+"Manuell, GPX/TCX und GymPit" = "Manual, GPX/TCX y GymPit";
+"Deine Trends" = "Tus tendencias";
+"Aktuelle Werte und persönliche Verläufe" = "Valores actuales y evoluciones personales";
+"Aktuelle Werte gegenüber deinem 3-Monats-Schnitt" = "Valores actuales frente a tu media de tres meses";
+"Letzte 14 Tage im Vergleich zu deinem Normalwert" = "Los últimos 14 días frente a tu nivel habitual";
+"Deine Rekorde" = "Tus récords";
+"Bestleistungen" = "Mejores marcas";
+"Alle Bestleistungen" = "Todas las mejores marcas";
+"Deine stärksten aktuellen Leistungen" = "Tus mejores marcas recientes";
+"Filtere deine persönlichen Bestleistungen" = "Filtra tus mejores marcas";
+"Chronologisch nach dem neuesten Rekord" = "Por orden del récord más reciente";
+"Noch keine Rekorde" = "Aún no hay récords";
+"Fortschritt, der sichtbar bleibt – über alle Sportarten und Zeiträume." = "Un progreso que permanece visible en todos los deportes y períodos.";
+"Einheiten, Belastung und Fortschritt in einer klaren Trainingsübersicht." = "Sesiones, carga y progreso en un resumen de entrenamiento claro.";
+"Bewegung, Belastung und deine Entwicklung auf einen Blick." = "Movimiento, carga y tu evolución de un vistazo.";
+"Dein Zyklus" = "Tu ciclo";
+"Gesundheitsbereich" = "Área de salud";
+"Diese Werte wurden bisher nicht erfasst" = "Estos valores aún no se han registrado";
+"Noch ohne Daten" = "Todavía sin datos";
+"Letzte lokale Aktualisierung" = "Última actualización local";
+
+/* Letzte Lücken */
+"Dauer" = "Duración";
+"Effizienz" = "Eficiencia";
+"Min Puls" = "FC mínima";
+"Persönliche Bestleistungen" = "Mejores marcas personales";
+"Schritte heute" = "Pasos de hoy";
+"Sprache & Einheiten" = "Idioma y unidades";
+"Unverbindliche Orientierung deiner Körperwerte" = "Una orientación aproximada de tus valores corporales";
+"Verlauf, Blutung und Symptome diskret und übersichtlich dokumentiert." = "Evolución, sangrado y síntomas, documentados con discreción y claridad.";
+"Verteilung der erfassten Nacht" = "Reparto de la noche registrada";
+"Zyklusgesundheit" = "Salud del ciclo";
+"aktueller Zyklus" = "ciclo actual";
+"Ø/Tag" = "med./día";
+
+/* Beschriftungen aus SwiftUI-Bausteinen */
+"App" = "App";
+"Port" = "Puerto";
+"Daten exportieren" = "Exportar datos";
+"Daten importieren" = "Importar datos";
+"Mit zwei Fingern zoomen · Wischen zum Verschieben · Tippen für Wert" = "Pellizca para ampliar · desliza para desplazar · toca para ver el valor";
+"Vergleich mit den vorherigen 90 Tagen" = "Comparación con los 90 días anteriores";

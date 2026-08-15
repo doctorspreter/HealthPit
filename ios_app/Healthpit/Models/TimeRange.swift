@@ -13,7 +13,9 @@ import Foundation
 extension Calendar {
     nonisolated static var healthApp: Calendar {
         var calendar = Calendar(identifier: .gregorian)
-        calendar.locale = L10n.locale
+        // Systemsprache: Wochentagsnamen und Datumsangaben richten sich nach
+        // dem iPhone, nicht nach der in der App gewaehlten Sprache.
+        calendar.locale = .autoupdatingCurrent
         calendar.firstWeekday = 2
         calendar.minimumDaysInFirstWeek = 4
         return calendar

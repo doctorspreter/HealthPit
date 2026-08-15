@@ -35,6 +35,7 @@ struct HealthPitApp: App {
     @AppStorage(MeasurementSystemSetting.storageKey) private var measurementSystemRawValue = MeasurementSystemSetting.automatic.rawValue
     @State private var undatedImport: WorkoutFileImport?
     @State private var availableWorkouts: [UnifiedWorkout] = []
+    @State private var bootstrap = HealthPitBootstrap.shared
 
     var body: some Scene {
         WindowGroup {
@@ -43,12 +44,29 @@ struct HealthPitApp: App {
                 // Einstellungen, nicht in beobachtbarem Zustand – beim Wechsel
                 // muss die Oberfläche daher komplett neu aufgebaut werden.
                 .id("\(appLanguageRawValue)-\(measurementSystemRawValue)")
-                .environment(\.locale, AppLanguage.from(appLanguageRawValue).locale)
+                // Datum und Zahlen folgen bewusst der Systemsprache, nicht der
+                // App-Sprache: Sonst stand im Schlafbildschirm „Fr. 14. Aug.“
+                // über „Aug 14, 2026“ – der Datumswähler richtete sich nach der
+                // App, die formatierten Datumsangaben nach dem System. Die
+                // Texte der App übersetzt L10n, das bleibt davon unberührt.
+                // Datenbank öffnen, Altbestand übernehmen, Apple Health lesen.
+                // Alles, was die App anzeigt, kommt danach von dort.
+                .task { await bootstrap.run() }
+                .overlay {
+                    if case let .importing(progress) = bootstrap.phase {
+                        FirstImportOverlay(progress: progress)
+                    } else if case .converting = bootstrap.phase {
+                        FirstImportOverlay(progress: IngestProgress(
+                            step: L10n.string("Vorhandene Daten werden übernommen …"),
+                            fraction: nil
+                        ))
+                    }
+                }
                 .sheet(item: $undatedImport) { imported in
                     UndatedWorkoutImportView(imported: imported,
                                              workouts: availableWorkouts) { workout in
                         Task {
-                            await LocalWorkoutStore.shared.save(workout)
+                            await ManualWorkoutWriter.save(workout)
                             _ = try? await BridgeSyncService.shared.uploadLocalWorkouts()
                         }
                     }
@@ -66,22 +84,14 @@ struct HealthPitApp: App {
         defer { if access { url.stopAccessingSecurityScopedResource() } }
         guard let imported = try? WorkoutFileImporter.analyze(from: url) else { return }
         if imported.containsDate {
-            await LocalWorkoutStore.shared.save(imported.workout)
+            await ManualWorkoutWriter.save(imported.workout)
             _ = try? await BridgeSyncService.shared.uploadLocalWorkouts()
             return
         }
 
-        async let local = LocalWorkoutStore.shared.loadSummaries()
-        let cachedHealth = await HealthWorkoutCacheStore.shared.loadAllTime()
-        let fetchedHealth = try? await HealthKitManager.shared.fetchAllWorkouts()
-        let health: [WorkoutSummary]
-        if let fetchedHealth, !fetchedHealth.isEmpty {
-            health = fetchedHealth.filter(\.isEligibleForLocalHealthCache)
-            await HealthWorkoutCacheStore.shared.saveAllTime(health)
-        } else {
-            health = cachedHealth
-        }
-        availableWorkouts = UnifiedWorkoutBuilder.build(health: health, local: await local)
+        // Ohne Datum im Dateinamen: Der Anwender ordnet die Datei einem
+        // vorhandenen Training zu. Die Auswahl kommt aus der Datenbank.
+        availableWorkouts = await HealthQuery.shared.unifiedWorkouts()
         undatedImport = imported
     }
 }

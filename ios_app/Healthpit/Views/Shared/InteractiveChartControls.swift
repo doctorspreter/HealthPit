@@ -10,7 +10,7 @@ import Charts
 
 struct ChartGestureHint: View {
     var body: some View {
-        Label("Mit zwei Fingern zoomen · Wischen zum Verschieben · Tippen für Wert",
+        Label(L10n.string("Mit zwei Fingern zoomen · Wischen zum Verschieben · Tippen für Wert"),
               systemImage: "hand.draw")
             .font(.caption2)
             .foregroundStyle(.secondary.opacity(0.82))
@@ -96,7 +96,7 @@ struct ChartSelectedValue: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(title)
+            Text(L10n.string(title))
                 .font(.caption.bold())
                 .foregroundStyle(.secondary)
 
@@ -156,11 +156,11 @@ struct ProfessionalPageHero: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(alignment: .top, spacing: 14) {
                 VStack(alignment: .leading, spacing: 5) {
-                    Text(eyebrow.uppercased())
+                    Text(L10n.string(eyebrow).uppercased())
                         .font(.caption2.weight(.bold))
                         .tracking(1.15)
                         .foregroundStyle(.white.opacity(0.72))
-                    Text(title)
+                    Text(L10n.string(title))
                         .font(.system(.title, design: .rounded, weight: .bold))
                         .foregroundStyle(.white)
                         .lineLimit(2)
@@ -188,7 +188,7 @@ struct ProfessionalPageHero: View {
                 }
             }
 
-            Text(subtitle)
+            Text(L10n.string(subtitle))
                 .font(.subheadline)
                 .foregroundStyle(.white.opacity(0.82))
                 .fixedSize(horizontal: false, vertical: true)
@@ -223,10 +223,10 @@ struct ProfessionalSectionHeader: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 3) {
-                Text(title)
+                Text(L10n.string(title))
                     .font(.title3.bold())
                 if let subtitle {
-                    Text(subtitle)
+                    Text(L10n.string(subtitle))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -270,7 +270,7 @@ struct ProfessionalMetricTile: View {
                 .font(.system(.title3, design: .rounded, weight: .bold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
-            Text(title)
+            Text(L10n.string(title))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -295,9 +295,9 @@ struct ProfessionalEmptyState: View {
                 .foregroundStyle(tint)
                 .frame(width: 62, height: 62)
                 .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-            Text(title)
+            Text(L10n.string(title))
                 .font(.headline)
-            Text(message)
+            Text(L10n.string(message))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -323,8 +323,10 @@ struct ProfessionalSettingsLabel: View {
                 .frame(width: 36, height: 36)
                 .background(tint.gradient, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.subheadline.weight(.semibold))
-                Text(subtitle).font(.caption2).foregroundStyle(.secondary)
+                // Beides übersetzen: Der Titel lief früher ungefiltert
+                // durch, sodass die Kacheln im Menü deutsch blieben.
+                Text(L10n.string(title)).font(.subheadline.weight(.semibold))
+                Text(L10n.string(subtitle)).font(.caption2).foregroundStyle(.secondary)
             }
         }
         .padding(.vertical, 3)

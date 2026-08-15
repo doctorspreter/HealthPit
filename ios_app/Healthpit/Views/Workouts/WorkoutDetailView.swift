@@ -41,7 +41,7 @@ struct WorkoutDetailView: View {
                         ForEach(stats) { statTile($0) }
                     }
                 } else if !isLoading {
-                    Text("Keine weiteren Kennzahlen verfügbar.")
+                    Text(L10n.string("Keine weiteren Kennzahlen verfügbar."))
                         .foregroundStyle(.secondary)
                 }
 
@@ -116,7 +116,7 @@ struct WorkoutDetailView: View {
 
     private func splitSection(_ splits: [WorkoutSplit]) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Trainingsverlauf")
+            Text(L10n.string("Trainingsverlauf"))
                 .font(.headline)
             WorkoutSampleTimelineChartView(samples: timelineSamples,
                                            heartRate: detail?.heartRate,
@@ -160,7 +160,7 @@ struct WorkoutDetailView: View {
         let selectedPoint = selectedHeartRatePoint(in: heartRate)
         let chartPoints = chartSampledValues(heartRate.samples)
         return VStack(alignment: .leading, spacing: 10) {
-            Text("Puls")
+            Text(L10n.string("Puls"))
                 .font(.headline)
             HStack(spacing: 12) {
                 statTile(WorkoutStat(label: "Min Puls", value: "\(Int(heartRate.minimum.rounded())) bpm", systemImage: "heart"))
