@@ -15,6 +15,7 @@ from .const import API_BASE, DOMAIN
 from .coordinator import HealthPitCoordinator
 from .entity import (
     category_device_info,
+    gym_device_info,
     user_device_info,
     exercise_device_info,
     HealthPitUserEntity,
@@ -43,6 +44,12 @@ async def async_setup_entry(
         for user_id in coordinator.user_ids():
             registry.async_get_or_create(
                 config_entry_id=entry.entry_id, **user_device_info(coordinator, user_id)
+            )
+            # Dasselbe fuer das Dach ueber den Uebungen: Es traegt selbst keine
+            # Entitaet, entstuende also nie von allein – und die Uebungen
+            # lagen dann oben statt darunter.
+            registry.async_get_or_create(
+                config_entry_id=entry.entry_id, **gym_device_info(coordinator, user_id)
             )
 
     def _new_entities() -> list[SensorEntity]:

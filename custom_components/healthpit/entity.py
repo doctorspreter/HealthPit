@@ -67,6 +67,27 @@ def category_device_info(
     )
 
 
+def gym_device_info(coordinator: HealthPitCoordinator, user_id: str) -> DeviceInfo:
+    """The roof over the exercises.
+
+    Exercise devices need a parent that exists. Pointing them at the workouts
+    area was not enough: that device only comes into being if a workout sensor
+    carries it, and until then every exercise sat at the top level, next to the
+    person instead of under them.
+
+    It gets its own device rather than reusing the workouts area, because
+    "Leg press" belongs with strength training, not with a run.
+    """
+    person = coordinator.store.user_name(user_id) or "Healthpit"
+    return DeviceInfo(
+        identifiers={(DOMAIN, f"{user_id}_gym")},
+        name=f"{person} Gym workouts",
+        manufacturer="Healthpit",
+        model="Strength training",
+        via_device=(DOMAIN, user_id),
+    )
+
+
 def exercise_device_info(
     coordinator: HealthPitCoordinator, user_id: str, exercise_id: str, name: str
 ) -> DeviceInfo:
@@ -82,7 +103,7 @@ def exercise_device_info(
         name=f"{person} {name or exercise_id}",
         manufacturer="Healthpit",
         model="Exercise",
-        via_device=(DOMAIN, f"{user_id}_workouts"),
+        via_device=(DOMAIN, f"{user_id}_gym"),
     )
 
 
