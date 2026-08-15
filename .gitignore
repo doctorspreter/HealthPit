@@ -30,3 +30,11 @@ tests/HealthPitHuawei/
 sandbox/
 testordner/
 tests/healthpit_v2/
+
+# Tests und interne Unterlagen bleiben lokal; auf GitHub gehoeren sie nicht.
+tests/
+ios_app/Tests/
+ios_app/Package.swift
+ios_app/Scripts/
+docs/
+pytest.ini

@@ -27,7 +27,6 @@ The app never claims an identity — the token decides.
 | --- | --- | --- |
 | `custom_components/healthpit` | Home Assistant integration | HACS |
 | `ios_app` | HealthPit iPhone app | Xcode |
-| `tests` | Tests for the payload and merge logic | pytest |
 
 ## Setup
 
@@ -104,9 +103,11 @@ Do not commit `.env` files, databases, backups, tokens or Xcode user data. See
 
 ## Development
 
-```bash
-python -m pytest tests -q
-```
+The integration is plain Python and needs no build step. Copy
+`custom_components/healthpit` into your Home Assistant configuration, or point
+HACS at this repository.
+
+The iPhone app builds with Xcode from `ios_app`.
 
 ## License
 
