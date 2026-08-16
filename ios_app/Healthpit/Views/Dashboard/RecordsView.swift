@@ -264,13 +264,7 @@ struct RecordsView: View {
     }
 
     private func loadRecordWorkouts() async {
-        let defaults = UserDefaults.standard
-        let hiddenHealth = Set((defaults.string(forKey: BridgeSettings.hiddenHealthWorkoutIDsKey) ?? "")
-            .split(separator: ",").map(String.init))
-        recordWorkouts = await HealthQuery.shared.unifiedWorkouts().filter { workout in
-            guard let uuid = workout.health?.uuid.uuidString else { return true }
-            return !hiddenHealth.contains(uuid)
-        }
+        recordWorkouts = await HealthQuery.shared.unifiedWorkouts()
     }
 
     private func workout(for record: WorkoutRecord) -> UnifiedWorkout? {

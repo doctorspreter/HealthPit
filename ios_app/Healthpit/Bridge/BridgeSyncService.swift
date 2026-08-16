@@ -1304,16 +1304,13 @@ final class BridgeSyncService {
         defaults.object(forKey: BridgeSettings.appleHealthWorkoutUploadCutoffKey) as? Date
     }
 
+    /// Was hochgeladen werden darf.
+    ///
+    /// Geloeschtes muss hier nicht mehr herausgefiltert werden — die Datenbank
+    /// gibt es gar nicht erst heraus. Bleibt das, was GymPit selbst schickt:
+    /// Es zweimal zu senden hiesse, es zweimal zu speichern.
     private func visibleAppleHealthWorkouts(_ workouts: [WorkoutSummary]) -> [WorkoutSummary] {
-        let hiddenIDs = Set(
-            (defaults.string(forKey: BridgeSettings.hiddenHealthWorkoutIDsKey) ?? "")
-                .split(separator: ",")
-                .map(String.init)
-        )
-        return workouts.filter {
-            !hiddenIDs.contains($0.uuid.uuidString)
-                && !$0.isBridgeManagedAppleHealthSource
-        }
+        workouts.filter { !$0.isBridgeManagedAppleHealthSource }
     }
 
     private func rememberAppleHealthUploadCutoff(from workouts: [WorkoutSummary]) {

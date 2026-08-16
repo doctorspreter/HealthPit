@@ -70,6 +70,14 @@ final class HealthPitBootstrap {
                       + "\(repair.mergedObservations) doppelte Werte zusammengefasst.")
             }
 
+            // Und einmal die versteckten Kennungen aus den Einstellungen in
+            // die Datenbank: „geloescht" gehoert dorthin, nicht in eine Liste
+            // daneben, die jede Ansicht selbst beachten muss.
+            let hidden = await HiddenWorkoutMigration.runIfNeeded(store: store)
+            if hidden > 0 {
+                print("HealthPit: \(hidden) versteckte Trainings als geloescht uebernommen.")
+            }
+
             if await AppleHealthIngest.needsFullImport(store: store) {
                 phase = .importing(IngestProgress())
                 lastImport = try await ingest.runFullImport(store: store) { [weak self] progress in

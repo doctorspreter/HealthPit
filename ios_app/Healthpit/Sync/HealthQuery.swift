@@ -199,6 +199,23 @@ final class HealthQuery {
                               injury: nil)
     }
 
+    /// Ein selbst erfasstes oder importiertes Training in voller Laenge.
+    ///
+    /// Die Liste zeigt Zusammenfassungen; fuer die Detailseite braucht es
+    /// Strecke, Uebungen und Saetze. Die stehen in der Datenbank, in der
+    /// Nutzlast des Trainings — nicht in einer zweiten Datei daneben.
+    func localWorkout(id: UUID) async -> LocalWorkout? {
+        guard let store = try? await store() else { return nil }
+        for provider in [ProviderCode.healthPit, .gymPit] {
+            guard let matches = try? await store.workouts(originProvider: provider,
+                                                          sourceRecordID: id.uuidString) else { continue }
+            if let found = matches.compactMap(ManualWorkoutWriter.local(from:)).first {
+                return found
+            }
+        }
+        return nil
+    }
+
     // MARK: - Schlaf
 
     /// Die Naechte eines Zeitraums, je Nacht die aussagekraeftigste Quelle.

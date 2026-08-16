@@ -47,6 +47,30 @@ enum ManualWorkoutWriter {
         }
     }
 
+    /// Loescht ein Training in der Datenbank.
+    ///
+    /// Weich geloescht: Die Zeile bleibt mit `deleted_at` stehen. Ein harter
+    /// Wurf haette zur Folge, dass derselbe Datensatz beim naechsten Import aus
+    /// Apple Health wieder hereinkaeme — geloescht heisst „will ich nicht
+    /// sehen", nicht „kenne ich nicht".
+    ///
+    /// Frueher stand daneben eine Liste versteckter Kennungen in den
+    /// Einstellungen. Zwei Wege, dasselbe zu sagen, und nur einer galt fuer die
+    /// Bruecke.
+    @discardableResult
+    static func delete(workoutID: WorkoutID) async -> Bool {
+        guard let store = try? await HealthPitData.shared.store(),
+              var workout = try? await store.workout(workoutID) ?? nil else { return false }
+        workout.deletedAt = Date()
+        workout.updatedAt = Date()
+        do {
+            try await store.update(workout)
+            return true
+        } catch {
+            return false
+        }
+    }
+
     static func incoming(_ workout: LocalWorkout) -> IncomingWorkout {
         var observations: [IncomingObservation] = []
         func add(_ metricID: MetricID,

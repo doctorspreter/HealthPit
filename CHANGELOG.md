@@ -213,6 +213,24 @@
 - Non-finite metric values are rejected before they can enter storage or
   long-term statistics.
 
+## 26.08.6
+
+### Geändert
+
+- **Gelöscht steht jetzt in der Datenbank.** Ein Training aus Apple Health
+  liess sich nie wirklich löschen — iOS erlaubt das nur der App, die es
+  geschrieben hat. HealthPit merkte sich deshalb eine Liste versteckter
+  Kennungen in den Einstellungen, und jede Ansicht musste sie selbst beachten.
+  Wer den Filter vergass, zeigte Gelöschtes wieder an; die Brücke lud es weiter
+  hoch. Jetzt wird die Zeile in der Datenbank als gelöscht vermerkt, und alle
+  Ansichten bekommen sie gar nicht mehr zu sehen. Was in der alten Liste stand,
+  wird beim ersten Start einmalig übernommen.
+- Weich gelöscht: die Zeile bleibt stehen. Ein harter Wurf hätte zur Folge,
+  dass derselbe Datensatz beim nächsten Import aus Apple Health wieder
+  hereinkäme.
+- Die Detailseite eines selbst erfassten Trainings liest Strecke, Übungen und
+  Sätze aus der Datenbank statt aus der zweiten Datei daneben.
+
 ## 26.08.5
 
 ### Geändert

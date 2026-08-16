@@ -34,7 +34,6 @@ struct WorkoutListView: View {
     @State private var showingDeleteConfirmation = false
     @State private var showingSyncStatus = false
     @State private var hasLoadedData = false
-    @AppStorage(BridgeSettings.hiddenHealthWorkoutIDsKey) private var hiddenHealthWorkoutIDsRaw = ""
 
     var body: some View {
         List {
@@ -202,7 +201,6 @@ struct WorkoutListView: View {
             showingSyncStatus = false
             filterItemsForSelectedRange()
         }
-        .onChange(of: hiddenHealthWorkoutIDsRaw) { _, _ in rebuildItems() }
         .onChange(of: showingManualWorkout) { _, isShowing in
             if isShowing { showingSyncStatus = false }
         }
@@ -238,11 +236,8 @@ struct WorkoutListView: View {
     /// Alles aus der Datenbank. Dort liegt jedes Training genau einmal –
     /// selbst angelegte, aus Apple Health und ueber die Bridge importierte.
     private func reloadFromDatabase() async {
+        // Ohne Filter: Was geloescht ist, gibt die Datenbank gar nicht heraus.
         allTimeItems = await HealthQuery.shared.unifiedWorkouts()
-            .filter { workout in
-                guard let uuid = workout.health?.uuid.uuidString else { return true }
-                return !hiddenHealthWorkoutIDs.contains(uuid)
-            }
         filterItemsForSelectedRange()
     }
 
@@ -280,10 +275,7 @@ struct WorkoutListView: View {
             allTimeHealthWorkouts = allTimeHealth
         }
         let sourceHealth = allTimeHealthWorkouts.isEmpty ? healthWorkouts : allTimeHealthWorkouts
-        let completeHealth = sourceHealth.filter {
-            !hiddenHealthWorkoutIDs.contains($0.uuid.uuidString)
-        }
-        allTimeItems = UnifiedWorkoutBuilder.build(health: completeHealth,
+        allTimeItems = UnifiedWorkoutBuilder.build(health: sourceHealth,
                                                    local: localWorkouts)
         filterItemsForSelectedRange()
     }
@@ -328,18 +320,19 @@ struct WorkoutListView: View {
     }
 
     private func deleteWorkout(_ item: UnifiedWorkout) async {
+        // In der Datenbank, an einer Stelle. Weich geloescht, damit derselbe
+        // Datensatz beim naechsten Import nicht wieder hereinkommt.
+        if let workoutID = WorkoutID(item.id) {
+            await ManualWorkoutWriter.delete(workoutID: workoutID)
+        }
         if let local = item.local {
             await LocalWorkoutStore.shared.delete(id: local.id)
             _ = try? await BridgeSyncService.shared.deleteImportedWorkout(id: local.id)
         }
         if let health = item.health {
-            var ids = hiddenHealthWorkoutIDs
-            ids.insert(health.uuid.uuidString)
-            hiddenHealthWorkoutIDsRaw = ids.sorted().joined(separator: ",")
             _ = try? await BridgeSyncService.shared.deleteImportedWorkout(id: health.uuid)
         }
-        localWorkouts = await LocalWorkoutStore.shared.loadSummaries()
-        rebuildItems()
+        await reloadFromDatabase()
     }
 
     private func deleteWarning(for item: UnifiedWorkout) -> String {
@@ -351,10 +344,6 @@ struct WorkoutListView: View {
             parts.append("Apple-Health-Daten werden in dieser App ausgeblendet; Apple Health selbst bleibt unverändert.")
         }
         return parts.joined(separator: " ")
-    }
-
-    private var hiddenHealthWorkoutIDs: Set<String> {
-        Set(hiddenHealthWorkoutIDsRaw.split(separator: ",").map(String.init))
     }
 
 }
@@ -842,7 +831,7 @@ struct LocalWorkoutDetailLoaderView: View {
                                healthWorkout: healthWorkout)
             .task {
                 if workout == nil {
-                    workout = await LocalWorkoutStore.shared.fullWorkout(id: summary.id) ?? summary
+                    workout = await HealthQuery.shared.localWorkout(id: summary.id) ?? summary
                 }
             }
     }
