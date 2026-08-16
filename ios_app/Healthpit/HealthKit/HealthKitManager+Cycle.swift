@@ -15,66 +15,6 @@ import HealthKit
 
 extension HealthKitManager {
 
-    /// Alles fuer die Zyklusansicht, ab `monthsBack` Monaten rueckwaerts.
-    func fetchCycleOverview(monthsBack: Int = 12,
-                            referenceDate now: Date = .now) async throws -> CycleOverview {
-        guard isHealthDataAvailable else { throw HealthError.healthDataUnavailable }
-        // Reines Lesen fragt nicht: der Systemdialog schoebe sich sonst beim
-        // Start ungefragt hoch, weil die Uebersicht dort mitgeladen wird.
-        await prepareForBackgroundWork()
-
-        let calendar = Calendar.healthApp
-        let start = calendar.date(byAdding: .month, value: -monthsBack, to: now) ?? now
-        let interval = DateInterval(start: start, end: max(now, start))
-
-        var overview = CycleOverview()
-        overview.days = try await fetchCycleDays(interval: interval)
-        overview.cycles = Self.cycles(from: overview.days)
-        overview.events = try await fetchCycleEvents(interval: interval)
-        return overview
-    }
-
-    /// Blutungstage aus `menstrualFlow`.
-    func fetchCycleDays(interval: DateInterval) async throws -> [CycleDayEntry] {
-        guard let type = HKCategoryType.categoryType(forIdentifier: .menstrualFlow) else { return [] }
-        let samples = try await categorySamples(of: type,
-                                                interval: interval,
-                                                dataPointID: HealthDataPointDescriptor.cycleID)
-        let ownBundleID = Bundle.main.bundleIdentifier
-
-        // Pro Tag zaehlt genau ein Eintrag. Liegen mehrere vor – etwa weil eine
-        // andere App denselben Tag fuehrt – gewinnt der eigene. Sonst waere
-        // nach einer Korrektur in Healthpit unklar, welcher Wert erscheint.
-        var byDay: [Date: CycleDayEntry] = [:]
-        for sample in samples {
-            let day = Calendar.healthApp.startOfDay(for: sample.startDate)
-            let isStart = (sample.metadata?[HKMetadataKeyMenstrualCycleStart] as? Bool) ?? false
-            let entry = CycleDayEntry(id: sample.uuid,
-                                      date: day,
-                                      flow: MenstrualFlow(rawValue: sample.value) ?? .unspecified,
-                                      isCycleStart: isStart,
-                                      isOwnEntry: sample.sourceRevision.source.bundleIdentifier == ownBundleID)
-            if let existing = byDay[day], existing.isOwnEntry, !entry.isOwnEntry { continue }
-            byDay[day] = entry
-        }
-        return byDay.values.sorted { $0.date < $1.date }
-    }
-
-    /// Die uebrigen Ereignisse der Reproduktionsgesundheit.
-    func fetchCycleEvents(interval: DateInterval) async throws -> [CycleEvent] {
-        var out: [CycleEvent] = []
-        for kind in CycleEventKind.allCases {
-            guard let type = HKCategoryType.categoryType(forIdentifier: kind.categoryIdentifier) else { continue }
-            let samples = try await categorySamples(of: type,
-                                                    interval: interval,
-                                                    dataPointID: HealthDataPointDescriptor.cycleID)
-            out.append(contentsOf: samples.map {
-                CycleEvent(id: $0.uuid, kind: kind, date: $0.startDate, rawValue: $0.value)
-            })
-        }
-        return out.sorted { $0.date > $1.date }
-    }
-
     // MARK: - Schreiben
 
     /// Legt einen Blutungstag an oder ersetzt den vorhandenen.

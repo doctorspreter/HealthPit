@@ -521,7 +521,6 @@
 
 
 /* Bridge-Modi, Datensicherung, zaehlbare Texte */
-"Die Sicherung enthält alle lokalen Workouts als JSON-Datei. Beim Import wird nichts gelöscht, nur ergänzt und aktualisiert. Zugangsdaten sind aus Sicherheitsgründen nicht enthalten und müssen nach einer Wiederherstellung neu eingetragen werden." = "The backup holds every local workout as a JSON file. Importing never deletes anything, it only adds and updates. Credentials are left out for security and have to be entered again after a restore.";
 "Sicherung wird erstellt …" = "Creating backup …";
 "Es sind keine lokalen Workouts vorhanden." = "There are no local workouts.";
 "%lld Workouts aus der Sicherung übernommen." = "Restored %lld workouts from the backup.";
@@ -817,3 +816,12 @@
 "In Apple Health blieb der Eintrag stehen: Er wurde von %@ geschrieben, und nur diese App darf ihn löschen." = "The entry stayed in Apple Health: it was written by %@, and only that app may delete it.";
 "In Apple Health war zu dieser Aufzeichnung nichts mehr vorhanden." = "Nothing was left in Apple Health for this recording.";
 "Die zugehörigen Trainings sind nicht mehr vorhanden." = "The workouts this decision was about no longer exist.";
+"Die Sicherung enthält den gesamten Datenbestand als JSON-Datei: alle Werte, Trainings und Quellenregeln, nach Herkunft geordnet. Beim Import wird nichts gelöscht, nur ergänzt und aktualisiert. Zugangsdaten sind aus Sicherheitsgründen nicht enthalten und müssen nach einer Wiederherstellung neu eingetragen werden." = "The backup holds the whole store as a JSON file: every value, workout and source rule, grouped by origin. Importing never deletes anything, it only adds and updates. Credentials are left out for security and have to be entered again after a restore.";
+"Herzfrequenz, Erholung und kardiovaskuläre Entwicklung." = "Heart rate, recovery and cardiovascular development.";
+"Körperzusammensetzung und langfristige Veränderungen." = "Body composition and long-term changes.";
+"Energie, Nährstoffe und deine tägliche Versorgung." = "Energy, nutrients and your daily intake.";
+"Wichtige Vitalzeichen kompakt und verständlich eingeordnet." = "Key vital signs, compact and put in context.";
+"Bewegung, Belastung und deine Entwicklung." = "Movement, load and your development.";
+"Trainingseinheiten und Leistungsentwicklung." = "Training sessions and performance over time.";
+"Schlafdauer, Phasen und Regeneration." = "Sleep duration, stages and recovery.";
+"Zyklusverlauf und protokollierte Symptome." = "Cycle history and the symptoms you logged.";

@@ -181,7 +181,9 @@ struct ProfessionalPageHero: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.68)
                     if let detail {
-                        Text(detail)
+                        // Auch hier durch die Uebersetzung: „Messwerte" stand
+                        // sonst deutsch in einer englischen App.
+                        Text(L10n.string(detail))
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.white.opacity(0.78))
                     }
@@ -258,7 +260,7 @@ struct ProfessionalMetricTile: View {
                     .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 Spacer()
                 if let detail {
-                    Text(detail)
+                    Text(L10n.string(detail))
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(tint)
                         .padding(.horizontal, 7)

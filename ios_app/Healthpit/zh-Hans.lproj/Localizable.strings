@@ -521,7 +521,6 @@
 
 
 /* Bridge-Modi, Datensicherung, zaehlbare Texte */
-"Die Sicherung enthält alle lokalen Workouts als JSON-Datei. Beim Import wird nichts gelöscht, nur ergänzt und aktualisiert. Zugangsdaten sind aus Sicherheitsgründen nicht enthalten und müssen nach einer Wiederherstellung neu eingetragen werden." = "备份以 JSON 文件保存所有本地训练。导入只会新增和更新，不会删除任何内容。出于安全考虑，备份不含登录凭据，恢复后需要重新输入。";
 "Sicherung wird erstellt …" = "正在创建备份 …";
 "Es sind keine lokalen Workouts vorhanden." = "没有本地训练。";
 "%lld Workouts aus der Sicherung übernommen." = "已从备份恢复 %lld 项训练。";
@@ -817,3 +816,12 @@
 "In Apple Health blieb der Eintrag stehen: Er wurde von %@ geschrieben, und nur diese App darf ihn löschen." = "该条目仍留在“健康”中：它由 %@ 写入，只有该 App 可以删除它。";
 "In Apple Health war zu dieser Aufzeichnung nichts mehr vorhanden." = "“健康”中已不存在这条记录。";
 "Die zugehörigen Trainings sind nicht mehr vorhanden." = "该决定所涉及的训练已不存在。";
+"Die Sicherung enthält den gesamten Datenbestand als JSON-Datei: alle Werte, Trainings und Quellenregeln, nach Herkunft geordnet. Beim Import wird nichts gelöscht, nur ergänzt und aktualisiert. Zugangsdaten sind aus Sicherheitsgründen nicht enthalten und müssen nach einer Wiederherstellung neu eingetragen werden." = "备份以 JSON 文件保存全部数据：所有数值、训练和来源规则，按来源分组。导入从不删除任何内容，只会新增和更新。出于安全考虑不包含凭据，恢复后需要重新输入。";
+"Herzfrequenz, Erholung und kardiovaskuläre Entwicklung." = "心率、恢复与心血管变化。";
+"Körperzusammensetzung und langfristige Veränderungen." = "身体成分与长期变化。";
+"Energie, Nährstoffe und deine tägliche Versorgung." = "能量、营养素与每日摄入。";
+"Wichtige Vitalzeichen kompakt und verständlich eingeordnet." = "重要生命体征，简明并加以说明。";
+"Bewegung, Belastung und deine Entwicklung." = "运动、负荷与你的变化。";
+"Trainingseinheiten und Leistungsentwicklung." = "训练场次与成绩变化。";
+"Schlafdauer, Phasen und Regeneration." = "睡眠时长、阶段与恢复。";
+"Zyklusverlauf und protokollierte Symptome." = "周期变化与已记录的症状。";

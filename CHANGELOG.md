@@ -222,6 +222,27 @@
 
 ## 26.08.8
 
+### Behoben — beim Durchsehen und im Simulator gefunden
+
+- **Die Versionsnummer stand als „26.08."** — beim Hochzählen war die letzte
+  Stelle verlorengegangen. Nur im Simulator zu sehen, nicht im Code.
+- Der Erklärungstext der Datensicherung beschrieb noch die alte Sicherung
+  („alle lokalen Workouts").
+- **Kopfzeilen blieben deutsch, auch auf Englisch:** „15 Messwerte" und die
+  Beschreibung jedes Gesundheitsbereichs gingen an der Übersetzung vorbei, weil
+  sie als Parameter statt als Text übergeben werden.
+
+### Entfernt
+
+- **Drei Zwischenspeicher, die nur noch geschrieben wurden.** Trainings, Schlaf
+  und die Startseiten-Kennzahlen wurden bei jedem Abgleich in Dateien
+  geschrieben, die seit dem Umbau niemand mehr liest — eine zweite Kopie
+  desselben Bestands. Der Vorladedienst holt nur noch, was wirklich von außen
+  kommt.
+- Die Lesewege in `HealthKitManager`, die nach dem Umbau unerreichbar waren:
+  Zyklusübersicht, Stundenverlauf, Schlafabfrage, Tageswert, Zielfortschritt.
+  Rund 200 Zeilen, die aussahen, als würden sie noch gebraucht.
+
 ### Behoben — beim Durchsehen gefunden
 
 - **Die Datensicherung enthielt nur die von Hand erfassten Trainings.** Der

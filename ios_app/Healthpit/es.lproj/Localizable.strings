@@ -521,7 +521,6 @@
 
 
 /* Bridge-Modi, Datensicherung, zaehlbare Texte */
-"Die Sicherung enthält alle lokalen Workouts als JSON-Datei. Beim Import wird nichts gelöscht, nur ergänzt und aktualisiert. Zugangsdaten sind aus Sicherheitsgründen nicht enthalten und müssen nach einer Wiederherstellung neu eingetragen werden." = "La copia de seguridad contiene todos los entrenamientos locales como archivo JSON. La importación nunca borra nada, solo añade y actualiza. Las credenciales se omiten por seguridad y deben introducirse de nuevo tras una restauración.";
 "Sicherung wird erstellt …" = "Creando copia de seguridad …";
 "Es sind keine lokalen Workouts vorhanden." = "No hay entrenamientos locales.";
 "%lld Workouts aus der Sicherung übernommen." = "Se han restaurado %lld entrenamientos de la copia de seguridad.";
@@ -817,3 +816,12 @@
 "In Apple Health blieb der Eintrag stehen: Er wurde von %@ geschrieben, und nur diese App darf ihn löschen." = "La entrada permaneció en Apple Salud: fue escrita por %@ y solo esa app puede eliminarla.";
 "In Apple Health war zu dieser Aufzeichnung nichts mehr vorhanden." = "En Apple Salud ya no quedaba nada de este registro.";
 "Die zugehörigen Trainings sind nicht mehr vorhanden." = "Los entrenamientos a los que se refiere esta decisión ya no existen.";
+"Die Sicherung enthält den gesamten Datenbestand als JSON-Datei: alle Werte, Trainings und Quellenregeln, nach Herkunft geordnet. Beim Import wird nichts gelöscht, nur ergänzt und aktualisiert. Zugangsdaten sind aus Sicherheitsgründen nicht enthalten und müssen nach einer Wiederherstellung neu eingetragen werden." = "La copia de seguridad contiene todos los datos en un archivo JSON: cada valor, entrenamiento y regla de origen, agrupados por procedencia. La importación nunca elimina nada, solo añade y actualiza. Las credenciales quedan fuera por seguridad y deben introducirse de nuevo tras una restauración.";
+"Herzfrequenz, Erholung und kardiovaskuläre Entwicklung." = "Frecuencia cardíaca, recuperación y evolución cardiovascular.";
+"Körperzusammensetzung und langfristige Veränderungen." = "Composición corporal y cambios a largo plazo.";
+"Energie, Nährstoffe und deine tägliche Versorgung." = "Energía, nutrientes y tu aporte diario.";
+"Wichtige Vitalzeichen kompakt und verständlich eingeordnet." = "Constantes vitales importantes, en contexto y de un vistazo.";
+"Bewegung, Belastung und deine Entwicklung." = "Movimiento, carga y tu evolución.";
+"Trainingseinheiten und Leistungsentwicklung." = "Sesiones de entrenamiento y evolución del rendimiento.";
+"Schlafdauer, Phasen und Regeneration." = "Duración del sueño, fases y recuperación.";
+"Zyklusverlauf und protokollierte Symptome." = "Evolución del ciclo y síntomas registrados.";

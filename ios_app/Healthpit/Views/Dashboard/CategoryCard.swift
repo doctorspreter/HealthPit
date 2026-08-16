@@ -573,7 +573,7 @@ struct RecordsCard: View {
                 .minimumScaleFactor(size == .small ? 0.8 : 0.75)
                 .fixedSize(horizontal: false, vertical: true)
             if let detail {
-                Text(detail)
+                Text(L10n.string(detail))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(size == .wide ? 1 : 2)

@@ -141,7 +141,6 @@ struct DataSourcesSettingsView: View {
             try? await store.resetObservationData()
         }
         await LocalWorkoutStore.shared.deleteAll()
-        await HealthWorkoutCacheStore.shared.clear()
         let defaults = UserDefaults.standard
         defaults.removeObject(forKey: BridgeSettings.hiddenHealthWorkoutIDsKey)
         actionMessage = L10n.string("Die lokalen App-Daten wurden gelöscht.")
@@ -362,7 +361,6 @@ private struct HealthSourceSettingsView: View {
     }
 
     private func invalidateCaches() {
-        Task { await HealthWorkoutCacheStore.shared.clear() }
     }
 }
 
@@ -439,7 +437,6 @@ private struct AppleHealthWriteSettingsView: View {
         defer { isDeleting = false }
         do {
             let count = try await HealthKitManager.shared.deleteDataWrittenByHealthpit()
-            await HealthWorkoutCacheStore.shared.clear()
             message = L10n.format("%lld von HealthPit geschriebene Objekte wurden gelöscht.", count)
         } catch {
             message = error.localizedDescription
@@ -498,7 +495,6 @@ private struct LocalDataSourcesSettingsView: View {
     @MainActor
     private func delete(_ source: LocalWorkout.Source) async {
         await LocalWorkoutStore.shared.delete(source: source)
-        await HealthWorkoutCacheStore.shared.clear()
         sourcePendingDeletion = nil
         message = L10n.string("Lokale Trainings wurden gelöscht:") + " \(source.displayName)"
     }

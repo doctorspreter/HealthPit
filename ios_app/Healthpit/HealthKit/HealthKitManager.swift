@@ -554,102 +554,6 @@ final class HealthKitManager: @unchecked Sendable {
         }
     }
 
-    /// Reads the complete permitted history in the shape Home Assistant's
-    /// hourly long-term statistics importer expects.
-    func fetchHourlyHistory(for metric: HealthMetric,
-                            referenceDate now: Date = .now) async throws -> [HealthMetricHistoryPoint] {
-        guard isHealthDataAvailable else { throw HealthError.healthDataUnavailable }
-        guard let firstDate = try await earliestSampleDate(for: metric) else { return [] }
-
-        var utc = Calendar(identifier: .gregorian)
-        utc.timeZone = TimeZone(secondsFromGMT: 0)!
-        guard let start = utc.dateInterval(of: .hour, for: firstDate)?.start,
-              let end = utc.date(byAdding: .hour, value: 1,
-                                 to: utc.dateInterval(of: .hour, for: now)?.start ?? now) else {
-            return []
-        }
-
-        let type = metric.quantityType
-        let basePredicate = HKQuery.predicateForSamples(withStart: start,
-                                                        end: end,
-                                                        options: .strictStartDate)
-        let scope = try await configuredScope(basePredicate: basePredicate,
-                                              sampleType: type,
-                                              dataPointID: metric.id)
-        guard case .predicate(let predicate) = scope else { return [] }
-
-        let options: HKStatisticsOptions = switch metric.aggregation {
-        case .cumulativeSum:
-            .cumulativeSum
-        case .discreteAverage:
-            [.discreteAverage, .discreteMin, .discreteMax]
-        }
-
-        return try await withCheckedThrowingContinuation { continuation in
-            let query = HKStatisticsCollectionQuery(quantityType: type,
-                                                    quantitySamplePredicate: predicate,
-                                                    options: options,
-                                                    anchorDate: start,
-                                                    intervalComponents: DateComponents(hour: 1))
-            query.initialResultsHandler = { _, collection, error in
-                if let error {
-                    continuation.resume(throwing: HealthError.queryFailed(underlying: error))
-                    return
-                }
-                guard let collection else {
-                    continuation.resume(returning: [])
-                    return
-                }
-
-                let localCalendar = Calendar.healthApp
-                var cumulativeTotal = 0.0
-                var dailyTotal = 0.0
-                var currentDay: Date?
-                var result: [HealthMetricHistoryPoint] = []
-
-                collection.enumerateStatistics(from: start, to: end) { statistics, _ in
-                    switch metric.aggregation {
-                    case .cumulativeSum:
-                        guard let quantity = statistics.sumQuantity(),
-                              quantity.is(compatibleWith: metric.unit) else { return }
-                        let value = quantity.doubleValue(for: metric.unit)
-                        let day = localCalendar.startOfDay(for: statistics.startDate)
-                        if currentDay != day {
-                            currentDay = day
-                            dailyTotal = 0
-                        }
-                        dailyTotal += value
-                        cumulativeTotal += value
-                        result.append(HealthMetricHistoryPoint(date: statistics.startDate,
-                                                               state: dailyTotal,
-                                                               sum: cumulativeTotal,
-                                                               mean: nil,
-                                                               minimum: nil,
-                                                               maximum: nil))
-                    case .discreteAverage:
-                        guard let average = statistics.averageQuantity(),
-                              average.is(compatibleWith: metric.unit) else { return }
-                        let mean = average.doubleValue(for: metric.unit)
-                        let minimum = statistics.minimumQuantity()
-                            .flatMap { $0.is(compatibleWith: metric.unit) ? $0.doubleValue(for: metric.unit) : nil }
-                            ?? mean
-                        let maximum = statistics.maximumQuantity()
-                            .flatMap { $0.is(compatibleWith: metric.unit) ? $0.doubleValue(for: metric.unit) : nil }
-                            ?? mean
-                        result.append(HealthMetricHistoryPoint(date: statistics.startDate,
-                                                               state: nil,
-                                                               sum: nil,
-                                                               mean: mean,
-                                                               minimum: minimum,
-                                                               maximum: maximum))
-                    }
-                }
-                continuation.resume(returning: result)
-            }
-            healthStore.execute(query)
-        }
-    }
-
     private func earliestSampleDate(for metric: HealthMetric) async throws -> Date? {
         let type = metric.quantityType
         let basePredicate = HKQuery.predicateForSamples(withStart: .distantPast,
@@ -676,20 +580,6 @@ final class HealthKitManager: @unchecked Sendable {
     }
 
     // MARK: - Aktueller Wert (für Dashboard-Kacheln)
-
-    /// Liefert den "heutigen" Wert einer Metrik:
-    /// - kumulierbare Metriken (Schritte, kcal) → Tagessumme,
-    /// - Momentaufnahmen (Puls, Gewicht) → jüngster gemessener Wert.
-    /// Gibt `nil` zurück, wenn keine Daten/kein Zugriff (Empty-State).
-    func currentValue(for metric: HealthMetric,
-                      referenceDate now: Date = .now) async throws -> Double? {
-        switch metric.aggregation {
-        case .cumulativeSum:
-            return try await todaySum(for: metric, referenceDate: now)
-        case .discreteAverage:
-            return try await latestValue(for: metric)?.value
-        }
-    }
 
     /// Tagessumme über eine kumulierbare Metrik via `HKStatisticsQuery`.
     private func todaySum(for metric: HealthMetric, referenceDate now: Date) async throws -> Double? {
@@ -731,20 +621,6 @@ final class HealthKitManager: @unchecked Sendable {
     /// Jüngste Einzelmessung einer Metrik (für Momentaufnahmen wie Gewicht/Puls).
     private func mostRecentValue(for metric: HealthMetric) async throws -> Double? {
         try await latestValue(for: metric)?.value
-    }
-
-    /// Wert inkl. Messdatum: Tagessumme (Datum = nil) bzw. jüngste Einzelmessung
-    /// (mit ihrem tatsächlichen Datum, auch wenn sie alt ist).
-    func latestValueWithDate(for metric: HealthMetric,
-                             referenceDate now: Date = .now) async throws -> (value: Double, measuredAt: Date?)? {
-        switch metric.aggregation {
-        case .cumulativeSum:
-            guard let value = try await todaySum(for: metric, referenceDate: now) else { return nil }
-            return (value, nil)
-        case .discreteAverage:
-            guard let latest = try await latestValue(for: metric) else { return nil }
-            return (latest.value, latest.date)
-        }
     }
 
     func latestValue(for metric: HealthMetric) async throws -> LatestMetricValue? {
@@ -1019,12 +895,6 @@ final class HealthKitManager: @unchecked Sendable {
     }
 
     // MARK: - Schlaf (PLAN Schritt 11)
-
-    /// Lädt Schlafphasen im Zeitraum und gruppiert sie zu Nächten (neueste zuerst).
-    func fetchSleep(in range: TimeRange,
-                    referenceDate now: Date = .now) async throws -> [SleepSession] {
-        try await fetchSleep(interval: range.dateInterval(referenceDate: now))
-    }
 
     /// Lädt Schlafphasen für ein frei gewähltes Intervall.
     func fetchSleep(interval: DateInterval) async throws -> [SleepSession] {

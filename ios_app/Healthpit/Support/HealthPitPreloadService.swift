@@ -2,13 +2,16 @@
 //  HealthPitPreloadService.swift
 //  Healthpit
 //
-//  Fuellt lokale Caches frueh, damit Detailseiten nicht erst beim Oeffnen
-//  teure Abfragen starten muessen.
+//  Was beim Start einmal angestossen wird.
 //
-//  Gelesen wird aus der Datenbank, nicht aus HealthKit. Sonst stuenden in den
-//  Caches andere Zahlen als auf den Bildschirmen: HealthKit liefert Prozente
-//  als Bruch, kennt keine abgeschalteten Quellen und dieselbe Einheit aus drei
-//  Apps dreimal.
+//  Hier wurden lokale Zwischenspeicher gefuellt, damit Detailseiten beim
+//  Oeffnen nicht auf HealthKit warten mussten. Seit die Bildschirme aus der
+//  Datenbank lesen, wurden diese Dateien nur noch geschrieben und von niemandem
+//  gelesen — eine zweite Kopie desselben Bestands, bei jedem Abgleich neu.
+//
+//  Geblieben ist, was wirklich von aussen kommt: die Trainings, die Home
+//  Assistant zurueckschickt, und die Rekorde, die aus der Datenbank gerechnet
+//  werden.
 //
 
 import Foundation
@@ -28,13 +31,7 @@ actor HealthPitPreloadService {
 
         await health.prepareForBackgroundWork()
 
-        async let dashboardMetrics: Void = refreshDashboardMetrics()
-        async let sleepCaches: Void = refreshSleepCaches()
-        async let imports: Int? = try? BridgeSyncService.shared.downloadImportedWorkouts()
-
-        _ = await sleepCaches
-        _ = await dashboardMetrics
-        _ = await imports
+        _ = try? await BridgeSyncService.shared.downloadImportedWorkouts()
         // Do not warm this cache before the bridge download has completed.
         // Otherwise the first workout screen can observe the old GymPit copy
         // without its exercises and keep showing it for the whole view life.
@@ -50,51 +47,10 @@ actor HealthPitPreloadService {
 
         await health.prepareForBackgroundWork()
 
-        async let dashboardMetrics: Void = refreshDashboardMetrics()
-        async let sleepCaches: Void = refreshSleepCaches()
-        async let workoutCaches: Void = refreshAppleHealthWorkoutCaches()
-
-        _ = await dashboardMetrics
-        _ = await sleepCaches
-        _ = await workoutCaches
+        // Nichts mehr vorzuladen: Die Bildschirme lesen die Datenbank, und die
+        // liegt auf demselben Geraet. Ein Zwischenspeicher davor waere eine
+        // zweite Kopie desselben Bestands.
+        await WorkoutRecordRefreshService.shared.refreshFromLocalCaches()
     }
 
-    private func refreshDashboardMetrics() async {
-        let metrics = [
-            HealthCategory.activity,
-            .heart,
-            .body,
-            .nutrition,
-            .vitals
-        ].flatMap(HealthMetric.headline(for:))
-
-        var values: [String: (value: Double, measuredAt: Date?)] = [:]
-        for metric in metrics {
-            if let latest = await HealthQuery.shared.latestValue(for: metric) {
-                values[metric.id] = (latest.value, latest.date)
-            }
-        }
-        await DashboardMetricCacheStore.shared.save(metricValues: values)
-    }
-
-    private func refreshSleepCaches() async {
-        for range in [TimeRange.day, .week, .month] {
-            let sessions = await HealthQuery.shared.nights(in: range.dateInterval(referenceDate: .now))
-            await SleepCacheStore.shared.save(sessions, range: range)
-        }
-    }
-
-    private func refreshAppleHealthWorkoutCaches(referenceDate: Date = .now) async {
-        for range in [TimeRange.day, .week, .month, .year] {
-            let workouts = await HealthQuery.shared.workouts(
-                in: range.dateInterval(referenceDate: referenceDate)
-            )
-            await HealthWorkoutCacheStore.shared.save(workouts,
-                                                      range: range,
-                                                      referenceDate: referenceDate)
-            if range == .year {
-                await HealthWorkoutCacheStore.shared.mergeAllTime(workouts)
-            }
-        }
-    }
 }

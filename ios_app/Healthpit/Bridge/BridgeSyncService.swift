@@ -581,7 +581,6 @@ final class BridgeSyncService {
         let uploadableWorkouts = visibleAppleHealthWorkouts(workouts)
         let uploaded = try await uploadAppleHealthWorkouts(uploadableWorkouts, credentials: credentials)
         _ = try await reconcileAppleHealthWorkouts(workouts: workouts, credentials: credentials)
-        await HealthWorkoutCacheStore.shared.saveAllTime(workouts)
         rememberAppleHealthUploadCutoff(from: workouts)
         defaults.set(Date().addingTimeInterval(-30), forKey: BridgeSettings.appleHealthWorkoutPackageCursorKey)
         BackgroundSyncScheduler.schedule()
@@ -612,7 +611,6 @@ final class BridgeSyncService {
                 workouts: workouts,
                 credentials: credentials
             )
-            await HealthWorkoutCacheStore.shared.saveAllTime(workouts)
             rememberAppleHealthUploadCutoff(from: workouts)
         }
 
@@ -1209,7 +1207,6 @@ final class BridgeSyncService {
 
     private func reconcileAppleHealthWorkouts(credentials: BridgeCredentials) async throws -> Int {
         let workouts = await databaseWorkouts()
-        await HealthWorkoutCacheStore.shared.saveAllTime(workouts)
         return try await reconcileAppleHealthWorkouts(workouts: workouts, credentials: credentials)
     }
 
@@ -1245,7 +1242,6 @@ final class BridgeSyncService {
             defaults.set(syncStartedAt.addingTimeInterval(-30), forKey: BridgeSettings.appleHealthWorkoutPackageCursorKey)
             return 0
         }
-        await HealthWorkoutCacheStore.shared.mergeAllTime(workouts)
         if isSharingEnabled(BridgeDataTypeDescriptor.workoutsID) {
             rememberAppleHealthUploadCutoff(from: workouts)
         }

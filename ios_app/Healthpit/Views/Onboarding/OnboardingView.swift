@@ -92,7 +92,7 @@ struct OnboardingView: View {
                 .foregroundStyle(tint)
                 .frame(width: 42, height: 42)
                 .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-            Text(title).font(.caption.bold())
+            Text(L10n.string(title)).font(.caption.bold())
         }
         .frame(maxWidth: .infinity)
     }

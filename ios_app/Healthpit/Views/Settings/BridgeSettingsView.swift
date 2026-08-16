@@ -339,7 +339,7 @@ struct BridgeSettingsView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-                    Text(L10n.string("Die Sicherung enthält alle lokalen Workouts als JSON-Datei. Beim Import wird nichts gelöscht, nur ergänzt und aktualisiert. Zugangsdaten sind aus Sicherheitsgründen nicht enthalten und müssen nach einer Wiederherstellung neu eingetragen werden."))
+                    Text(L10n.string("Die Sicherung enthält den gesamten Datenbestand als JSON-Datei: alle Werte, Trainings und Quellenregeln, nach Herkunft geordnet. Beim Import wird nichts gelöscht, nur ergänzt und aktualisiert. Zugangsdaten sind aus Sicherheitsgründen nicht enthalten und müssen nach einer Wiederherstellung neu eingetragen werden."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
