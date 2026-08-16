@@ -415,7 +415,6 @@ final class BridgeSyncService {
         return formatter
     }()
 
-    private let health = HealthKitManager.shared
     private let defaults = UserDefaults.standard
     private let encoder: JSONEncoder
     private let decoder: JSONDecoder
@@ -1138,7 +1137,7 @@ final class BridgeSyncService {
         let workouts = await LocalWorkoutStore.shared.load()
             .filter { [.manual, .gpx, .tcx].contains($0.source) }
         guard !workouts.isEmpty else { return 0 }
-        let enrichedWorkouts = await enrichedForUpload(workouts)
+        let enrichedWorkouts = await ManualWorkoutWriter.enriched(workouts)
         await ManualWorkoutWriter.saveMany(enrichedWorkouts)
         return try await uploadWorkouts(enrichedWorkouts, credentials: credentials)
     }
@@ -1319,26 +1318,6 @@ final class BridgeSyncService {
         if current == nil || newest > current! {
             defaults.set(newest, forKey: BridgeSettings.appleHealthWorkoutUploadCutoffKey)
         }
-    }
-
-    /// Ergaenzt ein von Hand erfasstes Training um den Puls.
-    ///
-    /// Die zweite und letzte Stelle, die unmittelbar aus HealthKit liest: Fuer
-    /// ein Zeitfenster gibt es dort Rohproben, in der Datenbank nur Tageswerte.
-    /// Es ist auch kein Lesen fuer die Anzeige, sondern ein Zusatz beim
-    /// Erfassen — das Ergebnis wird gleich danach in die Datenbank geschrieben
-    /// und von dort hochgeladen.
-    private func enrichedForUpload(_ workouts: [LocalWorkout]) async -> [LocalWorkout] {
-        var out: [LocalWorkout] = []
-        for var workout in workouts {
-            if workout.averageHeartRate == nil,
-               let summary = try? await health.heartRateSummary(start: workout.start, end: workout.end) {
-                workout.averageHeartRate = summary.average
-                workout.maxHeartRate = workout.maxHeartRate ?? summary.maximum
-            }
-            out.append(workout)
-        }
-        return out
     }
 
     private func downloadImportedWorkouts(credentials: BridgeCredentials) async throws -> Int {

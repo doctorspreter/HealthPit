@@ -213,6 +213,22 @@
 - Non-finite metric values are rejected before they can enter storage or
   long-term statistics.
 
+## 26.08.7
+
+### Geändert
+
+- **Strecke und Pulskurve stehen jetzt auch in der Datenbank.** Sie waren der
+  letzte Bestand, den die App bei jedem Öffnen frisch aus Apple Health las. Der
+  Katalog führt `WRK_ROUTE` seit dem Umbau — es war nie eine Frage des Modells,
+  sondern der Menge. Geholt wird deshalb beim ersten Öffnen eines Trainings und
+  dann behalten: Was man ansieht, liegt danach vollständig in der Datenbank;
+  was niemand ansieht, kostet nichts.
+- Die Kennzahlen der Detailseite werden aus dem gespeicherten Training
+  gerechnet statt aus dem HealthKit-Objekt.
+- Der Puls für ein von Hand erfasstes Training wird beim Erfassen ergänzt, in
+  der Aufnahmeschicht — die Brücke greift auf nichts mehr außerhalb der
+  Datenbank zu.
+
 ## 26.08.6
 
 ### Geändert

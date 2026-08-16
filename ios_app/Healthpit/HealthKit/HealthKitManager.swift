@@ -1333,7 +1333,9 @@ final class HealthKitManager: @unchecked Sendable {
     /// Die Schrittweite aendert nur, wo eine Runde endet. Die Felder von
     /// `WorkoutSplit` bleiben metrisch definiert (`paceSecondsPerKm` sind immer
     /// Sekunden pro Kilometer), damit die Anzeigeschicht genau einmal umrechnet.
-    private static func splits(from route: [RoutePoint]) -> [WorkoutSplit] {
+    /// Nicht privat: Die Ausleseschicht baut daraus dieselben Splits aus der
+    /// Strecke, die in der Datenbank steht.
+    static func splits(from route: [RoutePoint]) -> [WorkoutSplit] {
         guard route.count > 1 else { return [] }
         let stepMeters = WorkoutUnits.isImperial ? 1609.344 : 1000.0
         let stepKm = stepMeters / 1000

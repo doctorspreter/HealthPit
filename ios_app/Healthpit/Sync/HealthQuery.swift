@@ -216,6 +216,34 @@ final class HealthQuery {
         return nil
     }
 
+    /// Das Detail eines Trainings: Kennzahlen, Strecke, Splits, Puls.
+    ///
+    /// Beim ersten Oeffnen wird geholt, was noch fehlt, und in die Datenbank
+    /// geschrieben. Danach kommt alles von dort — auch ohne Apple Health, auch
+    /// wenn die Quelle spaeter abgeschaltet wird.
+    func workoutDetail(for summary: WorkoutSummary) async -> WorkoutDetail {
+        guard let store = try? await store(),
+              let workoutID = WorkoutID(summary.id.uuidString),
+              let workout = try? await store.workout(workoutID) ?? nil else {
+            return WorkoutDetail(stats: [], route: [], splits: [], heartRate: nil)
+        }
+
+        if let stored = await WorkoutDetailIngest.stored(for: workoutID, in: store) {
+            return WorkoutDetailIngest.detail(route: stored.route,
+                                              heartRate: stored.heartRate,
+                                              summary: summary)
+        }
+
+        // Noch nie geholt: einmal aus Apple Health, dann liegt es hier.
+        let fetched = (try? await HealthKitManager.shared.workoutDetail(for: summary.uuid))
+            ?? WorkoutDetail(stats: [], route: [], splits: [], heartRate: nil)
+        await WorkoutDetailIngest.save(route: fetched.route,
+                                       heartRate: fetched.heartRate?.samples ?? [],
+                                       for: workout,
+                                       in: store)
+        return fetched
+    }
+
     // MARK: - Schlaf
 
     /// Die Naechte eines Zeitraums, je Nacht die aussagekraeftigste Quelle.

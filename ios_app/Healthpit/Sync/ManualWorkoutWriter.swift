@@ -71,6 +71,26 @@ enum ManualWorkoutWriter {
         }
     }
 
+    /// Ergaenzt ein von Hand erfasstes Training um den Puls aus Apple Health.
+    ///
+    /// Der eine verbliebene Griff nach HealthKit — und er gehoert hierher, in
+    /// die Aufnahme: Fuer ein Zeitfenster gibt es dort Rohproben, in der
+    /// Datenbank Tageswerte. Was hier herauskommt, wird gleich gespeichert und
+    /// von da an aus der Datenbank gelesen wie alles andere.
+    static func enriched(_ workouts: [LocalWorkout]) async -> [LocalWorkout] {
+        var out: [LocalWorkout] = []
+        for var workout in workouts {
+            if workout.averageHeartRate == nil,
+               let summary = try? await HealthKitManager.shared.heartRateSummary(
+                start: workout.start, end: workout.end) {
+                workout.averageHeartRate = summary.average
+                workout.maxHeartRate = workout.maxHeartRate ?? summary.maximum
+            }
+            out.append(workout)
+        }
+        return out
+    }
+
     static func incoming(_ workout: LocalWorkout) -> IncomingWorkout {
         var observations: [IncomingObservation] = []
         func add(_ metricID: MetricID,

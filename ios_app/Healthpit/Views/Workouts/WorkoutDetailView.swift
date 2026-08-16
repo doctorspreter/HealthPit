@@ -294,11 +294,9 @@ struct WorkoutDetailView: View {
     private func load() async {
         isLoading = true
         defer { isLoading = false }
-        // Eine der beiden verbliebenen Stellen, die noch unmittelbar aus
-        // HealthKit lesen: Strecke und Pulskurve eines Trainings liegen nicht
-        // in der Datenbank. Sie fuehrt Tageswerte und Trainingskennzahlen,
-        // keine Rohserien mit tausenden Punkten je Einheit.
-        detail = try? await health.workoutDetail(for: workout.uuid)
+        // Aus der Datenbank. Beim ersten Oeffnen holt sie Strecke und
+        // Pulskurve einmal aus Apple Health nach und behaelt sie.
+        detail = await HealthQuery.shared.workoutDetail(for: workout)
     }
 
     private var isCycling: Bool {
