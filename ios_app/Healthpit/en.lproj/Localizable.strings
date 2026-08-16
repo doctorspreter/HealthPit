@@ -816,3 +816,4 @@
 "Die Aufzeichnung wurde auch aus Apple Health gelöscht." = "The recording was deleted from Apple Health as well.";
 "In Apple Health blieb der Eintrag stehen: Er wurde von %@ geschrieben, und nur diese App darf ihn löschen." = "The entry stayed in Apple Health: it was written by %@, and only that app may delete it.";
 "In Apple Health war zu dieser Aufzeichnung nichts mehr vorhanden." = "Nothing was left in Apple Health for this recording.";
+"Die zugehörigen Trainings sind nicht mehr vorhanden." = "The workouts this decision was about no longer exist.";

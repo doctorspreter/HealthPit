@@ -148,10 +148,39 @@ struct WorkoutDuplicateDecision: Decodable, Identifiable, Hashable, Sendable {
     let primary: String
     let linked: String
     let action: String
+    /// Die beiden Trainings, um die es ging.
+    ///
+    /// Ohne sie stand in der Liste nur „Als ein Training" und ein Knopf zum
+    /// Zuruecknehmen — richtig, aber niemandem zuzuordnen. Die Integration
+    /// schickt die Beschreibung neben den Schluesseln mit; sie fehlt nur,
+    /// wenn das Training inzwischen geloescht wurde.
+    let primarySide: WorkoutDuplicateSide?
+    let linkedSide: WorkoutDuplicateSide?
 
     var id: String { "\(primary)|\(linked)" }
 
     var isMerge: Bool { action == WorkoutDuplicateAction.merge.rawValue }
+
+    /// Beide Seiten, soweit bekannt.
+    var sides: [WorkoutDuplicateSide] { [primarySide, linkedSide].compactMap { $0 } }
+
+    enum CodingKeys: String, CodingKey {
+        case primary, linked, action
+        case primarySide = "primary_side"
+        case linkedSide = "linked_side"
+    }
+
+    nonisolated init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        primary = try container.decode(String.self, forKey: .primary)
+        linked = try container.decode(String.self, forKey: .linked)
+        action = (try? container.decodeIfPresent(String.self, forKey: .action)) as? String ?? ""
+        // Eine unerwartete Seite darf die ganze Liste nicht kippen: dann steht
+        // die Entscheidung eben ohne Beschreibung da und laesst sich weiterhin
+        // zuruecknehmen.
+        primarySide = try? container.decodeIfPresent(WorkoutDuplicateSide.self, forKey: .primarySide)
+        linkedSide = try? container.decodeIfPresent(WorkoutDuplicateSide.self, forKey: .linkedSide)
+    }
 }
 
 /// Was der Endpunkt liefert.

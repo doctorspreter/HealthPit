@@ -816,3 +816,4 @@
 "Die Aufzeichnung wurde auch aus Apple Health gelöscht." = "L’enregistrement a également été supprimé d’Apple Santé.";
 "In Apple Health blieb der Eintrag stehen: Er wurde von %@ geschrieben, und nur diese App darf ihn löschen." = "L’entrée est restée dans Apple Santé : elle a été écrite par %@, et seule cette app peut la supprimer.";
 "In Apple Health war zu dieser Aufzeichnung nichts mehr vorhanden." = "Il ne restait rien dans Apple Santé pour cet enregistrement.";
+"Die zugehörigen Trainings sind nicht mehr vorhanden." = "Les séances concernées par cette décision n’existent plus.";

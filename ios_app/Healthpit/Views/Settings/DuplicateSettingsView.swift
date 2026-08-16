@@ -166,25 +166,41 @@ struct DuplicateSettingsView: View {
 
     @ViewBuilder
     private func decisionRow(_ decision: WorkoutDuplicateDecision) -> some View {
-        HStack {
-            Label(
-                decision.isMerge
-                    ? L10n.string("Als ein Training")
-                    : L10n.string("Als zwei Trainings"),
-                systemImage: decision.isMerge ? "arrow.triangle.merge" : "arrow.triangle.branch"
-            )
-            .font(.footnote)
-            Spacer()
-            if busyKeys.contains(decision.id) {
-                ProgressView()
-            } else {
-                Button(L10n.string("Zurücknehmen")) {
-                    Task { await undo(decision) }
-                }
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Label(
+                    decision.isMerge
+                        ? L10n.string("Als ein Training")
+                        : L10n.string("Als zwei Trainings"),
+                    systemImage: decision.isMerge ? "arrow.triangle.merge" : "arrow.triangle.branch"
+                )
                 .font(.footnote)
-                .buttonStyle(.borderless)
+                Spacer()
+                if busyKeys.contains(decision.id) {
+                    ProgressView()
+                } else {
+                    Button(L10n.string("Zurücknehmen")) {
+                        Task { await undo(decision) }
+                    }
+                    .font(.footnote)
+                    .buttonStyle(.borderless)
+                }
+            }
+
+            // Worum es ging. Ohne diese Zeilen war jede Entscheidung von jeder
+            // anderen ununterscheidbar.
+            if decision.sides.isEmpty {
+                Text(L10n.string("Die zugehörigen Trainings sind nicht mehr vorhanden."))
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            } else {
+                ForEach(Array(decision.sides.enumerated()), id: \.offset) { index, side in
+                    if index > 0 { Divider() }
+                    sideRow(side)
+                }
             }
         }
+        .padding(.vertical, 4)
     }
 
     // MARK: - Texte

@@ -816,3 +816,4 @@
 "Die Aufzeichnung wurde auch aus Apple Health gelöscht." = "该记录也已从“健康”中删除。";
 "In Apple Health blieb der Eintrag stehen: Er wurde von %@ geschrieben, und nur diese App darf ihn löschen." = "该条目仍留在“健康”中：它由 %@ 写入，只有该 App 可以删除它。";
 "In Apple Health war zu dieser Aufzeichnung nichts mehr vorhanden." = "“健康”中已不存在这条记录。";
+"Die zugehörigen Trainings sind nicht mehr vorhanden." = "该决定所涉及的训练已不存在。";

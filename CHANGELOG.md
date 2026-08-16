@@ -136,6 +136,15 @@
 
 ## 26.08.3
 
+### Behoben
+
+- **Entschiedene Duplikate ließen sich nicht zuordnen.** Unter „Entschieden"
+  stand nur „Als ein Training" und ein Knopf zum Zurücknehmen — richtig, aber
+  ununterscheidbar. Die Integration schickt die beiden Trainings längst neben
+  den Schlüsseln mit; die App hat sie nur nie gelesen. Jetzt stehen Sportart,
+  Datum, Dauer, Strecke und Quelle beider Aufzeichnungen darunter. Wurde ein
+  Training seither gelöscht, sagt die Zeile das und bleibt zurücknehmbar.
+
 ### Neu
 
 - **Zusammenführen fragt jetzt nach.** Statt sofort zu entscheiden, öffnet
