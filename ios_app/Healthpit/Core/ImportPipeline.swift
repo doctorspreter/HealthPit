@@ -385,6 +385,37 @@ struct ImportPipeline: Sendable {
                                 matchedBy: .externalRecordID)
         }
 
+        // Dieselbe Einheit aus einer anderen Quell-App.
+        //
+        // Health Sync, die Huawei-App und Apple schreiben denselben Lauf je
+        // einmal, jeweils mit eigener UUID und eigener Herkunft. Ueber IDs ist
+        // das nicht zu erkennen – ueber die Zeit schon: Zwei Trainings, die
+        // sich fast vollstaendig ueberdecken, sind dieselbe Einheit. Zwei
+        // wirklich verschiedene koennen nicht gleichzeitig stattfinden.
+        if !incoming.isDeleted,
+           let existing = try await sameSessionMatch(incoming, userID: userID) {
+            try await touchReference(entityType: .workout,
+                                     entityID: existing.workoutID.rawValue,
+                                     provider: ingestProvider,
+                                     externalRecordID: incoming.externalRecordID,
+                                     syncIdentifier: incoming.syncIdentifier,
+                                     userID: userID)
+            try await store.append(SyncEvent(entityType: .workout,
+                                             entityID: existing.workoutID.rawValue,
+                                             provider: ingestProvider,
+                                             direction: .importing,
+                                             action: .deduplicate,
+                                             externalRecordID: incoming.externalRecordID,
+                                             metadata: ["match": MatchEvidence.heuristic.rawValue,
+                                                        "source_app": incoming.sourceAppID ?? ""]))
+            try await importChildObservations(incoming, workoutID: existing.workoutID,
+                                              ingestProvider: ingestProvider,
+                                              adapter: adapter, userID: userID)
+            return ImportResult(action: .deduplicate,
+                                workoutID: existing.workoutID,
+                                matchedBy: .heuristic)
+        }
+
         try await store.insert(candidate)
         try await store.upsert(ExternalReference(userID: userID,
                                                  entityType: .workout,
@@ -813,9 +844,26 @@ struct ImportPipeline: Sendable {
                                 syncIdentifier: String?,
                                 syncVersion: Int? = nil,
                                 userID: String) async throws {
-        let existing = try await store.reference(entityType: entityType,
+        // Zuerst ueber die Record-ID suchen, nicht ueber die Entitaet.
+        //
+        // Eine Referenz sagt: „Dieser Datensatz ist bei Anbieter X unter
+        // Kennung Y bekannt.“ Drei Apps koennen denselben Lauf nach Apple
+        // Health legen – dann gibt es drei Kennungen fuer eine Entitaet. Wer
+        // nur ueber Entitaet und Anbieter sucht, ueberschreibt die vorige und
+        // vergisst damit die erste Kopie; beim naechsten Import wird sie
+        // erneut angelegt, und die Duplikate sind wieder da.
+        let existing: ExternalReference?
+        if let externalRecordID {
+            // Keine Zeile mit dieser Kennung? Dann ist es eine weitere Kopie
+            // und bekommt eine eigene.
+            existing = try await store.reference(provider: provider,
+                                                 externalRecordID: externalRecordID,
+                                                 userID: userID)
+        } else {
+            existing = try await store.reference(entityType: entityType,
                                                  entityID: entityID,
                                                  provider: provider)
+        }
         var reference = existing ?? ExternalReference(userID: userID,
                                                       entityType: entityType,
                                                       entityID: entityID,
@@ -827,6 +875,34 @@ struct ImportPipeline: Sendable {
         reference.importedAt = Date()
         if reference.status == .deletedRemote { reference.status = .active }
         try await store.upsert(reference)
+    }
+
+    /// Findet ein gespeichertes Training, das dieselbe Einheit meint.
+    ///
+    /// Streng absichtlich: Die Zeitfenster muessen sich zu mindestens 80 % der
+    /// kuerzeren Einheit decken. Bei weniger koennte es ein Aufwaermen neben
+    /// dem Lauf sein – und zwei verschiedene Einheiten zusammenzuwerfen waere
+    /// schlimmer als eine doppelte Zeile.
+    ///
+    /// Die Sportart bleibt bewusst aussen vor: Dieselbe Einheit kommt je nach
+    /// Quelle als „Laufen“ oder als „Sonstiges“ an.
+    func sameSessionMatch(_ incoming: IncomingWorkout,
+                          userID: String = HealthPitUser.local) async throws -> StoredWorkout? {
+        let duration = incoming.endTime.timeIntervalSince(incoming.startTime)
+        guard duration > 0 else { return nil }
+
+        let candidates = try await store.workouts(overlapping: incoming.startTime,
+                                                  end: incoming.endTime,
+                                                  userID: userID)
+        return candidates.first { existing in
+            let overlapStart = max(existing.startTime, incoming.startTime)
+            let overlapEnd = min(existing.endTime, incoming.endTime)
+            let overlap = overlapEnd.timeIntervalSince(overlapStart)
+            guard overlap > 0 else { return false }
+            let shorter = min(existing.duration, duration)
+            guard shorter > 0 else { return false }
+            return overlap / shorter >= 0.8
+        }
     }
 }
 

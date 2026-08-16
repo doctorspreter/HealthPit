@@ -61,6 +61,15 @@ final class HealthPitBootstrap {
                 lastConversion = try await converter.run()
             }
 
+            // Einmal aufraeumen, was vor der Wiedererkennung entstanden ist:
+            // derselbe Lauf, dreimal abgelegt, weil drei Apps ihn nach Apple
+            // Health geschrieben haben. Laeuft genau einmal je Fassung.
+            let repair = try await DuplicateRepair(store: store).runIfNeeded()
+            if repair.didChangeAnything {
+                print("HealthPit: \(repair.mergedWorkouts) doppelte Trainings und "
+                      + "\(repair.mergedObservations) doppelte Werte zusammengefasst.")
+            }
+
             if await AppleHealthIngest.needsFullImport(store: store) {
                 phase = .importing(IngestProgress())
                 lastImport = try await ingest.runFullImport(store: store) { [weak self] progress in

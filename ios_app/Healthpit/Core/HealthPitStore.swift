@@ -635,6 +635,24 @@ actor HealthPitStore {
             .compactMap(StoredWorkout.init(row:))
     }
 
+    /// Trainings, die sich zeitlich mit dem gegebenen Fenster ueberschneiden.
+    ///
+    /// Grundlage der Erkennung „dieselbe Einheit, andere Quelle“: Health Sync,
+    /// die Huawei-App und Apple selbst schreiben denselben Lauf jeweils als
+    /// eigenen Datensatz mit eigener UUID. Ueber Zeit und Dauer ist er
+    /// wiederzuerkennen, ueber die IDs nicht.
+    func workouts(overlapping start: Date,
+                  end: Date,
+                  userID: String = HealthPitUser.local) throws -> [StoredWorkout] {
+        try database.query("""
+        SELECT * FROM workout
+        WHERE user_id = ? AND deleted_at IS NULL
+          AND start_time < ? AND end_time > ?
+        ORDER BY start_time;
+        """, [.text(userID), .date(end), .date(start)])
+            .compactMap(StoredWorkout.init(row:))
+    }
+
     func workoutCount(includeDeleted: Bool = false) throws -> Int {
         let sql = includeDeleted
             ? "SELECT COUNT(*) AS count FROM workout;"
@@ -685,6 +703,17 @@ actor HealthPitStore {
                                           syncIdentifier: syncIdentifier,
                                           userID: reference.userID) {
             return found
+        }
+        // Nur ohne eigene Kennung auf die Entitaet zurueckfallen.
+        //
+        // Mit Kennung ist eine nicht gefundene Zeile eine *weitere* Kopie:
+        // Drei Apps koennen denselben Lauf nach Apple Health legen, und jede
+        // fuehrt ihn unter eigener Record-ID. Faellt man hier zurueck,
+        // ueberschreibt die zweite Kopie die Kennung der ersten – und beim
+        // naechsten Import wird die erste nicht wiedererkannt und erneut
+        // angelegt. Genau so entstehen die Duplikate zurueck.
+        guard reference.externalRecordID == nil, reference.syncIdentifier == nil else {
+            return nil
         }
         return try references(entityType: reference.entityType, entityID: reference.entityID)
             .first { $0.provider == reference.provider }
