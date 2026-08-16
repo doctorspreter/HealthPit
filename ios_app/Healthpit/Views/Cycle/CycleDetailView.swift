@@ -332,7 +332,7 @@ struct CycleDetailView: View {
             // in die Vergangenheit alles leer.
             let calendar = Calendar.healthApp
             let months = calendar.dateComponents([.month], from: visibleMonth, to: Date()).month ?? 0
-            overview = try await health.fetchCycleOverview(monthsBack: max(12, months + 2))
+            overview = await HealthQuery.shared.cycleOverview(monthsBack: max(12, months + 2))
             message = nil
         } catch {
             message = error.localizedDescription
@@ -482,11 +482,22 @@ struct CycleDayEditorView: View {
                                                 date: date,
                                                 rawValue: HKCategoryValue.notApplicable.rawValue)
             }
+            await syncBackIntoTheDatabase()
             await onSaved()
             dismiss()
         } catch {
             message = error.localizedDescription
         }
+    }
+
+    /// Das Geschriebene in die Datenbank nachziehen.
+    ///
+    /// Geschrieben wird nach Apple Health — dort gehoert der Eintrag hin, und
+    /// nur dort sieht ihn auch die Health-App. Gelesen wird aus der Datenbank.
+    /// Ohne diesen Schritt zeigte die Ansicht nach dem Speichern weiter den
+    /// Stand von vorher, und der Eintrag schiene verloren.
+    private func syncBackIntoTheDatabase() async {
+        try? await HealthPitBootstrap.shared.refresh()
     }
 
     /// Entfernt alles, was Healthpit an diesem Tag angelegt hat.
@@ -495,6 +506,7 @@ struct CycleDayEditorView: View {
         defer { isDeleting = false }
         do {
             try await health.deleteCycleEntries(on: date)
+            await syncBackIntoTheDatabase()
             await onSaved()
             dismiss()
         } catch {

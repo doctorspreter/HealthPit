@@ -80,7 +80,7 @@ struct ActivityOverviewView: View {
 
     private func reloadGoals() async {
         goals = ActivityGoalStore.goals()
-        goalValues = await health.progressValues(for: goals)
+        goalValues = await HealthQuery.shared.progressValues(for: goals)
     }
 
     private var header: some View {

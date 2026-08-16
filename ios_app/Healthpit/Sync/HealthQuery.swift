@@ -79,6 +79,49 @@ final class HealthQuery {
         .sorted { $0.date < $1.date }
     }
 
+    /// Der Verlauf einer Metrik fuer den Nachtrag in Home Assistant.
+    ///
+    /// Die Datenbank fuehrt je Metrik und Tag einen Wert — so kommt er aus
+    /// Apple Health herein, und das ist die Aufloesung, die HealthPit hat.
+    /// Home Assistant erwartet volle Stunden; ein Tagesanfang in UTC ist eine.
+    ///
+    /// Summen tragen `state` und `sum` (der laufende Gesamtwert), Messwerte
+    /// `mean`, `min` und `max`. Genau das erwartet der Endpunkt.
+    func history(for metric: HealthMetric) async -> [HealthMetricHistoryPoint] {
+        guard let metricID = Self.metricID(for: metric),
+              let store = try? await store(),
+              let observations = try? await store.observations(metricID: metricID,
+                                                               from: nil, to: nil) else {
+            return []
+        }
+        let allowed = await filtered(observations, metricID: metricID, store: store)
+            .filter { $0.periodType == .day }
+
+        var byHour: [Date: HealthObservation] = [:]
+        var utc = Calendar(identifier: .gregorian)
+        utc.timeZone = TimeZone(secondsFromGMT: 0) ?? .current
+        for observation in allowed {
+            guard let hour = utc.dateInterval(of: .hour, for: observation.startTime)?.start else { continue }
+            if let existing = byHour[hour], existing.updatedAt >= observation.updatedAt { continue }
+            byHour[hour] = observation
+        }
+
+        let isSum = metric.aggregation == .cumulativeSum
+        var running = 0.0
+        return byHour.keys.sorted().compactMap { hour -> HealthMetricHistoryPoint? in
+            guard let observation = byHour[hour],
+                  let raw = observation.valueNumeric else { return nil }
+            let value = Self.display(raw, of: observation, for: metric)
+            if isSum {
+                running += value
+                return HealthMetricHistoryPoint(date: hour, state: value, sum: running,
+                                                mean: nil, minimum: nil, maximum: nil)
+            }
+            return HealthMetricHistoryPoint(date: hour, state: nil, sum: nil,
+                                            mean: value, minimum: value, maximum: value)
+        }
+    }
+
     /// Die Kennzahlen der Startseite: je Metrik der zuletzt gemessene Wert.
     func headlineValues(for metrics: [HealthMetric]) async -> [String: DashboardMetricCacheEntry] {
         var result: [String: DashboardMetricCacheEntry] = [:]
@@ -210,6 +253,98 @@ final class HealthQuery {
             byNight[night] = session
         }
         return byNight.values.sorted { $0.end > $1.end }
+    }
+
+    // MARK: - Zyklus
+
+    /// Die Blutungstage eines Zeitraums, wie die Datenbank sie fuehrt.
+    ///
+    /// Je Tag ein Eintrag. Fuehren zwei Quellen denselben Tag, gilt der
+    /// eigene — nach einer Korrektur in HealthPit soll die Korrektur zu sehen
+    /// sein und nicht der alte Wert der anderen App.
+    func cycleDays(in interval: DateInterval) async -> [CycleDayEntry] {
+        guard let store = try? await store(),
+              let observations = try? await store.observations(metricID: "CYC_MENSTRUAL_FLOW",
+                                                               from: interval.start,
+                                                               to: interval.end) else {
+            return []
+        }
+        let allowed = await filtered(observations, metricID: "CYC_MENSTRUAL_FLOW", store: store)
+        let ownBundleID = Bundle.main.bundleIdentifier
+
+        var byDay: [Date: CycleDayEntry] = [:]
+        for observation in allowed {
+            let day = Calendar.healthApp.startOfDay(for: observation.startTime)
+            let isOwn = observation.sourceAppID == ownBundleID
+            let entry = CycleDayEntry(
+                id: UUID(uuidString: observation.originExternalID ?? "") ?? UUID(),
+                date: day,
+                flow: MenstrualFlow(rawValue: Int(observation.valueCode ?? "") ?? 0) ?? .unspecified,
+                isCycleStart: observation.metadata["cycle_start"] == "1",
+                isOwnEntry: isOwn
+            )
+            if let existing = byDay[day], existing.isOwnEntry, !isOwn { continue }
+            byDay[day] = entry
+        }
+        return byDay.values.sorted { $0.date < $1.date }
+    }
+
+    /// Die Zyklus-Ereignisse eines Zeitraums.
+    func cycleEvents(in interval: DateInterval) async -> [CycleEvent] {
+        guard let store = try? await store(),
+              let observations = try? await store.observations(metricID: "CYC_EVENT",
+                                                               from: interval.start,
+                                                               to: interval.end) else {
+            return []
+        }
+        return observations.compactMap { observation -> CycleEvent? in
+            guard let raw = observation.metadata["event_kind"],
+                  let kind = CycleEventKind(rawValue: raw) else { return nil }
+            return CycleEvent(id: UUID(uuidString: observation.originExternalID ?? "") ?? UUID(),
+                              kind: kind,
+                              date: observation.startTime,
+                              rawValue: Int(observation.metadata["raw_value"] ?? "") ?? 0)
+        }
+        .sorted { $0.date > $1.date }
+    }
+
+    /// Die ganze Zyklus-Uebersicht aus der Datenbank.
+    func cycleOverview(monthsBack: Int = 12, referenceDate now: Date = .now) async -> CycleOverview {
+        let start = Calendar.healthApp.date(byAdding: .month, value: -monthsBack, to: now) ?? now
+        let interval = DateInterval(start: start, end: max(now, start))
+        var overview = CycleOverview()
+        overview.days = await cycleDays(in: interval)
+        overview.cycles = HealthKitManager.cycles(from: overview.days)
+        overview.events = await cycleEvents(in: interval)
+        return overview
+    }
+
+    // MARK: - Ziele
+
+    /// Wie weit ein Ziel erreicht ist — auf denselben Werten wie die Anzeige.
+    ///
+    /// Frueher fragte das HealthKit erneut ab. Damit konnte der Fortschritt
+    /// eine Quelle mitzaehlen, die der Anwender in HealthPit abgeschaltet hat,
+    /// und der Balken widersprach der Zahl daneben.
+    func progress(for goal: ActivityGoal, referenceDate now: Date = .now) async -> Double {
+        guard let metric = goal.metric else { return 0 }
+        let interval = goal.period.interval(containing: now)
+        let clipped = DateInterval(start: interval.start, end: min(interval.end, now))
+        guard clipped.duration > 0 else { return 0 }
+        let values = await dailyValues(for: metric, in: clipped).map(\.value)
+        guard !values.isEmpty else { return 0 }
+        return metric.aggregation == .cumulativeSum
+            ? values.reduce(0, +)
+            : values.reduce(0, +) / Double(values.count)
+    }
+
+    func progressValues(for goals: [ActivityGoal],
+                        referenceDate now: Date = .now) async -> [UUID: Double] {
+        var result: [UUID: Double] = [:]
+        for goal in goals {
+            result[goal.id] = await progress(for: goal, referenceDate: now)
+        }
+        return result
     }
 
     // MARK: - Quellenfreigabe

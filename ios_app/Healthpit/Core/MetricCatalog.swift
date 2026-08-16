@@ -278,6 +278,11 @@ enum MetricCatalog {
     // MARK: - Zyklus
 
     static let cycle: [MetricDefinition] = [
+        MetricDefinition("CYC_EVENT", category: .cycle, name: "Cycle event",
+                         valueType: .enumerated,
+                         canonicalUnit: nil,
+                         allowedCodes: ["INTERMENSTRUAL_BLEEDING", "OVULATION_TEST",
+                                        "CERVICAL_MUCUS", "SEXUAL_ACTIVITY"]),
         MetricDefinition("CYC_MENSTRUAL_FLOW", category: .cycle, name: "Menstrual flow",
                          valueType: .enumerated,
                          canonicalUnit: nil,

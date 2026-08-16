@@ -3,7 +3,12 @@
 //  Healthpit
 //
 //  Fuellt lokale Caches frueh, damit Detailseiten nicht erst beim Oeffnen
-//  teure HealthKit-/Bridge-Abfragen starten muessen.
+//  teure Abfragen starten muessen.
+//
+//  Gelesen wird aus der Datenbank, nicht aus HealthKit. Sonst stuenden in den
+//  Caches andere Zahlen als auf den Bildschirmen: HealthKit liefert Prozente
+//  als Bruch, kennt keine abgeschalteten Quellen und dieselbe Einheit aus drei
+//  Apps dreimal.
 //
 
 import Foundation
@@ -24,20 +29,10 @@ actor HealthPitPreloadService {
         await health.prepareForBackgroundWork()
 
         async let dashboardMetrics: Void = refreshDashboardMetrics()
-        async let sleepDay = try? health.fetchSleep(in: .day)
-        async let sleepWeek = try? health.fetchSleep(in: .week)
-        async let sleepMonth = try? health.fetchSleep(in: .month)
+        async let sleepCaches: Void = refreshSleepCaches()
         async let imports: Int? = try? BridgeSyncService.shared.downloadImportedWorkouts()
 
-        if let sessions = await sleepDay {
-            await SleepCacheStore.shared.save(sessions, range: .day)
-        }
-        if let sessions = await sleepWeek {
-            await SleepCacheStore.shared.save(sessions, range: .week)
-        }
-        if let sessions = await sleepMonth {
-            await SleepCacheStore.shared.save(sessions, range: .month)
-        }
+        _ = await sleepCaches
         _ = await dashboardMetrics
         _ = await imports
         // Do not warm this cache before the bridge download has completed.
@@ -75,47 +70,31 @@ actor HealthPitPreloadService {
 
         var values: [String: (value: Double, measuredAt: Date?)] = [:]
         for metric in metrics {
-            if let result = try? await health.latestValueWithDate(for: metric) {
-                values[metric.id] = result
+            if let latest = await HealthQuery.shared.latestValue(for: metric) {
+                values[metric.id] = (latest.value, latest.date)
             }
         }
         await DashboardMetricCacheStore.shared.save(metricValues: values)
     }
 
     private func refreshSleepCaches() async {
-        async let sleepDay = try? health.fetchSleep(in: .day)
-        async let sleepWeek = try? health.fetchSleep(in: .week)
-        async let sleepMonth = try? health.fetchSleep(in: .month)
-
-        if let sessions = await sleepDay {
-            await SleepCacheStore.shared.save(sessions, range: .day)
-        }
-        if let sessions = await sleepWeek {
-            await SleepCacheStore.shared.save(sessions, range: .week)
-        }
-        if let sessions = await sleepMonth {
-            await SleepCacheStore.shared.save(sessions, range: .month)
+        for range in [TimeRange.day, .week, .month] {
+            let sessions = await HealthQuery.shared.nights(in: range.dateInterval(referenceDate: .now))
+            await SleepCacheStore.shared.save(sessions, range: range)
         }
     }
 
     private func refreshAppleHealthWorkoutCaches(referenceDate: Date = .now) async {
-        async let day = try? health.fetchWorkouts(in: .day, referenceDate: referenceDate)
-        async let week = try? health.fetchWorkouts(in: .week, referenceDate: referenceDate)
-        async let month = try? health.fetchWorkouts(in: .month, referenceDate: referenceDate)
-        async let year = try? health.fetchWorkouts(in: .year, referenceDate: referenceDate)
-
-        if let workouts = await day {
-            await HealthWorkoutCacheStore.shared.save(workouts, range: .day, referenceDate: referenceDate)
-        }
-        if let workouts = await week {
-            await HealthWorkoutCacheStore.shared.save(workouts, range: .week, referenceDate: referenceDate)
-        }
-        if let workouts = await month {
-            await HealthWorkoutCacheStore.shared.save(workouts, range: .month, referenceDate: referenceDate)
-        }
-        if let workouts = await year {
-            await HealthWorkoutCacheStore.shared.save(workouts, range: .year, referenceDate: referenceDate)
-            await HealthWorkoutCacheStore.shared.mergeAllTime(workouts)
+        for range in [TimeRange.day, .week, .month, .year] {
+            let workouts = await HealthQuery.shared.workouts(
+                in: range.dateInterval(referenceDate: referenceDate)
+            )
+            await HealthWorkoutCacheStore.shared.save(workouts,
+                                                      range: range,
+                                                      referenceDate: referenceDate)
+            if range == .year {
+                await HealthWorkoutCacheStore.shared.mergeAllTime(workouts)
+            }
         }
     }
 }

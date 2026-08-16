@@ -21,11 +21,12 @@ struct AppleHealthIngestReport: Sendable, Equatable {
     var nights = 0
     var sleepSegments = 0
     var workouts = 0
+    var cycleDays = 0
     /// Ab wann Apple Health ueberhaupt etwas hat.
     var earliest: Date?
 
     var didFindAnything: Bool {
-        dailyValues > 0 || nights > 0 || workouts > 0
+        dailyValues > 0 || nights > 0 || workouts > 0 || cycleDays > 0
     }
 }
 
@@ -90,7 +91,14 @@ actor AppleHealthIngest {
         report.nights = sleep.nights
         report.sleepSegments = sleep.segments
 
-        // 3) Trainings.
+        // 3) Zyklus.
+        let cycle = try await cycleObservations(from: earliest, to: now)
+        if !cycle.isEmpty {
+            _ = try await pipeline.import(cycle, from: .appleHealth)
+        }
+        report.cycleDays = cycle.count
+
+        // 4) Trainings.
         await progress(IngestProgress(step: L10n.string("Lese Trainings …"),
                                       fraction: Double(quantities.count + 1) / Double(quantities.count + 2)))
         report.workouts = try await importWorkouts(from: earliest, to: now, pipeline: pipeline)
@@ -132,6 +140,12 @@ actor AppleHealthIngest {
         }
         report.nights = sleep.nights
         report.sleepSegments = sleep.segments
+
+        let cycle = try await cycleObservations(from: from, to: now)
+        if !cycle.isEmpty {
+            _ = try await pipeline.import(cycle, from: .appleHealth)
+        }
+        report.cycleDays = cycle.count
         report.workouts = try await importWorkouts(from: from, to: now, pipeline: pipeline)
 
         try await store.setMigrationFlag(Self.lastSyncFlag, value: String(now.timeIntervalSince1970))

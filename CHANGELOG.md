@@ -213,6 +213,32 @@
 - Non-finite metric values are rejected before they can enter storage or
   long-term statistics.
 
+## 26.08.5
+
+### Geändert
+
+- **Alles liest jetzt aus der Datenbank.** Die Brücke nach Home Assistant, die
+  Vorlade-Zwischenspeicher und die Zyklusansicht holten ihre Werte weiterhin
+  unmittelbar aus Apple Health — und damit galt für sie nichts von dem, was die
+  Datenbank entschieden hatte: keine Quellenregeln, keine Wiedererkennung
+  doppelter Aufzeichnungen, keine kanonischen Einheiten. Betroffen waren
+  Messwerte, Stundenverlauf, Schlaf, Zyklus, Zielfortschritt und die
+  Trainings-Zwischenspeicher.
+- **Der Zyklus liegt endlich in der Datenbank.** Blutungstage und die
+  Ereignisse (Ovulationstest, Zervixschleim, Zwischenblutung, sexuelle
+  Aktivität) werden beim Import mitgelesen. Geschrieben wird weiterhin nach
+  Apple Health — dort gehört der Eintrag hin —, und danach zieht die Datenbank
+  sofort nach.
+- Der Verlauf, den die App nach Home Assistant schickt, hat jetzt Tages- statt
+  Stundenauflösung. Das ist die Auflösung, in der die Datenbank die Werte
+  führt; die Diagramme über Monate und Jahre ändern sich dadurch nicht.
+
+### Bleibt bei Apple Health
+
+- Strecke und Pulskurve eines Trainings sowie der Puls zu einem von Hand
+  erfassten Training: Rohserien mit tausenden Punkten je Einheit stehen nicht
+  in der Datenbank. Beides ist Ableitung beim Erfassen, keine Anzeige.
+
 ## 26.08.4
 
 ### Behoben

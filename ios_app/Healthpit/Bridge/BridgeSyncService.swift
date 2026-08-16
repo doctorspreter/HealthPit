@@ -621,13 +621,12 @@ final class BridgeSyncService {
         var pointCount = 0
         for metric in HealthMetric.all {
             guard isSharingEnabled(metric.id) else { continue }
-            guard let history = try? await health.fetchHourlyHistory(for: metric),
-                  !history.isEmpty else { continue }
+            let history = await HealthQuery.shared.history(for: metric)
+            guard !history.isEmpty else { continue }
 
             let seed: BridgeMetricPayload
-            if let latest = try? await health.latestValueWithDate(for: metric) {
-                seed = metric.payload(value: latest.value,
-                                      measuredAt: latest.measuredAt ?? .now)
+            if let latest = await HealthQuery.shared.latestValue(for: metric) {
+                seed = metric.payload(value: latest.value, measuredAt: latest.date)
             } else {
                 // A cumulative type with older data but nothing today still
                 // needs an entity; zero is its correct current daily value.
@@ -636,14 +635,12 @@ final class BridgeSyncService {
             try await uploadMetrics([seed], credentials: credentials)
 
             let points = history.map { point in
-                BridgeHistoryPointPayload(
-                    start: point.date,
-                    state: point.state.map { $0 * metric.healthKitScale },
-                    sum: point.sum.map { $0 * metric.healthKitScale },
-                    mean: point.mean.map { $0 * metric.healthKitScale },
-                    min: point.minimum.map { $0 * metric.healthKitScale },
-                    max: point.maximum.map { $0 * metric.healthKitScale }
-                )
+                BridgeHistoryPointPayload(start: point.date,
+                                          state: point.state,
+                                          sum: point.sum,
+                                          mean: point.mean,
+                                          min: point.minimum,
+                                          max: point.maximum)
             }
             pointCount += try await uploadHistory(
                 points,
@@ -758,8 +755,8 @@ final class BridgeSyncService {
     private func importSleepHistory(
         credentials: BridgeCredentials
     ) async throws -> (metrics: Int, points: Int) {
-        let sessions = try await health.fetchSleep(
-            interval: DateInterval(start: Date(timeIntervalSince1970: 0), end: .now)
+        let sessions = await HealthQuery.shared.nights(
+            in: DateInterval(start: Date(timeIntervalSince1970: 0), end: .now)
         )
         guard let latest = sessions.first else { return (0, 0) }
         let measuredAt = latest.end
@@ -830,7 +827,7 @@ final class BridgeSyncService {
     ) async throws -> (metrics: Int, points: Int) {
         let calendar = Calendar.healthApp
         let interval = DateInterval(start: Date(timeIntervalSince1970: 0), end: .now)
-        let days = try await health.fetchCycleDays(interval: interval)
+        let days = await HealthQuery.shared.cycleDays(in: interval)
         let cycles = HealthKitManager.cycles(from: days)
         guard !cycles.isEmpty else { return (0, 0) }
 
@@ -909,17 +906,22 @@ final class BridgeSyncService {
         try await deleteImportedWorkout(id: id, credentials: try await bridgeCredentials())
     }
 
+
     private func collectMetrics() async -> [BridgeMetricPayload] {
         let now = Date()
         var out: [BridgeMetricPayload] = []
 
         for metric in HealthMetric.all {
             guard isSharingEnabled(metric.id) else { continue }
-            guard let value = try? await health.currentValue(for: metric) else { continue }
-            out.append(metric.payload(value: value, measuredAt: now))
+            // Aus der Datenbank, nicht aus HealthKit: dort sind abgeschaltete
+            // Quellen bereits aussortiert und die Einheit ist die kanonische.
+            guard let latest = await HealthQuery.shared.latestValue(for: metric) else { continue }
+            out.append(metric.payload(value: latest.value, measuredAt: latest.date))
         }
 
-        if let sleep = (try? await health.fetchSleep(in: .week))?.first {
+        let lastWeek = DateInterval(start: Calendar.healthApp.date(byAdding: .day, value: -7, to: now) ?? now,
+                                    end: now)
+        if let sleep = await HealthQuery.shared.nights(in: lastWeek).first {
             let sleepMeasuredAt = sleep.end
             let sleepMetrics: [BridgeMetricPayload] = [
                 .duration(id: "sleep_duration",
@@ -961,7 +963,8 @@ final class BridgeSyncService {
             out.append(contentsOf: sleepMetrics.filter { isSharingEnabled($0.id) })
         }
 
-        if let cycle = try? await health.fetchCycleOverview(), cycle.hasData {
+        let cycle = await HealthQuery.shared.cycleOverview()
+        if cycle.hasData {
             let measuredAt = cycle.currentCycle?.start ?? now
             if isSharingEnabled("cycle_current_day"),
                let day = cycle.currentCycleDay {
@@ -1008,7 +1011,7 @@ final class BridgeSyncService {
             out.append(BridgeMetricPayload(id: syncID,
                                            category: metric.category.rawValue,
                                            title: title,
-                                           value: goal.target * metric.healthKitScale,
+                                           value: goal.target,
                                            unit: metric.unitSymbol,
                                            measuredAt: now,
                                            aggregation: "latest",
@@ -1016,7 +1019,7 @@ final class BridgeSyncService {
                                            deviceClass: nil,
                                            stateClass: "measurement",
                                            displayPrecision: metric.fractionDigits))
-            let reached = await health.progressValue(for: goal, referenceDate: now)
+            let reached = await HealthQuery.shared.progress(for: goal, referenceDate: now)
             let progress = goal.target > 0 ? min(reached / goal.target * 100, 999) : 0
             out.append(BridgeMetricPayload(id: "\(syncID)_progress",
                                            category: metric.category.rawValue,
@@ -1032,7 +1035,7 @@ final class BridgeSyncService {
         }
 
         if isSharingEnabled(BridgeDataTypeDescriptor.workoutsID) {
-            let workoutCount = await HealthWorkoutCacheStore.shared.countAllTime()
+            let workoutCount = await HealthQuery.shared.workouts().count
             out.append(BridgeMetricPayload(id: "workout_count_all_time",
                                            category: HealthCategory.workouts.rawValue,
                                            title: "Workouts gesamt",
@@ -1321,6 +1324,13 @@ final class BridgeSyncService {
         }
     }
 
+    /// Ergaenzt ein von Hand erfasstes Training um den Puls.
+    ///
+    /// Die zweite und letzte Stelle, die unmittelbar aus HealthKit liest: Fuer
+    /// ein Zeitfenster gibt es dort Rohproben, in der Datenbank nur Tageswerte.
+    /// Es ist auch kein Lesen fuer die Anzeige, sondern ein Zusatz beim
+    /// Erfassen — das Ergebnis wird gleich danach in die Datenbank geschrieben
+    /// und von dort hochgeladen.
     private func enrichedForUpload(_ workouts: [LocalWorkout]) async -> [LocalWorkout] {
         var out: [LocalWorkout] = []
         for var workout in workouts {
@@ -1649,7 +1659,10 @@ private extension HealthMetric {
         BridgeMetricPayload(id: bridgeID,
                             category: category.rawValue,
                             title: title,
-                            value: value * healthKitScale,
+                            // Kanonisch, wie die Datenbank ihn fuehrt. Der
+                            // HealthKit-Faktor gehoert nur dorthin, wo
+                            // unmittelbar aus HealthKit gelesen wird.
+                            value: value,
                             unit: unitSymbol,
                             measuredAt: measuredAt,
                             aggregation: aggregation == .cumulativeSum ? "sum" : "average",
