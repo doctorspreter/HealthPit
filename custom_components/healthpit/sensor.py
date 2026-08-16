@@ -9,6 +9,7 @@ from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr, entity_registry as er
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import API_BASE, DOMAIN
@@ -17,6 +18,8 @@ from .entity import (
     category_device_info,
     gym_device_info,
     is_exercise_device,
+    is_legacy_workouts_device,
+    sport_device_info,
     user_device_info,
     HealthPitUserEntity,
 )
@@ -52,7 +55,8 @@ async def async_setup_entry(
             registry.async_get_or_create(
                 config_entry_id=entry.entry_id, **gym_device_info(coordinator, user_id)
             )
-        _remove_empty_exercise_devices(hass, entry, coordinator.user_ids())
+        _retire_old_workout_entities(hass, coordinator.user_ids())
+        _remove_empty_legacy_devices(hass, entry, coordinator.user_ids())
 
     def _new_entities() -> list[SensorEntity]:
         _ensure_devices()
@@ -78,16 +82,66 @@ async def async_setup_entry(
     entry.async_on_unload(coordinator.async_add_listener(_add_new))
 
 
-def _remove_empty_exercise_devices(
+def workout_device_info(
+    coordinator: HealthPitCoordinator,
+    user_id: str,
+    descriptor: dict[str, Any],
+) -> DeviceInfo:
+    """Which device a workout sensor belongs on.
+
+    Strength training from GymPit goes to the gym device, where its exercises
+    already are — splitting a session from the machines it was done on would
+    put one training in two places. Everything else goes to the device of its
+    sport, and an exercise aggregate always goes to the gym.
+    """
+    if descriptor.get("exercise_key") is not None:
+        return gym_device_info(coordinator, user_id)
+    sources = descriptor.get("sources") or []
+    if "gympit" in sources:
+        return gym_device_info(coordinator, user_id)
+    sport_key = str(descriptor.get("sport_key") or "")
+    if not sport_key:
+        # Ohne Sportart bliebe nur das alte Sammelgeraet. Der Kraftraum ist die
+        # bessere Heimat als ein Geraet, das wir gerade abschaffen.
+        return gym_device_info(coordinator, user_id)
+    return sport_device_info(
+        coordinator, user_id, sport_key, str(descriptor.get("sport") or sport_key)
+    )
+
+
+def _retire_old_workout_entities(hass: HomeAssistant, user_ids: list[str]) -> None:
+    """Remove the workout sensors of the previous layout.
+
+    They were all called ``{user}_workout_…`` and lived together on one
+    "Workouts" device with German names — „Laufen Distanz", „Beinpresse
+    Bestgewicht". Sport devices and the gym device replace them, under names
+    that no longer carry the sport or the language.
+
+    Left alone they would linger forever as unavailable rows: nothing feeds
+    them any more, and Home Assistant keeps a registry entry until someone
+    removes it. What they showed is rebuilt from the same workouts — the values
+    are a calculation, not a recording, and the statistics are backdated with
+    them.
+    """
+    entities = er.async_get(hass)
+    prefixes = tuple(f"{user_id}_workout_" for user_id in user_ids)
+    for entry in list(entities.entities.values()):
+        if entry.platform != DOMAIN or entry.domain != "sensor":
+            continue
+        if entry.unique_id.startswith(prefixes):
+            entities.async_remove(entry.entity_id)
+
+
+def _remove_empty_legacy_devices(
     hass: HomeAssistant,
     entry: ConfigEntry,
     user_ids: list[str],
 ) -> None:
-    """Clear out the devices the exercises used to have.
+    """Clear out the devices of the previous layout once they are empty.
 
-    Their sensors sit on the gym device now. What stays behind is an empty
-    device per machine, still listed next to the health areas — exactly the
-    clutter this change removes.
+    Two kinds: the device every exercise used to have, and the single
+    "Workouts" device that held every sport at once. Their sensors sit on the
+    gym device and on the sport devices now.
 
     Only devices without a single entity are touched. As long as a sensor still
     hangs there the device stays: removing it would take the entity registry
@@ -96,15 +150,20 @@ def _remove_empty_exercise_devices(
     """
     devices = dr.async_get(hass)
     entities = er.async_get(hass)
-    def was_an_exercise(device: dr.DeviceEntry) -> bool:
+
+    def is_from_the_old_layout(device: dr.DeviceEntry) -> bool:
         return any(
-            domain == DOMAIN and is_exercise_device(identifier, user)
+            domain == DOMAIN
+            and (
+                is_exercise_device(identifier, user)
+                or is_legacy_workouts_device(identifier, user)
+            )
             for domain, identifier in device.identifiers
             for user in user_ids
         )
 
     for device in dr.async_entries_for_config_entry(devices, entry.entry_id):
-        if not was_an_exercise(device):
+        if not is_from_the_old_layout(device):
             continue
         if er.async_entries_for_device(
             entities, device.id, include_disabled_entities=True
@@ -299,7 +358,16 @@ class HealthPitMetricSensor(HealthPitUserEntity, SensorEntity):
         # Nach Bereich gruppiert statt alles in einer langen Liste. Die
         # unique_id bleibt unveraendert, damit bestehende Entitaeten ihre ID
         # und ihre Historie behalten.
-        self._attr_device_info = category_device_info(coordinator, user_id, category)
+        #
+        # „Workouts" ist kein Bereich mehr, seit jede Sportart ihr eigenes
+        # Geraet hat. Was hier trotzdem unter dieser Kategorie ankommt, ist
+        # eine Gesamtzahl ueber alle Sportarten — die gehoert zur Person, nicht
+        # zu einer von ihnen.
+        self._attr_device_info = (
+            user_device_info(coordinator, user_id)
+            if category in {"workouts", "workout"}
+            else category_device_info(coordinator, user_id, category)
+        )
 
     def _item(self) -> dict[str, Any] | None:
         items = (self._user_data.get("by_category") or {}).get(self._category, [])
@@ -383,8 +451,14 @@ class HealthPitWorkoutSensor(HealthPitUserEntity, SensorEntity):
     ) -> None:
         super().__init__(coordinator, user_id)
         self._descriptor_key = descriptor_key
-        self._attr_unique_id = f"{user_id}_workout_{descriptor_key}"
-        self._attr_device_info = category_device_info(coordinator, user_id, "workouts")
+        # Bewusst eine neue Kennung: die alten Sensoren hiessen
+        # `{user}_workout_…` und trugen Sportart und Sprache in ihrer
+        # Entitaets-ID („peter_workouts_laufen_distanz"). Sie werden entfernt,
+        # diese hier entstehen sauber neu.
+        self._attr_unique_id = f"{user_id}_wk_{descriptor_key}"
+        self._attr_device_info = workout_device_info(
+            coordinator, user_id, self._descriptor() or {}
+        )
 
     def _descriptor(self) -> dict[str, Any] | None:
         return next(

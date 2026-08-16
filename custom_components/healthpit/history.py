@@ -37,7 +37,12 @@ from .const import DOMAIN
 from .coordinator import HealthPitCoordinator
 from .metrics import group_exercise_history
 from .precision import rounded_value, suggested_precision
-from .workout_entities import slug, sport_name
+from .workout_entities import (
+    exercise_identity,
+    exercise_volume,
+    slug,
+    sport_name,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -56,7 +61,18 @@ def _contribution(workout: dict[str, Any], kind: str) -> float:
         return float(workout.get("duration_seconds") or 0) / 3600
     if kind == "distance_km":
         return float(workout.get("distance_km") or 0)
+    if kind == "volume_kg":
+        return float(workout.get("volume_kg") or 0)
     return 0.0
+
+
+# Dasselbe je Uebung. Ohne diese Zeilen haetten „Sessions" und „Total volume"
+# der Beinpresse erst ab dem Tag Werte, an dem die Entitaet entstand — obwohl
+# jede einzelne Sitzung dahinter seit Jahren vorliegt.
+EXERCISE_CUMULATIVE: dict[str, tuple[str | None, str]] = {
+    "sessions": (None, "one"),
+    "total_volume": ("kg", "volume_kg"),
+}
 
 
 def _hour(value: datetime) -> datetime:
@@ -104,7 +120,7 @@ def _entity_id(
 ) -> str | None:
     """Find the sensor a descriptor belongs to, by the unique ID we gave it."""
     return registry.async_get_entity_id(
-        "sensor", DOMAIN, f"{user_id}_workout_{descriptor_key}"
+        "sensor", DOMAIN, f"{user_id}_wk_{descriptor_key}"
     )
 
 
@@ -283,7 +299,51 @@ async def async_import_history(
                     "Imported %s statistics rows for %s", len(rows), entity_id
                 )
 
+        for exercise_key, contributions in _by_exercise(workouts).items():
+            prefix = f"exercise:{exercise_key}"
+            for suffix, (unit, kind) in EXERCISE_CUMULATIVE.items():
+                descriptor_key = f"{prefix}:{suffix}"
+                entity_id = _entity_id(registry, current_user, descriptor_key)
+                if entity_id is None:
+                    skipped.append(descriptor_key)
+                    continue
+
+                rows = _series(contributions, kind)
+                if not rows:
+                    continue
+
+                async_import_statistics(
+                    hass,
+                    _metadata(entity_id=entity_id, unit=unit, has_sum=True),
+                    rows,
+                )
+                imported += len(rows)
+
     return {"rows": imported, "skipped": len(skipped), "users": len(user_ids)}
+
+
+def _by_exercise(workouts: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+    """Per exercise one entry per session, carrying what that session added.
+
+    Shaped like a workout on purpose, so the same ``_series`` builds the running
+    total: an exercise trained on eleven days is eleven contributions with their
+    own timestamps, not one number at the end.
+    """
+    by_exercise: dict[str, list[dict[str, Any]]] = {}
+    for workout in workouts:
+        for exercise in workout.get("exercises") or []:
+            if not isinstance(exercise, dict):
+                continue
+            key = exercise_identity(exercise)
+            if not key:
+                continue
+            by_exercise.setdefault(key, []).append(
+                {
+                    "start_time": workout.get("start_time") or workout.get("start"),
+                    "volume_kg": exercise_volume(exercise),
+                }
+            )
+    return by_exercise
 
 
 # Was noch auf seine Entitaet wartet: unique_id -> Einheit und Stundenwerte.

@@ -1,4 +1,11 @@
-"""Build stable Home Assistant sensor descriptions from bridge workouts."""
+"""Build stable Home Assistant sensor descriptions from bridge workouts.
+
+Every sport gets its own device, so the names here no longer repeat it: the
+device is called "Peter Run", the sensor on it simply "Distance". They are
+English and fixed, like every other device and entity name in this
+integration — a name that travels into an entity ID must not move with the
+interface language.
+"""
 
 from __future__ import annotations
 
@@ -35,21 +42,31 @@ def _sport_metrics(
     prefix = f"sport:{sport_key}"
     icon = _sport_icon(sport)
     attributes = _workout_attributes(latest)
+    # Woher die Einheiten dieser Sportart stammen. Der Sensor entscheidet
+    # daran, auf welches Geraet er gehoert: Krafttraining aus GymPit liegt
+    # beim Kraftraum, alles andere bei seiner Sportart.
+    sources = sorted({
+        source
+        for workout in workouts
+        for source in ([workout.get("source")] + list(workout.get("sources") or []))
+        if source
+    })
     out: list[dict[str, Any]] = []
 
-    _add(
-        out,
+    def add(**kwargs: Any) -> None:
+        _add(out, sport=sport, sport_key=sport_key, sources=sources, **kwargs)
+
+    add(
         key=f"{prefix}:latest",
-        name=f"Letztes Training {sport}",
+        name="Last workout",
         value=_parse_datetime(latest.get("start_time") or latest.get("start")),
         icon=icon,
         device_class="timestamp",
         attributes=attributes,
     )
-    _add(
-        out,
+    add(
         key=f"{prefix}:count",
-        name=f"{sport} Trainings",
+        name="Sessions",
         value=len(workouts),
         icon="mdi:counter",
         state_class="total",
@@ -57,10 +74,9 @@ def _sport_metrics(
     )
 
     total_duration_seconds = sum(_number(item.get("duration_seconds")) or 0 for item in workouts)
-    _add(
-        out,
+    add(
         key=f"{prefix}:total_duration",
-        name=f"{sport} Gesamttrainingszeit",
+        name="Total time",
         value=_rounded(total_duration_seconds / 3600),
         unit="h",
         icon="mdi:timer-outline",
@@ -71,10 +87,9 @@ def _sport_metrics(
 
     latest_duration_seconds = _number(latest.get("duration_seconds"))
     if latest_duration_seconds is not None:
-        _add(
-            out,
+        add(
             key=f"{prefix}:duration",
-            name=f"{sport} Dauer",
+            name="Duration",
             value=_rounded(latest_duration_seconds / 60),
             unit="min",
             icon="mdi:timer-outline",
@@ -86,10 +101,9 @@ def _sport_metrics(
     latest_distance = _number(latest.get("distance_km"))
     total_distance = sum(_number(item.get("distance_km")) or 0 for item in workouts)
     if latest_distance is not None:
-        _add(
-            out,
+        add(
             key=f"{prefix}:distance",
-            name=f"{sport} Distanz",
+            name="Distance",
             value=_rounded(latest_distance),
             unit="km",
             icon="mdi:map-marker-distance",
@@ -98,10 +112,9 @@ def _sport_metrics(
             attributes=attributes,
         )
     if total_distance > 0:
-        _add(
-            out,
+        add(
             key=f"{prefix}:total_distance",
-            name=f"{sport} Gesamtdistanz",
+            name="Total distance",
             value=_rounded(total_distance),
             unit="km",
             icon="mdi:map-marker-distance",
@@ -114,10 +127,9 @@ def _sport_metrics(
         duration_minutes = latest_duration_seconds / 60
         if _supports_pace(sport):
             pace = duration_minutes / latest_distance
-            _add(
-                out,
+            add(
                 key=f"{prefix}:pace",
-                name=f"{sport} Pace",
+                name="Pace",
                 value=_rounded(pace),
                 unit="min/km",
                 icon="mdi:run-fast",
@@ -127,10 +139,9 @@ def _sport_metrics(
                     "formatted_pace": _formatted_pace(pace),
                 },
             )
-        _add(
-            out,
+        add(
             key=f"{prefix}:speed",
-            name=f"{sport} Geschwindigkeit",
+            name="Speed",
             value=_rounded(latest_distance / (latest_duration_seconds / 3600)),
             unit="km/h",
             icon="mdi:speedometer",
@@ -139,61 +150,73 @@ def _sport_metrics(
             attributes=attributes,
         )
 
-    _add_latest_number(
-        out,
-        latest,
-        field="energy_kcal",
-        key=f"{prefix}:energy",
-        name=f"{sport} Energie",
-        unit="kcal",
-        icon="mdi:fire",
-        device_class="energy",
-        state_class="total",
-        attributes=attributes,
-    )
-    _add_latest_number(
-        out,
-        latest,
-        field="average_heart_rate",
-        key=f"{prefix}:average_heart_rate",
-        name=f"{sport} Durchschnittspuls",
-        unit="bpm",
-        icon="mdi:heart-pulse",
-        attributes=attributes,
-    )
-    _add_latest_number(
-        out,
-        latest,
-        field="max_heart_rate",
-        key=f"{prefix}:max_heart_rate",
-        name=f"{sport} Maximalpuls",
-        unit="bpm",
-        icon="mdi:heart-flash",
-        attributes=attributes,
-    )
-
-    for field, suffix, label, icon_name, unit, device_class in (
-        ("exercise_count", "exercises", "Übungen", "mdi:dumbbell", "", None),
-        ("set_count", "sets", "Sätze", "mdi:format-list-numbered", "", None),
-        ("volume_kg", "volume", "Volumen", "mdi:weight-kilogram", "kg", "weight"),
-        ("max_weight_kg", "max_weight", "Maximalgewicht", "mdi:weight-lifter", "kg", "weight"),
-        ("personal_records", "personal_records", "Persönliche Rekorde", "mdi:trophy", "", None),
+    for field, suffix, label, icon_name, unit, device_class, state_class in (
+        ("energy_kcal", "energy", "Energy", "mdi:fire", "kcal", "energy", "total"),
+        ("average_heart_rate", "average_heart_rate", "Average heart rate",
+         "mdi:heart-pulse", "bpm", None, "measurement"),
+        ("max_heart_rate", "max_heart_rate", "Maximum heart rate",
+         "mdi:heart-flash", "bpm", None, "measurement"),
+        ("exercise_count", "exercises", "Exercises", "mdi:dumbbell", "", None, "measurement"),
+        ("set_count", "sets", "Sets", "mdi:format-list-numbered", "", None, "measurement"),
+        ("volume_kg", "volume", "Volume", "mdi:weight-kilogram", "kg", "weight", "measurement"),
+        ("max_weight_kg", "max_weight", "Top weight", "mdi:weight-lifter", "kg", "weight", "measurement"),
+        ("personal_records", "personal_records", "Personal records", "mdi:trophy", "", None, "measurement"),
     ):
-        _add_latest_number(
-            out,
-            latest,
-            field=field,
+        add(
             key=f"{prefix}:{suffix}",
-            name=f"{sport} {label}",
+            name=label,
+            value=_rounded(_number(latest.get(field))),
             unit=unit,
             icon=icon_name,
             device_class=device_class,
+            state_class=state_class,
             attributes=attributes,
         )
     return out
 
 
+def exercise_name(exercise: dict[str, Any]) -> str:
+    """Wie die Uebung heisst."""
+    return str(exercise.get("name") or exercise.get("title") or "Übung").strip()
+
+
+def exercise_identity(exercise: dict[str, Any]) -> str:
+    """Der stabile Schluessel einer Uebung.
+
+    Der Katalogeintrag zaehlt, nicht der Name: dieselbe Maschine unter zwei
+    Schreibweisen waere sonst zweimal da. Ohne Katalog bleibt der Name.
+    """
+    identity = str(exercise.get("catalog_id") or exercise.get("catalogId") or "").strip()
+    return _slug(identity or exercise_name(exercise))
+
+
+def exercise_volume(exercise: dict[str, Any]) -> float:
+    """Bewegtes Gewicht einer Uebung in einer Einheit: Summe aus Kilo × Wiederholungen."""
+    total = 0.0
+    for item in exercise.get("sets") or []:
+        if not isinstance(item, dict):
+            continue
+        volume = _number(item.get("volume_kg"))
+        if volume is None:
+            weight = _number(item.get("weight_kg"))
+            repetitions = _number(item.get("reps"))
+            volume = weight * repetitions if weight is not None and repetitions is not None else None
+        if volume is not None:
+            total += volume
+    return total
+
+
 def _exercise_metrics(workouts: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """What only the whole history knows about an exercise.
+
+    The last weight, the last repetitions, the last set — those arrive as their
+    own values from GymPit and become their own sensors. Duplicating them here
+    is what put every machine into two places at once.
+
+    What is left is what a single value cannot say: how often the exercise was
+    trained, the heaviest weight ever moved, the volume of all sessions, the
+    number of personal records, and when it last happened.
+    """
     aggregates: dict[str, dict[str, Any]] = {}
     for workout in workouts:
         workout_time = _parse_datetime(workout.get("start_time") or workout.get("start"))
@@ -201,9 +224,8 @@ def _exercise_metrics(workouts: list[dict[str, Any]]) -> list[dict[str, Any]]:
         for exercise in workout.get("exercises") or []:
             if not isinstance(exercise, dict):
                 continue
-            name = str(exercise.get("name") or exercise.get("title") or "Übung").strip()
-            identity = str(exercise.get("catalog_id") or exercise.get("catalogId") or "").strip()
-            exercise_key = _slug(identity or name)
+            name = exercise_name(exercise)
+            exercise_key = exercise_identity(exercise)
             if not exercise_key:
                 continue
             sets = [item for item in exercise.get("sets") or [] if isinstance(item, dict)]
@@ -212,25 +234,7 @@ def _exercise_metrics(workouts: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 for item in sets
                 if (value := _number(item.get("weight_kg"))) is not None
             ]
-            reps = [
-                value
-                for item in sets
-                if (value := _number(item.get("reps"))) is not None
-            ]
-            rpes = [
-                value
-                for item in sets
-                if (value := _number(item.get("rpe"))) is not None
-            ]
-            volumes = []
-            for item in sets:
-                volume = _number(item.get("volume_kg"))
-                if volume is None:
-                    weight = _number(item.get("weight_kg"))
-                    repetitions = _number(item.get("reps"))
-                    volume = weight * repetitions if weight is not None and repetitions is not None else None
-                if volume is not None:
-                    volumes.append(volume)
+            volumes = [exercise_volume(exercise)]
 
             aggregate = aggregates.setdefault(
                 exercise_key,
@@ -262,12 +266,6 @@ def _exercise_metrics(workouts: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 aggregate["name"] = name
                 aggregate["category"] = exercise.get("category") or aggregate["category"]
                 aggregate["latest"] = {
-                    "set_count": len(sets),
-                    "reps": sum(reps),
-                    "weight": max(weights) if weights else None,
-                    "volume": sum(volumes),
-                    "rpe": sum(rpes) / len(rpes) if rpes else None,
-                    "duration_seconds": _number(exercise.get("duration_seconds")),
                     "device_settings": exercise.get("device_settings") or {},
                     "workout_title": workout.get("title") or workout.get("sport"),
                     "workout_id": workout_id,
@@ -289,46 +287,31 @@ def _exercise_metrics(workouts: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "source": latest.get("source"),
             "device_settings": latest.get("device_settings") or {},
         }
-        _add(
-            out,
+
+        def add(**kwargs: Any) -> None:
+            # Die Uebung steht im Namen, nicht im Geraet: alle Uebungen teilen
+            # sich das eine Kraftraum-Geraet.
+            _add(out, exercise=name, exercise_key=exercise_key, **kwargs)
+
+        add(
             key=f"{prefix}:latest",
-            name=f"{name} Letztes Training",
+            name=f"{name} Last workout",
             value=aggregate["latest_time"],
             icon="mdi:weight-lifter",
             device_class="timestamp",
             attributes=attributes,
         )
-        _add(
-            out,
+        add(
             key=f"{prefix}:sessions",
-            name=f"{name} Trainings",
+            name=f"{name} Sessions",
             value=len(aggregate["sessions"]),
             icon="mdi:counter",
             state_class="total",
             attributes=attributes,
         )
-        for field, suffix, label, icon, unit, device_class in (
-            ("set_count", "sets", "Sätze", "mdi:format-list-numbered", "", None),
-            ("reps", "reps", "Wiederholungen", "mdi:repeat", "", None),
-            ("weight", "weight", "Letztes Gewicht", "mdi:weight-kilogram", "kg", "weight"),
-            ("volume", "volume", "Letztes Volumen", "mdi:weight-kilogram", "kg", "weight"),
-            ("rpe", "rpe", "RPE", "mdi:gauge", "", None),
-        ):
-            _add(
-                out,
-                key=f"{prefix}:{suffix}",
-                name=f"{name} {label}",
-                value=_rounded(latest.get(field)),
-                unit=unit,
-                icon=icon,
-                device_class=device_class,
-                state_class="measurement",
-                attributes=attributes,
-            )
-        _add(
-            out,
+        add(
             key=f"{prefix}:best_weight",
-            name=f"{name} Bestgewicht",
+            name=f"{name} Best weight",
             value=_rounded(aggregate["best_weight"]),
             unit="kg",
             icon="mdi:trophy",
@@ -336,10 +319,9 @@ def _exercise_metrics(workouts: list[dict[str, Any]]) -> list[dict[str, Any]]:
             state_class="measurement",
             attributes=attributes,
         )
-        _add(
-            out,
+        add(
             key=f"{prefix}:total_volume",
-            name=f"{name} Gesamtvolumen",
+            name=f"{name} Total volume",
             value=_rounded(aggregate["total_volume"]),
             unit="kg",
             icon="mdi:weight-kilogram",
@@ -348,55 +330,15 @@ def _exercise_metrics(workouts: list[dict[str, Any]]) -> list[dict[str, Any]]:
             attributes=attributes,
         )
         if aggregate["personal_records"]:
-            _add(
-                out,
+            add(
                 key=f"{prefix}:personal_records",
-                name=f"{name} Persönliche Rekorde",
+                name=f"{name} Personal records",
                 value=aggregate["personal_records"],
                 icon="mdi:trophy-award",
                 state_class="total",
                 attributes=attributes,
             )
-        duration_seconds = latest.get("duration_seconds")
-        if duration_seconds is not None:
-            _add(
-                out,
-                key=f"{prefix}:duration",
-                name=f"{name} Dauer",
-                value=_rounded(float(duration_seconds) / 60),
-                unit="min",
-                icon="mdi:timer-outline",
-                device_class="duration",
-                state_class="measurement",
-                attributes=attributes,
-            )
     return out
-
-
-def _add_latest_number(
-    out: list[dict[str, Any]],
-    source: dict[str, Any],
-    *,
-    field: str,
-    key: str,
-    name: str,
-    unit: str,
-    icon: str,
-    attributes: dict[str, Any],
-    device_class: str | None = None,
-    state_class: str = "measurement",
-) -> None:
-    _add(
-        out,
-        key=key,
-        name=name,
-        value=_rounded(_number(source.get(field))),
-        unit=unit,
-        icon=icon,
-        device_class=device_class,
-        state_class=state_class,
-        attributes=attributes,
-    )
 
 
 def _add(
@@ -410,21 +352,32 @@ def _add(
     device_class: str | None = None,
     state_class: str | None = None,
     attributes: dict[str, Any] | None = None,
+    sport: str | None = None,
+    sport_key: str | None = None,
+    sources: list[str] | None = None,
+    exercise: str | None = None,
+    exercise_key: str | None = None,
 ) -> None:
     if value is None:
         return
-    out.append(
-        {
-            "key": key,
-            "name": name,
-            "value": value,
-            "unit": unit,
-            "icon": icon,
-            "device_class": device_class,
-            "state_class": state_class,
-            "attributes": attributes or {},
-        }
-    )
+    descriptor: dict[str, Any] = {
+        "key": key,
+        "name": name,
+        "value": value,
+        "unit": unit,
+        "icon": icon,
+        "device_class": device_class,
+        "state_class": state_class,
+        "attributes": attributes or {},
+    }
+    # Woran der Sensor haengt. Ohne diese Angaben muesste der Sensor den
+    # Schluessel zerlegen, um sein Geraet zu finden — und jede Aenderung am
+    # Schluesselformat wuerde still die Zuordnung kippen.
+    if sport is not None:
+        descriptor |= {"sport": sport, "sport_key": sport_key, "sources": sources or []}
+    if exercise is not None:
+        descriptor |= {"exercise": exercise, "exercise_key": exercise_key}
+    out.append(descriptor)
 
 
 def _workout_attributes(workout: dict[str, Any]) -> dict[str, Any]:

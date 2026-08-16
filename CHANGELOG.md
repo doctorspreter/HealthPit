@@ -1,5 +1,40 @@
 # Änderungsprotokoll
 
+## Home Assistant 2.5.0
+
+### Changed
+
+- **One device per sport.** Every sport that has workouts gets its own device —
+  "Peter Run", "Peter Cycling", "Peter Walk" — hanging under the person next to
+  the health areas. The single "Workouts" device that held a run, a ride and
+  every strength session in one list is gone.
+- **Strength training lives with its machines.** Sessions coming from GymPit go
+  to "Peter Gym workouts", where the exercises already are. One training in one
+  place.
+- **The exercises are no longer in two places at once.** Weight, repetitions,
+  volume and RPE arrive as canonical values from GymPit and are sensors of
+  their own; the workout upload produced a second, German-named copy of the
+  same numbers. Only what a single value cannot say is left: sessions, best
+  weight, total volume, personal records and when the exercise was last
+  trained.
+- **Names no longer carry the sport or the language.** The device is called
+  "Peter Run", so the sensor on it is simply "Distance" instead of „Laufen
+  Distanz". Every name in this integration is English and fixed, because a name
+  travels into an entity ID and must not move with the interface language.
+
+### Removed
+
+- The workout sensors of the previous layout (`{user}_workout_…`) are removed
+  from the entity registry rather than left behind as unavailable rows. Their
+  devices follow once they hold nothing.
+
+### Added
+
+- The backfill covers the exercise aggregates too: sessions and total volume
+  are written into the statistics at the hour each session happened. What the
+  removed sensors showed is a calculation over the stored workouts, so it comes
+  back with its whole history rather than starting at zero today.
+
 ## Home Assistant 2.4.5
 
 ### Changed
