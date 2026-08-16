@@ -392,27 +392,48 @@ def _workout_attributes(workout: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+# Welche Schreibweise welche Sportart meint.
+#
+# Die Sportart kommt als *uebersetzter Anzeigename* herein: die App schickt,
+# was sie auf dem Bildschirm zeigt, also „Laufen" auf Deutsch und „Running" auf
+# Englisch — und je nach Quelle auch „Outdoor Run" oder „Laufen im Freien".
+# Verglichen wurde bisher auf genaue Gleichheit, und damit zerfiel eine
+# Sportart in mehrere: „Peter Run" zaehlte nur die Einheiten, die zufaellig
+# genau „Laufen" hiessen, der Rest lag daneben unter eigenem Namen.
+#
+# Erkannt wird deshalb am Wortanfang, Wort fuer Wort — nicht irgendwo in der
+# Zeichenkette. „t-rad-itional strength training" ist kein Radfahren.
+SPORT_ALIASES: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("Gehen", ("geh", "walk", "spazier")),
+    ("Wandern", ("wander", "hike", "hiking", "trek")),
+    ("Laufen", ("lauf", "run", "jog", "trail", "sprint", "marathon")),
+    ("Radfahren", ("rad", "cycl", "bike", "velo", "spinning")),
+    ("Schwimmen", ("schwimm", "swim")),
+    ("Krafttraining", ("kraft", "strength", "hantel", "gym")),
+    ("Rudern", ("ruder", "row")),
+    ("Yoga", ("yoga",)),
+    ("Pilates", ("pilates",)),
+    ("Klettern", ("klett", "climb", "boulder")),
+    ("HIIT", ("hiit", "intervall", "interval")),
+)
+
+
 def _sport_name(workout: dict[str, Any]) -> str:
+    """Der Name, unter dem eine Sportart gefuehrt wird.
+
+    Alles, was dieselbe Sportart meint, muss hier denselben Namen bekommen —
+    er ist der Schluessel, unter dem die Einheiten zusammenkommen, und aus ihm
+    entsteht das Geraet.
+    """
     value = str(workout.get("sport") or workout.get("title") or "Workout").strip()
     normalized = _slug(value)
-    localized = {
-        "strength": "Krafttraining",
-        "strength_training": "Krafttraining",
-        "weight_training": "Krafttraining",
-        "krafttraining": "Krafttraining",
-        "run": "Laufen",
-        "running": "Laufen",
-        "laufen": "Laufen",
-        "cycling": "Radfahren",
-        "bike": "Radfahren",
-        "radfahren": "Radfahren",
-        "walking": "Gehen",
-        "walk": "Gehen",
-        "gehen": "Gehen",
-        "bouldering": "Bouldern",
-        "bouldern": "Bouldern",
-    }
-    return localized.get(normalized, value.replace("_", " ").strip() or "Workout")
+    if not normalized:
+        return "Workout"
+    words = normalized.split("_")
+    for name, parts in SPORT_ALIASES:
+        if any(word.startswith(part) for word in words for part in parts):
+            return name
+    return value.replace("_", " ").strip() or "Workout"
 
 
 def _sport_icon(sport: str) -> str:

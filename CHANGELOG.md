@@ -1,5 +1,22 @@
 # Änderungsprotokoll
 
+## Home Assistant 2.5.2
+
+### Fixed
+
+- **A sport fell apart into several.** The sport arrives as a translated
+  display name — „Laufen" in German, "Running" in English, "Outdoor Run" from
+  another source — and was compared letter for letter. "Peter Run" therefore
+  counted only the sessions spelled its way, and the rest sat next to it under
+  names of their own. Spellings are folded together now, matched word by word
+  at the start: "t-rad-itional strength training" is not cycling. The sensors
+  of the folded spellings are removed once.
+- **New sensors had no past.** Everything a workout sensor shows is a
+  calculation over workouts Home Assistant already holds, but the backfill only
+  ran when someone asked for it — GymPit after a sync, the app on a history
+  import. Whoever did neither saw empty curves over data that was right there.
+  It now runs by itself, shortly after a workout sensor is created.
+
 ## Home Assistant 2.5.1
 
 ### Fixed

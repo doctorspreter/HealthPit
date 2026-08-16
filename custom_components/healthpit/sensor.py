@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 from urllib.parse import quote
 
@@ -11,6 +12,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.event import async_call_later
 
 from .const import API_BASE, DOMAIN
 from .coordinator import HealthPitCoordinator
@@ -23,8 +25,11 @@ from .entity import (
     user_device_info,
     HealthPitUserEntity,
 )
+from .history import async_import_history
 from .metrics import EXERCISE_METRIC_LABELS, EXERCISE_UNIT_SYMBOLS
 from .precision import rounded_value, suggested_precision
+
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
@@ -76,15 +81,61 @@ async def async_setup_entry(
         if _clear_the_previous_layout(hass, entry, coordinator.user_ids()):
             coordinator.store.mark_completed(PREVIOUS_LAYOUT_MARK)
 
+    def _drop_the_split_sports_once() -> None:
+        """Die Reste der zersplitterten Sportarten, ein einziges Mal.
+
+        „Outdoor Run" und „Laufen" waren zwei Sportarten, seit die Sportart als
+        uebersetzter Anzeigename hereinkommt. Jetzt sind sie eine — und die
+        Sensoren der aufgeloesten Schreibweisen entstehen nicht mehr, blieben
+        aber als „nicht verfuegbar" stehen.
+
+        Wieder mit Merker: eine Regel, die dauerhaft Entitaeten wegraeumt, weil
+        gerade keine Beschreibung zu ihnen passt, wuerde beim ersten leeren
+        Speicher alles mitnehmen.
+        """
+        if coordinator.store.is_completed(SPLIT_SPORTS_MARK):
+            return
+        if _drop_orphaned_workout_entities(hass, coordinator):
+            coordinator.store.mark_completed(SPLIT_SPORTS_MARK)
+
+    @callback
+    def _fill_in_the_past(entities: list[SensorEntity]) -> None:
+        """Nachtragen, sobald ein Trainings-Sensor neu entstanden ist.
+
+        Ein neuer Sensor faengt bei null an. Alles, was er zeigt, ist aber eine
+        Rechnung ueber Trainings, die Home Assistant laengst haelt — die
+        Vergangenheit ist also da und muss nur geschrieben werden.
+
+        Bisher tat das nur, wer danach fragte: GymPit nach dem Abgleich, die
+        App beim Verlaufsimport. Wer beides nicht anstiess, sah leere Kurven,
+        obwohl jede Zahl darin schon vorlag.
+
+        Mit Verzoegerung, weil die Entitaet erst in der Registrierung stehen
+        muss, bevor eine Statistik an ihr haengen kann.
+        """
+        if not any(isinstance(item, HealthPitWorkoutSensor) for item in entities):
+            return
+
+        async def _import(_now: Any = None) -> None:
+            result = await async_import_history(hass, coordinator)
+            _LOGGER.debug("Filled in %s statistics rows for new sensors", result)
+
+        async_call_later(hass, 10, lambda now: hass.async_create_task(_import(now)))
+
     _clear_the_previous_layout_once()
-    async_add_entities(_new_entities())
+    _drop_the_split_sports_once()
+    initial = _new_entities()
+    async_add_entities(initial)
+    _fill_in_the_past(initial)
 
     @callback
     def _add_new() -> None:
         # A new phone, a new metric or a whole new user shows up while running.
         _clear_the_previous_layout_once()
+        _drop_the_split_sports_once()
         if new_entities := _new_entities():
             async_add_entities(new_entities)
+            _fill_in_the_past(new_entities)
 
     entry.async_on_unload(coordinator.async_add_listener(_add_new))
 
@@ -120,6 +171,47 @@ def workout_device_info(
 # wenn spaeter weitere dazukommen: Er ist die Quittung dafuer, dass genau
 # dieses Aufraeumen schon gelaufen ist.
 PREVIOUS_LAYOUT_MARK = "cleared_workout_layout_before_2_5_0"
+
+
+# Das Zusammenfuehren der Schreibweisen einer Sportart (2.5.2).
+SPLIT_SPORTS_MARK = "dropped_split_sports_2_5_2"
+
+
+def _drop_orphaned_workout_entities(
+    hass: HomeAssistant,
+    coordinator: HealthPitCoordinator,
+) -> bool:
+    """Remove workout sensors that no description produces any more.
+
+    "Outdoor Run" and "Laufen" were two sports as long as the sport arrived as
+    a translated display name and was compared letter for letter. Now they are
+    one, and the sensors of the spellings that were folded in have nothing left
+    feeding them.
+
+    Returns whether it could do its work — which needs the descriptions to be
+    there. Right after a restart the store may still be empty, and removing
+    everything then would be exactly wrong.
+    """
+    entities = er.async_get(hass)
+    done = True
+    for user_id in coordinator.user_ids():
+        current = {
+            f"{user_id}_wk_{item.get('key')}"
+            for item in coordinator.user_data(user_id).get("workout_metrics") or []
+        }
+        if not current:
+            # Keine Beschreibungen: entweder hat der Anwender keine Trainings,
+            # oder sie sind noch nicht geladen. Beides ist kein Grund, etwas zu
+            # loeschen.
+            done = False
+            continue
+        prefix = f"{user_id}_wk_sport:"
+        for item in list(entities.entities.values()):
+            if item.platform != DOMAIN or not item.unique_id.startswith(prefix):
+                continue
+            if item.unique_id not in current:
+                entities.async_remove(item.entity_id)
+    return done
 
 
 def _clear_the_previous_layout(

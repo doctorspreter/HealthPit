@@ -100,15 +100,16 @@ def gym_device_info(coordinator: HealthPitCoordinator, user_id: str) -> DeviceIn
 # sich mit der Sprache nicht aendern — deshalb hier die feste Uebersetzung.
 SPORT_DEVICE_NAMES = {
     "laufen": "Run",
-    "radfahren": "Cycling",
     "gehen": "Walk",
-    "schwimmen": "Swim",
     "wandern": "Hike",
-    "bouldern": "Bouldering",
+    "radfahren": "Cycling",
+    "schwimmen": "Swim",
     "krafttraining": "Strength training",
+    "rudern": "Rowing",
+    "klettern": "Climbing",
     "yoga": "Yoga",
     "pilates": "Pilates",
-    "rudern": "Rowing",
+    "hiit": "HIIT",
 }
 
 
