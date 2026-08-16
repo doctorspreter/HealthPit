@@ -110,6 +110,17 @@ def _required_text(value: Any, *, field: str, default: str = "", max_length: int
     return text
 
 
+def _text_or_none(value: Any, *, max_length: int = 0) -> str | None:
+    """Optionaler Text. Fehlt er, ist das keine Stoerung — aeltere App-Staende
+    schicken ihn nicht."""
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    return text[:max_length] if max_length else text
+
+
 def _number(value: Any) -> float | None:
     if value in (None, "") or isinstance(value, bool):
         return None
@@ -531,6 +542,11 @@ def normalize_workout(raw: Any, *, device_id: str) -> dict[str, Any]:
         "id": workout_id,
         "source": source,
         "sport": _required_text(raw.get("sport"), field="sport", default="Workout", max_length=80),
+        # Die sprachneutrale Sportart, sofern die App sie schickt. Der Name
+        # darueber ist uebersetzt und taugt nur zur Anzeige: „Laufen" und
+        # „Running" sind dieselbe Sportart, und danach zu gruppieren zerlegte
+        # sie in mehrere.
+        "sport_type": _text_or_none(_first(raw, "sport_type", "sportType"), max_length=64),
         "title": _required_text(raw.get("title"), field="title", default="Workout", max_length=160),
         "start_time": start,
         "start": start,

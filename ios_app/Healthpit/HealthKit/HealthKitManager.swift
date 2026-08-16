@@ -973,6 +973,7 @@ final class HealthKitManager: @unchecked Sendable {
         return WorkoutSummary(uuid: workout.uuid,
                               externalWorkoutID: externalWorkoutID?.isEmpty == false ? externalWorkoutID : nil,
                               activityName: type.displayName,
+                              sportType: AppleHealthIngest.sportType(type),
                               symbol: type.symbol,
                               sourceName: workout.sourceRevision.source.name,
                               start: workout.startDate,

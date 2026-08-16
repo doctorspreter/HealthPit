@@ -144,6 +144,7 @@ final class HealthQuery {
                               uuid: UUID(uuidString: workout.sourceRecordID ?? "") ?? UUID(),
                               externalWorkoutID: workout.metadata["origin_external_id"],
                               activityName: type.name,
+                              sportType: workout.sportType,
                               symbol: type.symbol,
                               sourceName: workout.sourceAppID,
                               start: workout.startTime,

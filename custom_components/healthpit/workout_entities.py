@@ -418,13 +418,41 @@ SPORT_ALIASES: tuple[tuple[str, tuple[str, ...]], ...] = (
 )
 
 
+# Die sprachneutralen Sportarten der App in ihren Namen.
+#
+# Ab diesem App-Stand reist die Sportart als Kennung mit — `RUNNING`, nicht
+# „Laufen". Dann muss hier nichts mehr geraten werden.
+SPORT_TYPE_NAMES = {
+    "RUNNING": "Laufen",
+    "WALKING": "Gehen",
+    "HIKING": "Wandern",
+    "CYCLING": "Radfahren",
+    "SWIMMING": "Schwimmen",
+    "STRENGTH_TRAINING": "Krafttraining",
+    "ROWING": "Rudern",
+    "CLIMBING": "Klettern",
+    "YOGA": "Yoga",
+    "PILATES": "Pilates",
+    "HIIT": "HIIT",
+}
+
+
 def _sport_name(workout: dict[str, Any]) -> str:
     """Der Name, unter dem eine Sportart gefuehrt wird.
 
     Alles, was dieselbe Sportart meint, muss hier denselben Namen bekommen —
     er ist der Schluessel, unter dem die Einheiten zusammenkommen, und aus ihm
     entsteht das Geraet.
+
+    Erste Wahl ist die Kennung aus der Datenbank der App. Sie ist eindeutig und
+    bewegt sich nicht. Fehlt sie — aeltere App-Staende, und alles, was vorher
+    schon gespeichert wurde —, bleibt nur der uebersetzte Anzeigename und
+    damit das Erkennen an Wortanfaengen.
     """
+    sport_type = str(workout.get("sport_type") or "").strip().upper()
+    if sport_type:
+        return SPORT_TYPE_NAMES.get(sport_type, sport_type.replace("_", " ").title())
+
     value = str(workout.get("sport") or workout.get("title") or "Workout").strip()
     normalized = _slug(value)
     if not normalized:

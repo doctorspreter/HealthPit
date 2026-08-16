@@ -199,6 +199,11 @@ def _merge_workout(imported: list[dict[str, Any]]) -> dict[str, Any]:
             if item.get("source") and item.get("workout_id")
         },
         "sport": sport,
+        # Die sprachneutrale Sportart geht mit. Ohne sie faellt ein
+        # zusammengefuehrtes Training zurueck auf das Erraten aus dem
+        # uebersetzten Namen — und landete unter einer anderen Sportart als
+        # dieselbe Einheit ohne Zusammenfuehrung.
+        "sport_type": _first_present(imported, "sport_type"),
         "title": title,
         "start_time": start,
         "start": start,

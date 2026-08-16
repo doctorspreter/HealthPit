@@ -1,5 +1,21 @@
 # Änderungsprotokoll
 
+## Home Assistant 2.6.0
+
+### Changed
+
+- **The workouts come from the database.** The app used to read them straight
+  out of HealthKit for the upload, which threw away everything the database had
+  already decided: the same session recorded by three apps was three workouts
+  again, disabled sources were uploaded anyway, and the sport travelled as a
+  translated display name.
+- **The sport travels as an identifier.** `sport_type: "RUNNING"` next to the
+  display name. Home Assistant no longer has to guess a sport from „Laufen",
+  "Running" or "Outdoor Run" — the guessing stays only for what is already
+  stored and for older app versions.
+- A merged workout keeps its canonical sport, so the same session does not land
+  under a different sport once it has been merged.
+
 ## Home Assistant 2.5.2
 
 ### Fixed
@@ -196,6 +212,17 @@
 
 - Non-finite metric values are rejected before they can enter storage or
   long-term statistics.
+
+## 26.08.4
+
+### Behoben
+
+- **Der Trainings-Upload las an der Datenbank vorbei.** Er holte die Trainings
+  unmittelbar aus HealthKit — und damit war jede Entscheidung der Datenbank
+  wieder verworfen: dieselbe Einheit aus drei Apps war erneut drei Trainings,
+  abgeschaltete Quellen gingen trotzdem hoch, und die Sportart reiste als
+  übersetzter Anzeigename. Jetzt kommt sie aus der Datenbank, mitsamt der
+  sprachneutralen Sportart.
 
 ## 26.08.3
 

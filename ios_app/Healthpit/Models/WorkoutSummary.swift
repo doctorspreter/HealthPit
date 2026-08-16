@@ -15,8 +15,16 @@ struct WorkoutSummary: Identifiable, Hashable, Codable, Sendable {
     /// ID des Workouts in der Ursprungs-App, sofern diese sie in HealthKit hinterlegt.
     /// GymPit verwendet hier dieselbe Workout-ID wie beim Bridge-Upload.
     let externalWorkoutID: String?
-    /// Anzeigename des Trainingstyps (z. B. "Laufen").
+    /// Anzeigename des Trainingstyps (z. B. "Laufen"). Uebersetzt — taugt zur
+    /// Anzeige, niemals als Kennung.
     let activityName: String
+    /// Sprachneutrale Sportart, wie die Datenbank sie fuehrt (`RUNNING`).
+    ///
+    /// Der Anzeigename wandert mit der Sprache: Dieselbe Einheit heisst
+    /// „Laufen" oder „Running", je nachdem, wie die App gerade eingestellt
+    /// ist. Wer darauf gruppiert, zerlegt eine Sportart in mehrere. Hier steht
+    /// die Kennung, die sich nicht bewegt.
+    let sportType: String
     /// SF-Symbol passend zum Typ.
     let symbol: String
     /// Ursprungs-App in Apple Health, z. B. "Fitness", "Gympit" oder "Apple Watch".
@@ -35,6 +43,7 @@ struct WorkoutSummary: Identifiable, Hashable, Codable, Sendable {
          uuid: UUID,
          externalWorkoutID: String? = nil,
          activityName: String,
+         sportType: String = "OTHER",
          symbol: String,
          sourceName: String? = nil,
          start: Date,
@@ -48,6 +57,7 @@ struct WorkoutSummary: Identifiable, Hashable, Codable, Sendable {
         self.uuid = uuid
         self.externalWorkoutID = externalWorkoutID
         self.activityName = activityName
+        self.sportType = sportType
         self.symbol = symbol
         self.sourceName = sourceName
         self.start = start

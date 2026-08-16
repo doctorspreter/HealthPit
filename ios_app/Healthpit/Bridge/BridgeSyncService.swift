@@ -140,7 +140,14 @@ struct BridgeWorkoutReconcilePayload: Encodable {
 struct BridgeImportedWorkoutPayload: Encodable {
     let id: String
     let source: String
+    /// Anzeigename, uebersetzt. Bleibt fuer aeltere Integrationsstaende drin.
     let sport: String
+    /// Sprachneutrale Sportart aus der Datenbank (`RUNNING`).
+    ///
+    /// Ohne sie musste Home Assistant die Sportart aus dem uebersetzten Namen
+    /// zurueckraten — und „Laufen", „Running" und „Outdoor Run" wurden zu drei
+    /// Sportarten.
+    let sportType: String
     let title: String
     let start: Date
     let end: Date
@@ -156,6 +163,7 @@ struct BridgeImportedWorkoutPayload: Encodable {
 
     enum CodingKeys: String, CodingKey {
         case id, source, sport, title, start, end, notes, route, exercises
+        case sportType = "sport_type"
         case distanceKm = "distance_km"
         case energyKcal = "energy_kcal"
         case averageHeartRate = "average_heart_rate"
@@ -570,7 +578,7 @@ final class BridgeSyncService {
     func fullResyncAppleHealthWorkouts() async throws -> Int {
         guard isSharingEnabled(BridgeDataTypeDescriptor.workoutsID) else { return 0 }
         let credentials = try await bridgeCredentials()
-        let workouts = try await health.fetchAllWorkouts()
+        let workouts = await databaseWorkouts()
         let uploadableWorkouts = visibleAppleHealthWorkouts(workouts)
         let uploaded = try await uploadAppleHealthWorkouts(uploadableWorkouts, credentials: credentials)
         _ = try await reconcileAppleHealthWorkouts(workouts: workouts, credentials: credentials)
@@ -595,7 +603,7 @@ final class BridgeSyncService {
 
         var uploadedWorkouts = 0
         if isSharingEnabled(BridgeDataTypeDescriptor.workoutsID) {
-            let workouts = try await health.fetchAllWorkouts()
+            let workouts = await databaseWorkouts()
             let visibleWorkouts = visibleAppleHealthWorkouts(workouts)
             uploadedWorkouts = try await uploadAppleHealthWorkouts(
                 visibleWorkouts,
@@ -1132,15 +1140,31 @@ final class BridgeSyncService {
         return try await uploadWorkouts(enrichedWorkouts, credentials: credentials)
     }
 
+
+    /// Die Trainings, die nach Home Assistant gehen — aus der Datenbank.
+    ///
+    /// Frueher stand hier `health.fetchAllWorkouts()`, also HealthKit
+    /// unmittelbar. Damit ging alles verloren, was die Datenbank vorher
+    /// entschieden hatte: dieselbe Einheit aus drei Apps war wieder drei
+    /// Trainings, die Sportart reiste als uebersetzter Anzeigename, und
+    /// abgeschaltete Quellen wurden trotzdem hochgeladen.
+    ///
+    /// Die Datenbank ist die Quelle. Was hier herauskommt, ist genau das, was
+    /// auch die Bildschirme der App zeigen.
+    private func databaseWorkouts(since start: Date? = nil) async -> [WorkoutSummary] {
+        let interval = start.map { DateInterval(start: $0, end: .now.addingTimeInterval(86_400)) }
+        return await HealthQuery.shared.workouts(in: interval)
+    }
+
     private func uploadAppleHealthWorkoutDelta(credentials: BridgeCredentials) async throws -> Int {
         guard isSharingEnabled(BridgeDataTypeDescriptor.workoutsID) else { return 0 }
         let cutoff = appleHealthUploadCutoff()
         let workouts: [WorkoutSummary]
         if let cutoff {
-            workouts = (try? await health.fetchWorkouts(start: cutoff.addingTimeInterval(-3600))) ?? []
+            workouts = await databaseWorkouts(since: cutoff.addingTimeInterval(-3600))
         } else {
             let fallback = Calendar.healthApp.date(byAdding: .day, value: -7, to: .now) ?? .now
-            workouts = (try? await health.fetchWorkouts(start: fallback)) ?? []
+            workouts = await databaseWorkouts(since: fallback)
         }
         guard !workouts.isEmpty else { return 0 }
         let uploadableWorkouts = visibleAppleHealthWorkouts(workouts)
@@ -1182,7 +1206,7 @@ final class BridgeSyncService {
     }
 
     private func reconcileAppleHealthWorkouts(credentials: BridgeCredentials) async throws -> Int {
-        let workouts = try await health.fetchAllWorkouts()
+        let workouts = await databaseWorkouts()
         await HealthWorkoutCacheStore.shared.saveAllTime(workouts)
         return try await reconcileAppleHealthWorkouts(workouts: workouts, credentials: credentials)
     }
@@ -1723,6 +1747,7 @@ private extension BridgeImportedWorkoutPayload {
         self.init(id: workout.uuid.uuidString,
                   source: LocalWorkout.Source.appleHealth.rawValue,
                   sport: workout.activityName,
+                  sportType: workout.sportType,
                   title: workout.activityName,
                   start: workout.start,
                   end: workout.end,
@@ -1741,6 +1766,7 @@ private extension BridgeImportedWorkoutPayload {
         self.init(id: workout.id.uuidString,
                   source: workout.source.rawValue,
                   sport: workout.sport,
+                  sportType: workout.sport.uppercased(),
                   title: workout.title,
                   start: workout.start,
                   end: workout.end,
