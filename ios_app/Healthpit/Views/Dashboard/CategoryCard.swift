@@ -555,7 +555,7 @@ struct RecordsCard: View {
     }
 
     private func load() async {
-        records = await WorkoutRecordCacheStore.shared.load()
+        records = WorkoutRecordAnalyzer.records(for: await HealthQuery.shared.unifiedWorkouts())
         if let record = records.first {
             title = record.localizedValue
             detail = L10n.format("%@: %@", record.localizedSport, record.localizedTitle)

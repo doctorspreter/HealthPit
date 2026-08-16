@@ -91,6 +91,25 @@ enum ManualWorkoutWriter {
         return out
     }
 
+    /// Loescht alles, was ueber diesen Weg hereinkam — von Hand, GPX, TCX.
+    ///
+    /// Weich, wie beim einzelnen Training: Die Zeilen bleiben mit `deleted_at`
+    /// stehen, damit ein erneuter Import sie nicht wieder anlegt.
+    @discardableResult
+    static func delete(source: LocalWorkout.Source) async -> Int {
+        guard let store = try? await HealthPitData.shared.store(),
+              let stored = try? await store.workouts() else { return 0 }
+        var deleted = 0
+        for workout in stored {
+            guard let local = local(from: workout), local.source == source else { continue }
+            var updated = workout
+            updated.deletedAt = Date()
+            updated.updatedAt = Date()
+            if (try? await store.update(updated)) != nil { deleted += 1 }
+        }
+        return deleted
+    }
+
     static func incoming(_ workout: LocalWorkout) -> IncomingWorkout {
         var observations: [IncomingObservation] = []
         func add(_ metricID: MetricID,

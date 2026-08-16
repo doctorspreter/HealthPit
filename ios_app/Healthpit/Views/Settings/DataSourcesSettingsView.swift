@@ -140,7 +140,6 @@ struct DataSourcesSettingsView: View {
         if let store = try? await HealthPitData.shared.store() {
             try? await store.resetObservationData()
         }
-        await LocalWorkoutStore.shared.deleteAll()
         let defaults = UserDefaults.standard
         defaults.removeObject(forKey: BridgeSettings.hiddenHealthWorkoutIDsKey)
         actionMessage = L10n.string("Die lokalen App-Daten wurden gelöscht.")
@@ -494,7 +493,7 @@ private struct LocalDataSourcesSettingsView: View {
 
     @MainActor
     private func delete(_ source: LocalWorkout.Source) async {
-        await LocalWorkoutStore.shared.delete(source: source)
+        await ManualWorkoutWriter.delete(source: source)
         sourcePendingDeletion = nil
         message = L10n.string("Lokale Trainings wurden gelöscht:") + " \(source.displayName)"
     }

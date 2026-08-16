@@ -240,12 +240,16 @@ struct RecordsView: View {
     }
 
     private func loadCachedRecords() async {
-        records = await WorkoutRecordCacheStore.shared.load()
+        // Gerechnet, nicht nachgeschlagen: Die Trainings kommen ohnehin aus der
+        // Datenbank, und die Rekorde sind eine Rechnung darueber. Sie zusaetzlich
+        // in einer Datei zu fuehren hiess, denselben Bestand zweimal zu halten —
+        // und beim Auseinanderlaufen gewann die Datei.
         await loadRecordWorkouts()
+        records = WorkoutRecordAnalyzer.records(for: recordWorkouts)
         ensureSelectedSportExists()
         visibleRecordLimit = min(max(visibleRecordLimit, 10), max(visibleRecords.count, 10))
         if records.isEmpty {
-            message = L10n.string("Noch keine gespeicherten Rekorde. Zum Berechnen nach unten ziehen.")
+            message = L10n.string("Mehr Workouts oder importierte Trainings benötigt.")
         }
     }
 
@@ -253,9 +257,8 @@ struct RecordsView: View {
         isLoading = true
         message = nil
         defer { isLoading = false }
-        await WorkoutRecordRefreshService.shared.refreshFromLocalCaches()
-        records = await WorkoutRecordCacheStore.shared.load()
         await loadRecordWorkouts()
+        records = WorkoutRecordAnalyzer.records(for: recordWorkouts)
         ensureSelectedSportExists()
         visibleRecordLimit = min(max(visibleRecordLimit, 10), max(visibleRecords.count, 10))
         if records.isEmpty {

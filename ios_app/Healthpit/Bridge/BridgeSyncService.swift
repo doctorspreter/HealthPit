@@ -545,7 +545,6 @@ final class BridgeSyncService {
         await SyncActivity.shared.enter(.records)
         defaults.set(Date(), forKey: BridgeSettings.lastSyncDateKey)
         BackgroundSyncScheduler.schedule()
-        await WorkoutRecordRefreshService.shared.refreshFromLocalCaches()
         return metrics.count
             + uploadedAppleHealthWorkouts
             + deletedAppleHealthWorkouts
@@ -557,14 +556,12 @@ final class BridgeSyncService {
     @discardableResult
     func uploadLocalWorkouts() async throws -> Int {
         let uploaded = try await uploadLocalWorkouts(credentials: try await bridgeCredentials())
-        await WorkoutRecordRefreshService.shared.refreshFromLocalCaches()
         return uploaded
     }
 
     @discardableResult
     func downloadImportedWorkouts() async throws -> Int {
         let downloaded = try await downloadImportedWorkouts(credentials: try await bridgeCredentials())
-        await WorkoutRecordRefreshService.shared.refreshFromLocalCaches()
         return downloaded
     }
 
@@ -584,7 +581,6 @@ final class BridgeSyncService {
         rememberAppleHealthUploadCutoff(from: workouts)
         defaults.set(Date().addingTimeInterval(-30), forKey: BridgeSettings.appleHealthWorkoutPackageCursorKey)
         BackgroundSyncScheduler.schedule()
-        await WorkoutRecordRefreshService.shared.refreshFromLocalCaches()
         return uploaded
     }
 
@@ -659,7 +655,6 @@ final class BridgeSyncService {
         let workoutRows = try await importWorkoutHistory(credentials: credentials)
         defaults.set(Date(), forKey: BridgeSettings.lastSyncDateKey)
         BackgroundSyncScheduler.schedule()
-        await WorkoutRecordRefreshService.shared.refreshFromLocalCaches()
         return BridgeHistoryImportResult(metricCount: metricCount,
                                          pointCount: pointCount,
                                          workoutCount: uploadedWorkouts,

@@ -234,6 +234,12 @@
 
 ### Entfernt
 
+- **Die letzten Dateien neben der Datenbank.** Die Rekordseite las die
+  Trainings aus der Datenbank *und* die daraus gerechneten Rekorde aus einer
+  Datei — sie werden jetzt aus den Trainings gerechnet, die ohnehin schon
+  dastehen. Der Speicher für die selbst erfassten Trainings ist ganz
+  verschwunden: Löschen geht in die Datenbank, die Sicherung liest von dort,
+  und eine Sicherung der alten Fassung landet beim Einlesen ebenfalls dort.
 - **Vier Reste beim Nachzählen:** Der Zusammenführer zweier Bestände in der
   Trainingsliste war nach dem Umbau unerreichbar (rund 160 Zeilen), der Puls im
   Editor und das Training im undatierten Import lasen noch an der Datenbank

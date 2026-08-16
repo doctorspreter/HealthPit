@@ -313,7 +313,6 @@ struct WorkoutListView: View {
             await ManualWorkoutWriter.delete(workoutID: workoutID)
         }
         if let local = item.local {
-            await LocalWorkoutStore.shared.delete(id: local.id)
             _ = try? await BridgeSyncService.shared.deleteImportedWorkout(id: local.id)
         }
         if let health = item.health {

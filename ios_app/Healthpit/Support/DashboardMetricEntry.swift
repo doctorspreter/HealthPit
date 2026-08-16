@@ -1,5 +1,5 @@
 //
-//  DashboardMetricCacheStore.swift
+//  DashboardMetricEntry.swift
 //  Healthpit
 //
 //  Ein Kennwert der Startseite.

@@ -115,8 +115,10 @@ enum HealthPitBackupService {
             deviceID: deviceID,
             username: username,
             // Weiterhin dabei: eine Sicherung dieser Fassung laesst sich damit
-            // auch von einer aelteren App lesen.
-            workouts: await LocalWorkoutStore.shared.load(),
+            // auch von einer aelteren App lesen. Abgeleitet aus der Datenbank,
+            // nicht aus der Datei daneben — sonst traegt die Sicherung Kopien,
+            // die inzwischen geloescht sind.
+            workouts: await HealthQuery.shared.unifiedWorkouts().compactMap(\.local),
             observations: observations
         )
     }
@@ -154,8 +156,10 @@ enum HealthPitBackupService {
            let report = try? await ObservationBackupService.restore(observations, into: store) {
             restored += report.workouts + report.observations
         }
-        if !backup.workouts.isEmpty {
-            await LocalWorkoutStore.shared.saveMany(backup.workouts)
+        // Eine Sicherung der Fassung 1 kennt nur diese Liste. Sie geht denselben
+        // Weg wie ein von Hand erfasstes Training: in die Datenbank.
+        if backup.observations == nil, !backup.workouts.isEmpty {
+            await ManualWorkoutWriter.saveMany(backup.workouts)
             restored += backup.workouts.count
         }
         return restored

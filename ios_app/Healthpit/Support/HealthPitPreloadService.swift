@@ -49,7 +49,6 @@ actor HealthPitPreloadService {
         // Nichts mehr vorzuladen: Die Bildschirme lesen die Datenbank, und die
         // liegt auf demselben Geraet. Ein Zwischenspeicher davor waere eine
         // zweite Kopie desselben Bestands.
-        await WorkoutRecordRefreshService.shared.refreshFromLocalCaches()
     }
 
 }
