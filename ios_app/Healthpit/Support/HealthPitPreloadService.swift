@@ -31,11 +31,10 @@ actor HealthPitPreloadService {
 
         await health.prepareForBackgroundWork()
 
+        // Was Home Assistant zurueckschickt — das ist das Einzige, was hier
+        // wirklich von aussen kommt. Der Rest steht in der Datenbank, und die
+        // liegt auf demselben Geraet.
         _ = try? await BridgeSyncService.shared.downloadImportedWorkouts()
-        // Do not warm this cache before the bridge download has completed.
-        // Otherwise the first workout screen can observe the old GymPit copy
-        // without its exercises and keep showing it for the whole view life.
-        _ = await LocalWorkoutStore.shared.loadSummaries()
     }
 
     /// Lokaler Abgleich für Pull-to-refresh: nur Apple Health lesen und lokale

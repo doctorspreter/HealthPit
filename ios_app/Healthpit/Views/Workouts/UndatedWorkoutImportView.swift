@@ -148,7 +148,7 @@ struct UndatedWorkoutImportView: View {
 
     private func mergedWorkout(for item: UnifiedWorkout) async -> LocalWorkout {
         if let localSummary = item.local {
-            var workout = await LocalWorkoutStore.shared.fullWorkout(id: localSummary.id) ?? localSummary
+            var workout = await HealthQuery.shared.localWorkout(id: localSummary.id) ?? localSummary
             workout.route = imported.workout.route
             workout.distanceKm = imported.workout.distanceKm ?? workout.distanceKm
             workout.energyKcal = imported.workout.energyKcal ?? workout.energyKcal

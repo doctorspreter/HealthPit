@@ -731,7 +731,11 @@ struct LocalWorkoutDetailView: View {
         guard importedHeartRate?.samples.isEmpty != false else { return }
         isLoadingHeartRate = true
         defer { isLoadingHeartRate = false }
-        fallbackHeartRate = try? await HealthKitManager.shared.heartRateSummary(start: workout.start, end: workout.end)
+        // Ueber die Ausleseschicht: Sie holt die Pulskurve beim ersten Mal aus
+        // Apple Health und behaelt sie danach in der Datenbank.
+        if let healthWorkout {
+            fallbackHeartRate = await HealthQuery.shared.workoutDetail(for: healthWorkout).heartRate
+        }
     }
 
     private func loadHealthDetail() async {

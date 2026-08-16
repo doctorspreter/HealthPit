@@ -234,6 +234,11 @@
 
 ### Entfernt
 
+- **Vier Reste beim Nachzählen:** Der Zusammenführer zweier Bestände in der
+  Trainingsliste war nach dem Umbau unerreichbar (rund 160 Zeilen), der Puls im
+  Editor und das Training im undatierten Import lasen noch an der Datenbank
+  vorbei, und die Brücke holte die selbst erfassten Trainings weiterhin aus der
+  Datei daneben — was dort gelöscht war, ging trotzdem hoch.
 - **Drei Zwischenspeicher, die nur noch geschrieben wurden.** Trainings, Schlaf
   und die Startseiten-Kennzahlen wurden bei jedem Abgleich in Dateien
   geschrieben, die seit dem Umbau niemand mehr liest — eine zweite Kopie

@@ -19,9 +19,6 @@ struct WorkoutListView: View {
     ]
 
     @State private var range: TimeRange = .month
-    @State private var healthWorkouts: [WorkoutSummary] = []
-    @State private var allTimeHealthWorkouts: [WorkoutSummary] = []
-    @State private var localWorkouts: [LocalWorkout] = []
     @State private var items: [UnifiedWorkout] = []
     @State private var allTimeItems: [UnifiedWorkout] = []
     @State private var referenceDate = Date()
@@ -270,16 +267,6 @@ struct WorkoutListView: View {
         isLoading = false
     }
 
-    private func rebuildItems(allTimeHealth: [WorkoutSummary]? = nil) {
-        if let allTimeHealth {
-            allTimeHealthWorkouts = allTimeHealth
-        }
-        let sourceHealth = allTimeHealthWorkouts.isEmpty ? healthWorkouts : allTimeHealthWorkouts
-        allTimeItems = UnifiedWorkoutBuilder.build(health: sourceHealth,
-                                                   local: localWorkouts)
-        filterItemsForSelectedRange()
-    }
-
     private func filterItemsForSelectedRange() {
         let interval = range.dateInterval(referenceDate: referenceDate)
         items = allTimeItems.filter { interval.contains($0.startDate) }
@@ -501,159 +488,6 @@ struct UnifiedStrengthSet: Identifiable, Hashable {
         rpe = set.rpe
         volumeKg = set.volumeKg ?? (set.weightKg ?? 0) * (set.reps ?? 0)
         isPersonalRecord = set.isPersonalRecord
-    }
-}
-
-enum UnifiedWorkoutBuilder {
-    nonisolated static func build(health: [WorkoutSummary],
-                                  local: [LocalWorkout]) -> [UnifiedWorkout] {
-        let health = deduplicatedHealth(health)
-        let local = local.sorted { $0.start < $1.start }
-        let healthByDay = Dictionary(grouping: health, by: { dayIndex(for: $0.start) })
-        let gympitLocalByID = Dictionary(
-            local.lazy.filter { $0.source == .gympit }.map { ($0.id, $0) },
-            uniquingKeysWith: { lhs, _ in lhs }
-        )
-        var usedHealth = Set<UUID>()
-        var usedLocal = Set<UUID>()
-        var out: [UnifiedWorkout] = []
-
-        for workout in health where !usedHealth.contains(workout.uuid) {
-            let exactLocal = workout.externalWorkoutUUID.flatMap { gympitLocalByID[$0] }
-            let localMatch = if let exactLocal, !usedLocal.contains(exactLocal.id) {
-                exactLocal
-            } else {
-                closestLocal(to: workout.start, in: local, used: usedLocal)
-            }
-            if let localMatch { usedLocal.insert(localMatch.id) }
-            out.append(UnifiedWorkout(id: "health-\(workout.uuid)",
-                                      health: workout,
-                                      local: localMatch))
-        }
-
-        for workout in local where !usedLocal.contains(workout.id) {
-            let group = localCandidates(around: workout.start, tolerance: 10 * 60, in: local).filter { candidate in
-                !usedLocal.contains(candidate.id) && isSameLocalWorkout(workout, candidate)
-            }
-            group.forEach { usedLocal.insert($0.id) }
-            let best = group.max { qualityScore($0) < qualityScore($1) } ?? workout
-            let id = group.map { $0.id.uuidString }.sorted().joined(separator: "-")
-            out.append(UnifiedWorkout(id: "local-\(id)",
-                                      health: nil,
-                                      local: best))
-        }
-
-        return out.sorted { $0.startDate > $1.startDate }
-    }
-
-    private nonisolated static func deduplicatedHealth(_ workouts: [WorkoutSummary]) -> [WorkoutSummary] {
-        var byKey: [String: WorkoutSummary] = [:]
-        for workout in workouts {
-            let key: String
-            if let externalWorkoutID = workout.externalWorkoutID {
-                let source = workout.sourceName?.lowercased() ?? ""
-                key = "external|\(source)|\(externalWorkoutID.lowercased())"
-            } else {
-                key = [
-                    workout.activityName.lowercased(),
-                    String(Int(workout.start.timeIntervalSince1970.rounded())),
-                    String(Int(workout.end.timeIntervalSince1970.rounded())),
-                    String(Int(workout.duration.rounded())),
-                    workout.distanceKm.map { String(format: "%.4f", $0) } ?? "",
-                    workout.energyKcal.map { String(format: "%.2f", $0) } ?? ""
-                ].joined(separator: "|")
-            }
-            if let existing = byKey[key] {
-                let existingScore = (existing.distanceKm ?? 0) + (existing.energyKcal ?? 0)
-                let candidateScore = (workout.distanceKm ?? 0) + (workout.energyKcal ?? 0)
-                if candidateScore > existingScore {
-                    byKey[key] = workout
-                }
-            } else {
-                byKey[key] = workout
-            }
-        }
-        return Array(byKey.values)
-    }
-
-    private nonisolated static func closestLocal(to date: Date,
-                                                 in local: [LocalWorkout],
-                                                 used: Set<UUID>) -> LocalWorkout? {
-        localCandidates(around: date, tolerance: 90 * 60, in: local)
-            .filter { !used.contains($0.id) }
-            .min { abs($0.start.timeIntervalSince(date)) < abs($1.start.timeIntervalSince(date)) }
-    }
-
-    private nonisolated static func healthCandidates(
-        around date: Date,
-        groupedByDay: [Int: [WorkoutSummary]]
-    ) -> [WorkoutSummary] {
-        let day = dayIndex(for: date)
-        return (day - 1...day + 1).flatMap { groupedByDay[$0] ?? [] }
-    }
-
-    private nonisolated static func dayIndex(for date: Date) -> Int {
-        Int(date.timeIntervalSinceReferenceDate / 86_400)
-    }
-
-    private nonisolated static func localCandidates(
-        around date: Date,
-        tolerance: TimeInterval,
-        in sorted: [LocalWorkout]
-    ) -> ArraySlice<LocalWorkout> {
-        let lowerDate = date.addingTimeInterval(-tolerance)
-        let upperDate = date.addingTimeInterval(tolerance)
-        let lower = lowerBound(for: lowerDate, in: sorted)
-        let upper = lowerBound(for: upperDate.addingTimeInterval(.ulpOfOne), in: sorted)
-        return sorted[lower..<upper]
-    }
-
-    private nonisolated static func lowerBound(for date: Date, in sorted: [LocalWorkout]) -> Int {
-        var lower = 0
-        var upper = sorted.count
-        while lower < upper {
-            let middle = lower + (upper - lower) / 2
-            if sorted[middle].start < date {
-                lower = middle + 1
-            } else {
-                upper = middle
-            }
-        }
-        return lower
-    }
-
-    private nonisolated static func isSameLocalWorkout(_ lhs: LocalWorkout, _ rhs: LocalWorkout) -> Bool {
-        if lhs.id == rhs.id { return true }
-        if lhs.source == rhs.source { return false }
-        if abs(lhs.start.timeIntervalSince(rhs.start)) > 10 * 60 { return false }
-
-        let allowedDurationDiff = max(10 * 60, max(lhs.duration, rhs.duration) * 0.25)
-        if lhs.duration > 0, rhs.duration > 0, abs(lhs.duration - rhs.duration) > allowedDurationDiff {
-            return false
-        }
-
-        if let lhsDistance = lhs.distanceKm, let rhsDistance = rhs.distanceKm {
-            let allowedDistanceDiff = max(0.5, max(lhsDistance, rhsDistance) * 0.2)
-            if abs(lhsDistance - rhsDistance) > allowedDistanceDiff {
-                return false
-            }
-        }
-
-        return true
-    }
-
-    private nonisolated static func qualityScore(_ workout: LocalWorkout) -> Double {
-        var score = workout.duration
-        score += Double(workout.exercises.count) * 10_000
-        score += Double(workout.exercises.flatMap(\.sets).count) * 1_000
-        if let distance = workout.distanceKm { score += distance * 100 }
-        score += Double(workout.route.count)
-        if workout.averageHeartRate != nil { score += 500 }
-        if workout.maxHeartRate != nil { score += 250 }
-        if !workout.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { score += 50 }
-        if workout.weather != nil { score += 25 }
-        if workout.injury?.isEmpty == false { score += 25 }
-        return score
     }
 }
 

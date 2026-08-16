@@ -1132,7 +1132,10 @@ final class BridgeSyncService {
 
     private func uploadLocalWorkouts(credentials: BridgeCredentials) async throws -> Int {
         guard isSharingEnabled(BridgeDataTypeDescriptor.workoutsID) else { return 0 }
-        let workouts = await LocalWorkoutStore.shared.load()
+        // Auch die selbst erfassten Trainings aus der Datenbank. Aus der Datei
+        // daneben zu lesen hiess: Was dort geloescht wurde, ging trotzdem hoch.
+        let workouts = await HealthQuery.shared.unifiedWorkouts()
+            .compactMap(\.local)
             .filter { [.manual, .gpx, .tcx].contains($0.source) }
         guard !workouts.isEmpty else { return 0 }
         let enrichedWorkouts = await ManualWorkoutWriter.enriched(workouts)
