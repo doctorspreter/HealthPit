@@ -803,3 +803,16 @@
 "Daten importieren" = "Importer des données";
 "Mit zwei Fingern zoomen · Wischen zum Verschieben · Tippen für Wert" = "Pincez pour zoomer · balayez pour déplacer · touchez pour la valeur";
 "Vergleich mit den vorherigen 90 Tagen" = "Comparaison avec les 90 jours précédents";
+
+/* Duplikate: Zusammenfuehren mit Auswahl */
+"Beide Aufzeichnungen erscheinen ab jetzt als ein Training. Welche davon behalten wird, entscheidet, was in Apple Health gelöscht werden kann." = "Les deux enregistrements apparaîtront désormais comme une seule séance. Celui que vous gardez détermine ce qui peut être supprimé dans Apple Santé.";
+"Behalten" = "Conserver";
+"Die andere Aufzeichnung auch aus Apple Health löschen" = "Supprimer aussi l’autre enregistrement d’Apple Santé";
+"Dieser Eintrag wurde von %@ geschrieben. Apple Health erlaubt das Löschen nur der App, die ihn angelegt hat — HealthPit kann ihn dort nicht entfernen." = "Cette entrée a été écrite par %@. Apple Santé n’autorise que l’app qui l’a créée à la supprimer — HealthPit ne peut pas l’y retirer.";
+"Zu dieser Aufzeichnung liegt in Apple Health nichts (mehr) vor." = "Il n’y a (plus) rien dans Apple Santé pour cet enregistrement.";
+"Diese Aufzeichnung stammt nicht aus Apple Health. In HealthPit und Home Assistant wird sie trotzdem zusammengeführt." = "Cet enregistrement ne provient pas d’Apple Santé. Il est tout de même fusionné dans HealthPit et Home Assistant.";
+"Apple Health öffnen" = "Ouvrir Apple Santé";
+"Zusammengeführt" = "Fusionné";
+"Die Aufzeichnung wurde auch aus Apple Health gelöscht." = "L’enregistrement a également été supprimé d’Apple Santé.";
+"In Apple Health blieb der Eintrag stehen: Er wurde von %@ geschrieben, und nur diese App darf ihn löschen." = "L’entrée est restée dans Apple Santé : elle a été écrite par %@, et seule cette app peut la supprimer.";
+"In Apple Health war zu dieser Aufzeichnung nichts mehr vorhanden." = "Il ne restait rien dans Apple Santé pour cet enregistrement.";

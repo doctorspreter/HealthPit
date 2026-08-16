@@ -803,3 +803,16 @@
 "Daten importieren" = "Importar datos";
 "Mit zwei Fingern zoomen · Wischen zum Verschieben · Tippen für Wert" = "Pellizca para ampliar · desliza para desplazar · toca para ver el valor";
 "Vergleich mit den vorherigen 90 Tagen" = "Comparación con los 90 días anteriores";
+
+/* Duplikate: Zusammenfuehren mit Auswahl */
+"Beide Aufzeichnungen erscheinen ab jetzt als ein Training. Welche davon behalten wird, entscheidet, was in Apple Health gelöscht werden kann." = "Ambos registros aparecerán como un solo entrenamiento a partir de ahora. Cuál conservas decide qué se puede eliminar en Apple Salud.";
+"Behalten" = "Conservar";
+"Die andere Aufzeichnung auch aus Apple Health löschen" = "Eliminar también el otro registro de Apple Salud";
+"Dieser Eintrag wurde von %@ geschrieben. Apple Health erlaubt das Löschen nur der App, die ihn angelegt hat — HealthPit kann ihn dort nicht entfernen." = "Esta entrada fue escrita por %@. Apple Salud solo permite eliminarla a la app que la creó: HealthPit no puede quitarla de allí.";
+"Zu dieser Aufzeichnung liegt in Apple Health nichts (mehr) vor." = "En Apple Salud ya no hay nada para este registro.";
+"Diese Aufzeichnung stammt nicht aus Apple Health. In HealthPit und Home Assistant wird sie trotzdem zusammengeführt." = "Este registro no procede de Apple Salud. Aun así se combina en HealthPit y Home Assistant.";
+"Apple Health öffnen" = "Abrir Apple Salud";
+"Zusammengeführt" = "Combinado";
+"Die Aufzeichnung wurde auch aus Apple Health gelöscht." = "El registro también se eliminó de Apple Salud.";
+"In Apple Health blieb der Eintrag stehen: Er wurde von %@ geschrieben, und nur diese App darf ihn löschen." = "La entrada permaneció en Apple Salud: fue escrita por %@ y solo esa app puede eliminarla.";
+"In Apple Health war zu dieser Aufzeichnung nichts mehr vorhanden." = "En Apple Salud ya no quedaba nada de este registro.";

@@ -803,3 +803,16 @@
 "Daten importieren" = "导入数据";
 "Mit zwei Fingern zoomen · Wischen zum Verschieben · Tippen für Wert" = "双指缩放 · 滑动平移 · 轻点查看数值";
 "Vergleich mit den vorherigen 90 Tagen" = "与此前 90 天对比";
+
+/* Duplikate: Zusammenfuehren mit Auswahl */
+"Beide Aufzeichnungen erscheinen ab jetzt als ein Training. Welche davon behalten wird, entscheidet, was in Apple Health gelöscht werden kann." = "两条记录从现在起显示为一次训练。保留哪一条决定了可以在“健康”中删除什么。";
+"Behalten" = "保留";
+"Die andere Aufzeichnung auch aus Apple Health löschen" = "同时从“健康”中删除另一条记录";
+"Dieser Eintrag wurde von %@ geschrieben. Apple Health erlaubt das Löschen nur der App, die ihn angelegt hat — HealthPit kann ihn dort nicht entfernen." = "该条目由 %@ 写入。“健康”只允许创建它的 App 删除它，HealthPit 无法在那里移除。";
+"Zu dieser Aufzeichnung liegt in Apple Health nichts (mehr) vor." = "“健康”中已没有这条记录的内容。";
+"Diese Aufzeichnung stammt nicht aus Apple Health. In HealthPit und Home Assistant wird sie trotzdem zusammengeführt." = "这条记录并非来自“健康”。它仍会在 HealthPit 和 Home Assistant 中合并。";
+"Apple Health öffnen" = "打开“健康”";
+"Zusammengeführt" = "已合并";
+"Die Aufzeichnung wurde auch aus Apple Health gelöscht." = "该记录也已从“健康”中删除。";
+"In Apple Health blieb der Eintrag stehen: Er wurde von %@ geschrieben, und nur diese App darf ihn löschen." = "该条目仍留在“健康”中：它由 %@ 写入，只有该 App 可以删除它。";
+"In Apple Health war zu dieser Aufzeichnung nichts mehr vorhanden." = "“健康”中已不存在这条记录。";

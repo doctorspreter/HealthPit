@@ -134,6 +134,20 @@
 - Non-finite metric values are rejected before they can enter storage or
   long-term statistics.
 
+## 26.08.3
+
+### Neu
+
+- **Zusammenführen fragt jetzt nach.** Statt sofort zu entscheiden, öffnet
+  „Zusammenführen" ein Blatt: Welche der beiden Aufzeichnungen bleibt, und soll
+  die andere auch aus Apple Health verschwinden?
+- Zu jeder Seite steht dabei, **welche App den Eintrag in Apple Health
+  geschrieben hat** — und ob HealthPit ihn dort löschen darf. iOS erlaubt jeder
+  App nur, ihre eigenen Einträge zu entfernen. Kommt dasselbe Training von
+  Health Sync und von Huawei, kann HealthPit keine der Kopien löschen; das
+  steht vor der Entscheidung da und nicht als Fehlermeldung danach. Für diesen
+  Fall führt ein Knopf direkt in Apple Health.
+
 ## 26.08.2
 
 ### Behoben

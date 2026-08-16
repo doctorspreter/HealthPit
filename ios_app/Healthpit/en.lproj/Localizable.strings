@@ -803,3 +803,16 @@
 "Daten importieren" = "Import data";
 "Mit zwei Fingern zoomen · Wischen zum Verschieben · Tippen für Wert" = "Pinch to zoom · swipe to pan · tap for the value";
 "Vergleich mit den vorherigen 90 Tagen" = "Compared with the previous 90 days";
+
+/* Duplikate: Zusammenfuehren mit Auswahl */
+"Beide Aufzeichnungen erscheinen ab jetzt als ein Training. Welche davon behalten wird, entscheidet, was in Apple Health gelöscht werden kann." = "Both recordings appear as one workout from now on. Which one you keep decides what can be deleted in Apple Health.";
+"Behalten" = "Keep";
+"Die andere Aufzeichnung auch aus Apple Health löschen" = "Also delete the other recording from Apple Health";
+"Dieser Eintrag wurde von %@ geschrieben. Apple Health erlaubt das Löschen nur der App, die ihn angelegt hat — HealthPit kann ihn dort nicht entfernen." = "This entry was written by %@. Apple Health only lets the app that created an entry delete it — HealthPit cannot remove it there.";
+"Zu dieser Aufzeichnung liegt in Apple Health nichts (mehr) vor." = "There is nothing (any more) in Apple Health for this recording.";
+"Diese Aufzeichnung stammt nicht aus Apple Health. In HealthPit und Home Assistant wird sie trotzdem zusammengeführt." = "This recording does not come from Apple Health. It is merged in HealthPit and Home Assistant all the same.";
+"Apple Health öffnen" = "Open Apple Health";
+"Zusammengeführt" = "Merged";
+"Die Aufzeichnung wurde auch aus Apple Health gelöscht." = "The recording was deleted from Apple Health as well.";
+"In Apple Health blieb der Eintrag stehen: Er wurde von %@ geschrieben, und nur diese App darf ihn löschen." = "The entry stayed in Apple Health: it was written by %@, and only that app may delete it.";
+"In Apple Health war zu dieser Aufzeichnung nichts mehr vorhanden." = "Nothing was left in Apple Health for this recording.";

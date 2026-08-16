@@ -390,6 +390,90 @@ final class HealthKitManager: @unchecked Sendable {
         return deleted
     }
 
+    // MARK: - Einzelnes Training in Apple Health
+
+    /// Wer einen Eintrag in Apple Health geschrieben hat.
+    ///
+    /// Die Unterscheidung ist keine Feinheit, sondern die Grenze des
+    /// Moeglichen: iOS laesst jede App nur ihre eigenen Eintraege loeschen.
+    /// Kommt dasselbe Training dreimal — von Health Sync, von Huawei, von der
+    /// Uhr — kann HealthPit keine dieser Kopien entfernen, und ein Knopf, der
+    /// das verspricht, wuerde luegen.
+    enum AppleHealthOrigin: Sendable, Equatable {
+        /// Von HealthPit selbst geschrieben; loeschbar.
+        case ours(String)
+        /// Von einer anderen App geschrieben; nur dort loeschbar.
+        case foreign(String)
+        /// In Apple Health nicht (mehr) vorhanden.
+        case missing
+
+        var isDeletable: Bool {
+            if case .ours = self { return true }
+            return false
+        }
+
+        var appName: String? {
+            switch self {
+            case .ours(let name), .foreign(let name): return name
+            case .missing: return nil
+            }
+        }
+    }
+
+    /// Woher ein Training in Apple Health stammt.
+    func origin(ofWorkout uuid: UUID) async -> AppleHealthOrigin {
+        // `try?` faltet die beiden Optionals zusammen: kein Treffer und ein
+        // Fehler bei der Abfrage laufen hier bewusst auf dasselbe hinaus.
+        guard let sample = try? await workoutSample(uuid: uuid) else { return .missing }
+        let name = sample.sourceRevision.source.name
+        return sample.sourceRevision.source == HKSource.default() ? .ours(name) : .foreign(name)
+    }
+
+    /// Loescht ein Training aus Apple Health, sofern HealthPit es geschrieben hat.
+    ///
+    /// Gibt zurueck, was tatsaechlich geschehen ist, statt einen Fehler zu
+    /// werfen: „geht nicht, weil eine andere App den Eintrag angelegt hat" ist
+    /// keine Stoerung, sondern eine Auskunft, die der Anwender lesen soll.
+    @discardableResult
+    func deleteWorkout(uuid: UUID) async throws -> AppleHealthOrigin {
+        guard isHealthDataAvailable else { throw HealthError.healthDataUnavailable }
+        try await requestAuthorization()
+        guard let sample = try await workoutSample(uuid: uuid) else { return .missing }
+        let name = sample.sourceRevision.source.name
+        guard sample.sourceRevision.source == HKSource.default() else { return .foreign(name) }
+
+        let store = healthStore
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            store.delete(sample) { _, error in
+                if let error {
+                    continuation.resume(throwing: HealthError.queryFailed(underlying: error))
+                } else {
+                    continuation.resume()
+                }
+            }
+        }
+        return .ours(name)
+    }
+
+    private func workoutSample(uuid: UUID) async throws -> HKWorkout? {
+        guard isHealthDataAvailable else { throw HealthError.healthDataUnavailable }
+        try await requestAuthorization()
+        let store = healthStore
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(sampleType: HKObjectType.workoutType(),
+                                      predicate: HKQuery.predicateForObject(with: uuid),
+                                      limit: 1,
+                                      sortDescriptors: nil) { _, samples, error in
+                if let error {
+                    continuation.resume(throwing: HealthError.queryFailed(underlying: error))
+                } else {
+                    continuation.resume(returning: samples?.first as? HKWorkout)
+                }
+            }
+            store.execute(query)
+        }
+    }
+
     // MARK: - Aggregierter Verlauf (für Diagramme)
 
     /// Lädt den über `range` aggregierten Verlauf einer Metrik (Bucket-weise).

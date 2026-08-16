@@ -14,6 +14,8 @@ struct DuplicateSettingsView: View {
     @State private var isLoading = false
     @State private var busyKeys: Set<String> = []
     @State private var errorMessage: String?
+    @State private var merging: WorkoutDuplicateCandidate?
+    @State private var noticeMessage: String?
 
     var body: some View {
         List {
@@ -74,6 +76,19 @@ struct DuplicateSettingsView: View {
         } message: {
             Text(errorMessage ?? "")
         }
+        .alert(L10n.string("Zusammengeführt"), isPresented: Binding(
+            get: { noticeMessage != nil },
+            set: { if !$0 { noticeMessage = nil } }
+        )) {
+            Button(L10n.string("OK"), role: .cancel) {}
+        } message: {
+            Text(noticeMessage ?? "")
+        }
+        .sheet(item: $merging) { candidate in
+            DuplicateMergeSheet(candidate: candidate) { choice in
+                Task { await merge(candidate, choice) }
+            }
+        }
     }
 
     // MARK: - Zeilen
@@ -104,7 +119,10 @@ struct DuplicateSettingsView: View {
             } else {
                 HStack(spacing: 12) {
                     Button {
-                        Task { await decide(candidate, .merge) }
+                        // Nicht sofort entscheiden: erst fragen, welche der
+                        // beiden bleibt und was mit der anderen in Apple
+                        // Health geschehen soll.
+                        merging = candidate
                     } label: {
                         // Ohne Symbol und mit einer Zeile: „Zusammenfuehren"
                         // brach sonst mitten im Wort um, und in den laengeren
@@ -214,6 +232,49 @@ struct DuplicateSettingsView: View {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    /// Zusammenfuehren, und auf Wunsch die verworfene Kopie aus Apple Health
+    /// entfernen.
+    ///
+    /// Die Reihenfolge ist Absicht: erst die Entscheidung, die Home Assistant
+    /// ohnehin dauerhaft haelt, dann das Loeschen. Scheitert das Loeschen, ist
+    /// die Zusammenfuehrung trotzdem gespeichert — umgekehrt waere ein Eintrag
+    /// weg, ohne dass jemand das Paar entschieden haette.
+    private func merge(_ candidate: WorkoutDuplicateCandidate,
+                       _ choice: WorkoutDuplicateMergeChoice) async {
+        busyKeys.insert(candidate.id)
+        defer { busyKeys.remove(candidate.id) }
+
+        let kept = choice.keep == .left ? candidate.left : candidate.right
+        let discarded = choice.keep == .left ? candidate.right : candidate.left
+        do {
+            try await BridgeSyncService.shared.decideDuplicate(
+                primary: kept.key,
+                linked: discarded.key,
+                action: .merge
+            )
+        } catch {
+            errorMessage = error.localizedDescription
+            return
+        }
+
+        if choice.removeFromAppleHealth, let uuid = discarded.appleHealthUUID {
+            do {
+                switch try await HealthKitManager.shared.deleteWorkout(uuid: uuid) {
+                case .ours:
+                    noticeMessage = L10n.string("Die Aufzeichnung wurde auch aus Apple Health gelöscht.")
+                case .foreign(let app):
+                    noticeMessage = L10n.format("In Apple Health blieb der Eintrag stehen: Er wurde von %@ geschrieben, und nur diese App darf ihn löschen.", app)
+                case .missing:
+                    noticeMessage = L10n.string("In Apple Health war zu dieser Aufzeichnung nichts mehr vorhanden.")
+                }
+            } catch {
+                noticeMessage = error.localizedDescription
+            }
+        }
+
+        await load()
     }
 
     private func decide(_ candidate: WorkoutDuplicateCandidate, _ action: WorkoutDuplicateAction) async {

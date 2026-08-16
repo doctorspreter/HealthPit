@@ -21,6 +21,9 @@ struct WorkoutDuplicateSide: Decodable, Hashable, Sendable {
     /// Woran eine Entscheidung haengt. Bleibt gueltig, auch wenn dasselbe
     /// Training erneut hochgeladen wird.
     let key: String
+    /// Alle Kennungen dieser Aufzeichnung, je Quelle eine. Nach einer
+    /// Zusammenfuehrung traegt eine Seite mehrere davon.
+    let keys: [String]
     let sport: String
     let title: String
     let source: String
@@ -35,7 +38,7 @@ struct WorkoutDuplicateSide: Decodable, Hashable, Sendable {
     let routePoints: Int
 
     enum CodingKeys: String, CodingKey {
-        case key, sport, title, source, sources, start
+        case key, keys, sport, title, source, sources, start
         case deviceID = "device_id"
         case durationSeconds = "duration_seconds"
         case distanceKm = "distance_km"
@@ -48,6 +51,7 @@ struct WorkoutDuplicateSide: Decodable, Hashable, Sendable {
     nonisolated init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         key = try container.decode(String.self, forKey: .key)
+        keys = (try? container.decodeIfPresent([String].self, forKey: .keys)) as? [String] ?? []
         sport = (try? container.decodeIfPresent(String.self, forKey: .sport)) as? String ?? ""
         title = (try? container.decodeIfPresent(String.self, forKey: .title)) as? String ?? ""
         source = (try? container.decodeIfPresent(String.self, forKey: .source)) as? String ?? ""
@@ -92,6 +96,21 @@ struct WorkoutDuplicateSide: Decodable, Hashable, Sendable {
         }
         let spaced = raw.replacingOccurrences(of: "_", with: " ")
         return L10n.stringResolvingStoredTranslation(spaced)
+    }
+
+    /// Der Apple-Health-Eintrag hinter dieser Seite.
+    ///
+    /// Die Schluessel sind `quelle:id`, und fuer Apple Health ist diese ID die
+    /// UUID des HKWorkout — dieselbe, mit der die App das Training hochgeladen
+    /// hat. Damit laesst sich der Eintrag in Apple Health wiederfinden.
+    var appleHealthUUID: UUID? {
+        let prefix = "\(LocalWorkout.Source.appleHealth.rawValue):"
+        for candidate in (keys.isEmpty ? [key] : keys) where candidate.hasPrefix(prefix) {
+            if let uuid = UUID(uuidString: String(candidate.dropFirst(prefix.count))) {
+                return uuid
+            }
+        }
+        return nil
     }
 
     /// „GymPit" statt „gympit", „Apple Health" statt „apple_health".
