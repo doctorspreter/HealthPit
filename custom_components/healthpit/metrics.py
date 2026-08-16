@@ -15,6 +15,7 @@ the same way ``payload.py`` and ``precision.py`` are.
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Any
 
 # The canonical categories of the registry. The app keeps sending its own
@@ -162,6 +163,35 @@ LEGACY_METRIC_IDS: dict[str, str] = {
     "workout_count_all_time": "WRK_COUNT_TOTAL",
 }
 
+# Die Kraftwerte aus GymPit. Beschriftungen bewusst Englisch und fest, wie die
+# Geraetenamen: sie stecken in Entitaets-IDs und duerfen nicht mit der
+# Oberflaechensprache wandern.
+EXERCISE_METRIC_LABELS = {
+    "WRK_SET_WEIGHT": "Weight",
+    "WRK_SET_REPS": "Repetitions",
+    "WRK_SET_VOLUME": "Volume",
+    "WRK_SET_RPE": "RPE",
+    "WRK_SET_TYPE": "Set type",
+    "WRK_SET_IS_PERSONAL_RECORD": "Personal record",
+    "WRK_EXERCISE": "Exercise",
+    "WRK_EQUIPMENT_SEAT": "Seat",
+    "WRK_EQUIPMENT_BACKREST": "Backrest",
+    "WRK_EQUIPMENT_HANDLE": "Handle",
+    "WRK_EQUIPMENT_RANGE": "Range",
+    "WRK_DURATION": "Duration",
+    "WRK_ENERGY": "Energy",
+}
+
+# Einheitencodes der Nutzlast in die Symbole, die Home Assistant fuehrt.
+EXERCISE_UNIT_SYMBOLS = {
+    "KG": "kg",
+    "CNT": "",
+    "SCORE": "",
+    "S": "s",
+    "KCAL": "kcal",
+    "M": "m",
+}
+
 # Workout sources the app used to send, mapped to provider codes.
 LEGACY_WORKOUT_SOURCES = {
     "manual": "HPT",
@@ -171,6 +201,55 @@ LEGACY_WORKOUT_SOURCES = {
     "gympit": "GYM",
     "garmin": "GAR",
 }
+
+
+def group_exercise_history(
+    user_id: str, values: list[dict[str, Any]]
+) -> dict[str, dict[str, Any]]:
+    """Sort strength values into hourly buckets, one per sensor.
+
+    Home Assistant's statistics are hourly rows, so several sets from the same
+    session land in the same bucket and become mean, lowest and highest of that
+    hour. The key is the sensor's ``unique_id``, because that is what the entity
+    registry can be asked for later.
+
+    Text and yes/no values are left out: an average set type is not a thing.
+    """
+    grouped: dict[str, dict[str, Any]] = {}
+    for value in values:
+        number = value.get("value")
+        if isinstance(number, bool) or not isinstance(number, (int, float)):
+            continue
+        metric_id = str(value.get("metric_id") or "")
+        if not metric_id:
+            continue
+        hour = _hour_of(value.get("end") or value.get("start"))
+        if hour is None:
+            continue
+        unique_id = f"{user_id}_exercise_{value.get('exercise_id') or ''}_{metric_id}"
+        entry = grouped.setdefault(
+            unique_id,
+            {
+                "unit": EXERCISE_UNIT_SYMBOLS.get(str(value.get("unit") or "")),
+                "hours": {},
+            },
+        )
+        entry["hours"].setdefault(hour, []).append(float(number))
+    return grouped
+
+
+def _hour_of(raw: Any) -> datetime | None:
+    """The full UTC hour a timestamp belongs to; ``None`` if it is unusable."""
+    if isinstance(raw, datetime):
+        moment = raw
+    else:
+        try:
+            moment = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+        except (TypeError, ValueError):
+            return None
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=timezone.utc)
+    return moment.astimezone(timezone.utc).replace(minute=0, second=0, microsecond=0)
 
 
 def is_metric_id(value: Any) -> bool:

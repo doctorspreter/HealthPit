@@ -26,7 +26,11 @@ from .compatibility_issue import async_update_app_issue  # HEALTHPIT-COMPAT-2026
 from .const import API_BASE, DOMAIN
 from .coordinator import HealthPitCoordinator
 from .duplicates import describe_decisions, find_candidates
-from .history import async_import_history, async_import_metric_history
+from .history import (
+    async_import_history,
+    async_import_metric_history,
+    async_queue_exercise_history,
+)
 from .route import as_geojson, as_gpx, as_svg, route_points
 from .payload import (
     normalize_metric_values,
@@ -170,6 +174,10 @@ class HealthPitWorkoutImportView(HomeAssistantView):
                 user_id, user_name, device_id, values
             )
         coordinator.async_handle_push()
+        if values:
+            # Erst melden, dann nachtragen: die Statistik haengt an der
+            # Entitaet, und die entsteht aus genau dieser Meldung.
+            async_queue_exercise_history(_hass(request), user_id, values)
         return web.json_response({"accepted": len(workouts), **result})
 
     async def get(self, request: web.Request) -> web.Response:

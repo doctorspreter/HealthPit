@@ -68,12 +68,17 @@ def category_device_info(
 
 
 def gym_device_info(coordinator: HealthPitCoordinator, user_id: str) -> DeviceInfo:
-    """The roof over the exercises.
+    """Where every strength value lives: one device for the whole gym.
 
-    Exercise devices need a parent that exists. Pointing them at the workouts
-    area was not enough: that device only comes into being if a workout sensor
-    carries it, and until then every exercise sat at the top level, next to the
-    person instead of under them.
+    Each exercise used to get a device of its own. In Home Assistant's device
+    list those are not nested under anything — "Peter Leg press" stood next to
+    "Peter Body", and fifteen machines meant fifteen entries at the same level
+    as the health areas. The grouping the hierarchy promised was nowhere to be
+    seen.
+
+    Now the exercises are entities on this single device and carry their name
+    in the entity name instead. One line in the device list, everything about
+    strength training behind it.
 
     It gets its own device rather than reusing the workouts area, because
     "Leg press" belongs with strength training, not with a run.
@@ -88,23 +93,14 @@ def gym_device_info(coordinator: HealthPitCoordinator, user_id: str) -> DeviceIn
     )
 
 
-def exercise_device_info(
-    coordinator: HealthPitCoordinator, user_id: str, exercise_id: str, name: str
-) -> DeviceInfo:
-    """One device per exercise: weight, reps, volume and RPE belong together.
+# Wie eine Uebung frueher ein eigenes Geraet bekam. Wird nur noch gebraucht,
+# um genau diese Geraete wieder aufzuraeumen.
+EXERCISE_DEVICE_PREFIX = "_exercise_"
 
-    A single "set weight" sensor would jump between exercises with every set —
-    45 kg on the abductor, then 80 on the leg press. As a device per exercise
-    each history line means one thing.
-    """
-    person = coordinator.store.user_name(user_id) or "Healthpit"
-    return DeviceInfo(
-        identifiers={(DOMAIN, f"{user_id}_exercise_{exercise_id}")},
-        name=f"{person} {name or exercise_id}",
-        manufacturer="Healthpit",
-        model="Exercise",
-        via_device=(DOMAIN, f"{user_id}_gym"),
-    )
+
+def is_exercise_device(identifier: str, user_id: str) -> bool:
+    """War das einmal ein Geraet je Uebung?"""
+    return identifier.startswith(f"{user_id}{EXERCISE_DEVICE_PREFIX}")
 
 
 class HealthPitUserEntity(CoordinatorEntity[HealthPitCoordinator]):

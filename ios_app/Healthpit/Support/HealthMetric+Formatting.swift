@@ -3,8 +3,12 @@
 //  Healthpit
 //
 //  Anzeige-Formatierung für Metrik-Werte: Umrechnung in die eingestellte
-//  Maßeinheit, korrekte Nachkommastellen je Typ und Skalierung von
-//  Prozentwerten (HealthKit liefert Prozente als Bruch 0…1).
+//  Maßeinheit und korrekte Nachkommastellen je Typ.
+//
+//  Prozentwerte werden hier nicht mehr skaliert. Sie kommen aus der Datenbank
+//  und stehen dort in der kanonischen Einheit — 96,2 heisst 96,2 %. Nur wer
+//  unmittelbar aus HealthKit liest, bekommt den Bruch 0…1 und muss
+//  `healthKitScale` anwenden.
 //
 //  Umgerechnet wird ausschliesslich hier, an der Anzeigegrenze. Alles dahinter
 //  – Abfragen, Zwischenspeicher, Schwellwerte, Bridge-Payload – bleibt in den
@@ -27,12 +31,13 @@ extension HealthMetric {
     /// Symbol der Anzeige-Einheit, übersetzt (z. B. "km" oder "mi").
     var displaySymbol: String { displayUnit.symbol }
 
-    /// Prozentwerte kommen als Bruch (0…1) aus HealthKit → für Anzeige ×100.
+    /// HealthKit liefert Prozente als Bruch (0,962) → kanonisch sind 96,2.
     ///
-    /// Nur diese eine Normalisierung, keine Maßsystem-Umrechnung: die
-    /// Bridge-Payload und die Diagramm-Pipeline hängen daran und müssen
-    /// metrisch bleiben.
-    var displayScale: Double { canonicalUnitSymbol == "%" ? 100 : 1 }
+    /// Gilt ausschliesslich fuer Werte, die unmittelbar aus HealthKit kommen.
+    /// Alles, was aus der Datenbank gelesen wird, steht dort bereits in der
+    /// kanonischen Einheit – dort noch einmal zu multiplizieren ergab die
+    /// 9620 %, die in der Anzeige standen.
+    var healthKitScale: Double { canonicalUnitSymbol == "%" ? 100 : 1 }
 
     /// Ein HealthKit-Wert in der Anzeige-Einheit.
     func displayValue(_ value: Double) -> Double {
@@ -94,9 +99,11 @@ private extension HealthMetric {
                             aggregation: AggregationStyle,
                             system: MeasurementSystem) -> MetricDisplayUnit {
 
-        // Prozente sind maßsystem-unabhängig, brauchen aber die 0…1-Skalierung.
+        // Prozente sind maßsystem-unabhängig und kommen aus der Datenbank
+        // bereits als Prozent. Eine Nachkommastelle, weil eine Sauerstoff-
+        // saettigung von 96,2 % nicht als 96 % gelesen werden soll.
         if canonicalSymbol == "%" {
-            return MetricDisplayUnit(symbolKey: "%", conversion: .factor(100), fractionDigits: 0)
+            return MetricDisplayUnit(symbolKey: "%", conversion: .identity, fractionDigits: 1)
         }
 
         guard system == .imperial else {

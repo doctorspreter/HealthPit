@@ -27,13 +27,15 @@ from homeassistant.components.recorder.statistics import (
     STATISTIC_UNIT_TO_UNIT_CONVERTER,
     async_import_statistics,
 )
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.event import async_call_later
 from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
 from .coordinator import HealthPitCoordinator
+from .metrics import group_exercise_history
 from .precision import rounded_value, suggested_precision
 from .workout_entities import slug, sport_name
 
@@ -282,6 +284,88 @@ async def async_import_history(
                 )
 
     return {"rows": imported, "skipped": len(skipped), "users": len(user_ids)}
+
+
+# Was noch auf seine Entitaet wartet: unique_id -> Einheit und Stundenwerte.
+PENDING_EXERCISE_HISTORY = f"{DOMAIN}_pending_exercise_history"
+
+# Wann erneut versucht wird, in Sekunden. Eine Entitaet entsteht erst, nachdem
+# der Koordinator die neuen Werte gemeldet hat – der erste Versuch geht also
+# regelmaessig ins Leere, und stur weiterzuprobieren waere Verschwendung.
+RETRY_DELAYS = (2, 10, 60)
+
+
+@callback
+def async_queue_exercise_history(
+    hass: HomeAssistant,
+    user_id: str,
+    values: list[dict[str, Any]],
+) -> None:
+    """Write the strength values into the long-term statistics.
+
+    A set from three weeks ago used to vanish here. The store keeps only the
+    latest value per exercise, and Home Assistant's ``states`` table cannot be
+    backdated, so everything before the last upload existed nowhere — GymPit
+    sent its whole history on every sync and Home Assistant showed the newest
+    set and nothing else.
+
+    The statistics table can be backdated. That is where the past belongs: one
+    row per hour that has sets, with mean, lowest and highest, so a year of
+    training is a curve instead of a single point.
+    """
+    pending: dict[str, dict[str, Any]] = hass.data.setdefault(
+        PENDING_EXERCISE_HISTORY, {}
+    )
+    for unique_id, entry in group_exercise_history(user_id, values).items():
+        waiting = pending.setdefault(unique_id, {"unit": entry["unit"], "hours": {}})
+        for hour, numbers in entry["hours"].items():
+            waiting["hours"].setdefault(hour, []).extend(numbers)
+
+    if pending:
+        async_flush_exercise_history(hass, attempt=0)
+
+
+@callback
+def async_flush_exercise_history(hass: HomeAssistant, attempt: int = 0) -> None:
+    """Import everything whose sensor exists by now, and wait for the rest."""
+    pending: dict[str, dict[str, Any]] = hass.data.get(PENDING_EXERCISE_HISTORY) or {}
+    if not pending:
+        return
+
+    registry = er.async_get(hass)
+    for unique_id in list(pending):
+        entity_id = registry.async_get_entity_id("sensor", DOMAIN, unique_id)
+        if entity_id is None:
+            # Der Sensor entsteht erst, wenn der Koordinator die Werte
+            # gemeldet hat. Aufheben und spaeter noch einmal versuchen.
+            continue
+        entry = pending.pop(unique_id)
+        rows = [
+            StatisticData(
+                start=hour,
+                mean=round(sum(numbers) / len(numbers), 3),
+                min=round(min(numbers), 3),
+                max=round(max(numbers), 3),
+                mean_weight=1.0,
+            )
+            for hour, numbers in sorted(entry["hours"].items())
+            if numbers
+        ]
+        if not rows:
+            continue
+        async_import_statistics(
+            hass,
+            _metadata(entity_id=entity_id, unit=entry["unit"] or None, has_sum=False),
+            rows,
+        )
+        _LOGGER.debug("Imported %s exercise history rows for %s", len(rows), entity_id)
+
+    if pending and attempt < len(RETRY_DELAYS):
+        async_call_later(
+            hass,
+            RETRY_DELAYS[attempt],
+            lambda _now: async_flush_exercise_history(hass, attempt + 1),
+        )
 
 
 def earliest_workout(coordinator: HealthPitCoordinator, user_id: str) -> datetime | None:

@@ -157,6 +157,7 @@ struct MetricDetailView: View {
                     }
                 }
                 .frame(height: 240)
+                .chartYScale(domain: chartValueDomain)
                 .chartXScale(domain: chartDateInterval.start...chartDateInterval.end)
                 .chartXVisibleDomain(length: chartVisibleDuration)
                 .chartScrollableAxes(.horizontal)
@@ -277,8 +278,10 @@ struct MetricDetailView: View {
     }
 
     private func stat(_ title: String, _ value: Double) -> some View {
-        // Die Schwellwerte sind in HealthKit-Einheiten definiert, der Wert liegt
-        // hier schon in der Anzeige-Einheit vor – deshalb zurueckrechnen.
+        // Die Schwellwerte stehen in der kanonischen Einheit, der Wert liegt
+        // hier schon in der Anzeige-Einheit vor – deshalb zurueckrechnen. Bei
+        // metrischer Einstellung ist das eine Nullrechnung, bei imperialer
+        // nicht: 3,1 mi sind 5 km, und verglichen wird gegen 5.
         let status = BodyMetricStatus.evaluate(metric: metric, value: metric.rawValue(fromDisplay: value))
         return VStack(spacing: 4) {
             Text(L10n.string(title))
@@ -308,6 +311,33 @@ struct MetricDetailView: View {
     /// Datenpunkte in der Anzeige-Einheit (Prozent-Skalierung, mi statt km …).
     private var scaledPoints: [DailyStatistic] {
         stats.map { DailyStatistic(id: $0.id, date: $0.date, value: metric.displayValue($0.value)) }
+    }
+
+    /// Der Wertebereich des Diagramms.
+    ///
+    /// Von selbst beginnt eine Achse bei null. Bei einer Sauerstoffsaettigung
+    /// zwischen 95 und 98 heisst das: eine waagerechte Linie ganz oben, jeden
+    /// Tag dieselbe – der Verlauf, um den es geht, verschwindet in der
+    /// Strichstaerke. Deshalb spannt sich die Achse um die Werte selbst, mit
+    /// einem Zehntel des Abstands als Luft nach oben und unten.
+    ///
+    /// Summen bleiben bei null: bei Schritten oder Kalorien ist die Hoehe des
+    /// Balkens die Aussage, und eine abgeschnittene Achse wuerde sie
+    /// verfaelschen.
+    private var chartValueDomain: ClosedRange<Double> {
+        let values = scaledPoints.map(\.value)
+        guard let lowest = values.min(), let highest = values.max() else { return 0...1 }
+        if metric.aggregation == .cumulativeSum {
+            return 0...max(highest * 1.1, highest + 1)
+        }
+        guard highest > lowest else {
+            // Ein einziger Wert oder lauter gleiche: ein schmales Fenster
+            // darum herum, damit die Linie nicht am Rand klebt.
+            let padding = max(abs(highest) * 0.05, 1)
+            return (lowest - padding)...(highest + padding)
+        }
+        let padding = (highest - lowest) * 0.1
+        return (lowest - padding)...(highest + padding)
     }
 
     private var averageValue: Double {

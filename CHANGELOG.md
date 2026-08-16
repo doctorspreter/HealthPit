@@ -1,5 +1,33 @@
 # Änderungsprotokoll
 
+## Home Assistant 2.4.5
+
+### Changed
+
+- **The exercises no longer get a device each.** They are entities on the one
+  "Gym workouts" device now and carry the exercise in their name. Home
+  Assistant lists devices flat, so a device per machine put fifteen entries
+  next to Body, Heart and Sleep — the grouping the hierarchy promised was
+  nowhere to be seen. Entity IDs and history are untouched; the empty devices
+  left behind are removed automatically once nothing hangs on them any more.
+
+### Added
+
+- **Strength values reach into the past.** Every set GymPit sends is written
+  into the long-term statistics at the hour it happened, with mean, lowest and
+  highest per hour. Only the newest value per exercise is kept in the store and
+  Home Assistant's state table cannot be backdated, so everything before the
+  last upload existed nowhere: a year of training showed a single point.
+- Numeric exercise sensors have a state class and, where it fits, a device
+  class. Without a state class Home Assistant keeps no statistics at all, and
+  the imported past would have had nothing to hang on.
+
+### Fixed
+
+- A value whose sensor does not exist yet is kept and retried instead of being
+  dropped. The sensor is created from the same push that carries the value, so
+  the first attempt regularly comes too early.
+
 ## Home Assistant 2.4.0
 
 ### Added
@@ -105,6 +133,24 @@
 
 - Non-finite metric values are rejected before they can enter storage or
   long-term statistics.
+
+## 26.08.2
+
+### Behoben
+
+- **Sauerstoffsättigung stand als 9620 %.** Die Anzeige rechnete Prozentwerte
+  weiterhin so um, wie HealthKit sie liefert — als Bruch zwischen 0 und 1. Aus
+  der Datenbank kommen sie aber schon als Prozent, und ×100 aus 96,2 dann 9620.
+  Betraf jeden Prozentwert: Körperfett, Gehstabilität, Gangasymmetrie,
+  Perfusionsindex. Was aus Apple Health gelesen und an Home Assistant geschickt
+  wird, war und bleibt richtig.
+- Die Ampel-Grenzen für Prozentwerte standen noch im alten Maßstab (0,95 statt
+  95) und stuften deshalb alles als „gut“ ein.
+- **Diagramme mit unbrauchbarer Skala.** Die Achse begann immer bei null. Bei
+  einer Sauerstoffsättigung zwischen 95 und 98 hieß das: ein waagerechter
+  Streifen ganz oben, jeden Tag derselbe. Sie spannt sich jetzt um die
+  vorhandenen Werte. Bei Summen — Schritte, Kalorien — bleibt sie bei null,
+  dort ist die Höhe des Balkens die Aussage.
 
 ## 26.08.1
 

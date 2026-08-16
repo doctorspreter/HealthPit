@@ -14,6 +14,7 @@
 *.db
 
 ios_app/DerivedData/
+ios_app/.build/
 ios_app/**/*.xcuserdatad/
 ios_app/**/*.xcuserstate
 ios_app/**/*.xcworkspace/xcuserdata/

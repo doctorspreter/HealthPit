@@ -8,7 +8,7 @@ from urllib.parse import quote
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import API_BASE, DOMAIN
@@ -16,10 +16,11 @@ from .coordinator import HealthPitCoordinator
 from .entity import (
     category_device_info,
     gym_device_info,
+    is_exercise_device,
     user_device_info,
-    exercise_device_info,
     HealthPitUserEntity,
 )
+from .metrics import EXERCISE_METRIC_LABELS, EXERCISE_UNIT_SYMBOLS
 from .precision import rounded_value, suggested_precision
 
 
@@ -51,6 +52,7 @@ async def async_setup_entry(
             registry.async_get_or_create(
                 config_entry_id=entry.entry_id, **gym_device_info(coordinator, user_id)
             )
+        _remove_empty_exercise_devices(hass, entry, coordinator.user_ids())
 
     def _new_entities() -> list[SensorEntity]:
         _ensure_devices()
@@ -74,6 +76,41 @@ async def async_setup_entry(
             async_add_entities(new_entities)
 
     entry.async_on_unload(coordinator.async_add_listener(_add_new))
+
+
+def _remove_empty_exercise_devices(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    user_ids: list[str],
+) -> None:
+    """Clear out the devices the exercises used to have.
+
+    Their sensors sit on the gym device now. What stays behind is an empty
+    device per machine, still listed next to the health areas — exactly the
+    clutter this change removes.
+
+    Only devices without a single entity are touched. As long as a sensor still
+    hangs there the device stays: removing it would take the entity registry
+    entry with it, and the sensor would come back under a new entity ID, its
+    history orphaned.
+    """
+    devices = dr.async_get(hass)
+    entities = er.async_get(hass)
+    def was_an_exercise(device: dr.DeviceEntry) -> bool:
+        return any(
+            domain == DOMAIN and is_exercise_device(identifier, user)
+            for domain, identifier in device.identifiers
+            for user in user_ids
+        )
+
+    for device in dr.async_entries_for_config_entry(devices, entry.entry_id):
+        if not was_an_exercise(device):
+            continue
+        if er.async_entries_for_device(
+            entities, device.id, include_disabled_entities=True
+        ):
+            continue
+        devices.async_remove_device(device.id)
 
 
 def _new_metric_sensors(
@@ -157,11 +194,10 @@ class HealthPitExerciseSensor(HealthPitUserEntity, SensorEntity):
         self._exercise_id = exercise_id
         self._metric_id = metric_id
         self._attr_unique_id = f"{user_id}_exercise_{exercise_id}_{metric_id}"
-        self._attr_device_info = (
-            exercise_device_info(coordinator, user_id, exercise_id, self._exercise_name())
-            if exercise_id
-            else category_device_info(coordinator, user_id, "workouts")
-        )
+        # Alle Uebungen auf einem Geraet. Die unique_id bleibt, was sie war,
+        # damit bestehende Entitaeten ihre ID und ihre Historie behalten – nur
+        # ihr Platz in der Geraeteliste aendert sich.
+        self._attr_device_info = gym_device_info(coordinator, user_id)
 
     def _value(self) -> dict[str, Any] | None:
         for item in self.coordinator.store.exercise_values(self._user_id):
@@ -178,9 +214,11 @@ class HealthPitExerciseSensor(HealthPitUserEntity, SensorEntity):
 
     @property
     def name(self) -> str | None:
-        # Der Geraetename traegt schon die Uebung; hier steht nur noch, welcher
-        # Wert es ist.
-        return METRIC_LABELS.get(self._metric_id, self._metric_id)
+        # Uebung und Wert stehen zusammen im Namen: das Geraet ist jetzt das
+        # ganze Kraftraum-Geraet und sagt allein nicht mehr, worum es geht.
+        label = METRIC_LABELS.get(self._metric_id, self._metric_id)
+        exercise = self._exercise_name()
+        return f"{exercise} {label}" if exercise else label
 
     @property
     def native_value(self) -> Any:
@@ -198,6 +236,24 @@ class HealthPitExerciseSensor(HealthPitUserEntity, SensorEntity):
         return UNIT_SYMBOLS.get(str(value.get("unit") or ""))
 
     @property
+    def device_class(self) -> str | None:
+        return DEVICE_CLASSES.get(self._metric_id)
+
+    @property
+    def state_class(self) -> str | None:
+        """Nur Zahlen bekommen eine Zustandsklasse.
+
+        Ohne sie fuehrt Home Assistant fuer den Sensor keine Langzeitstatistik –
+        und dann haette auch die nachgetragene Vergangenheit nichts, woran sie
+        haengen koennte. Satzart und Bestleistung sind Text und Ja/Nein; fuer
+        die waere ein Mittelwert sinnlos.
+        """
+        number = (self._value() or {}).get("value")
+        if isinstance(number, bool) or not isinstance(number, (int, float)):
+            return None
+        return "measurement"
+
+    @property
     def extra_state_attributes(self) -> dict[str, Any]:
         value = self._value() or {}
         return {
@@ -209,24 +265,19 @@ class HealthPitExerciseSensor(HealthPitUserEntity, SensorEntity):
         }
 
 
-# Beschriftungen der Kraftwerte. Englisch und fest, wie die Geraetenamen.
-METRIC_LABELS = {
-    "WRK_SET_WEIGHT": "Weight",
-    "WRK_SET_REPS": "Repetitions",
-    "WRK_SET_VOLUME": "Volume",
-    "WRK_SET_RPE": "RPE",
-    "WRK_SET_TYPE": "Set type",
-    "WRK_SET_IS_PERSONAL_RECORD": "Personal record",
-    "WRK_EXERCISE": "Exercise",
-    "WRK_EQUIPMENT_SEAT": "Seat",
-    "WRK_EQUIPMENT_BACKREST": "Backrest",
-    "WRK_EQUIPMENT_HANDLE": "Handle",
-    "WRK_EQUIPMENT_RANGE": "Range",
-    "WRK_DURATION": "Duration",
-    "WRK_ENERGY": "Energy",
-}
+# Beschriftungen und Einheiten stehen bei den Metriken, nicht hier: der
+# Nachtrag der Vergangenheit braucht dieselbe Tabelle.
+METRIC_LABELS = EXERCISE_METRIC_LABELS
+UNIT_SYMBOLS = EXERCISE_UNIT_SYMBOLS
 
-UNIT_SYMBOLS = {"KG": "kg", "CNT": "", "SCORE": "", "S": "s", "KCAL": "kcal", "M": "m"}
+# Nur dort, wo die Klasse wirklich passt. Eine falsche macht mehr Schaden als
+# keine: Home Assistant rechnet dann Einheiten um, die nichts miteinander zu
+# tun haben. Das Satzvolumen ist kein Gewicht, sondern Wiederholungen × Kilo.
+DEVICE_CLASSES = {
+    "WRK_SET_WEIGHT": SensorDeviceClass.WEIGHT,
+    "WRK_DURATION": SensorDeviceClass.DURATION,
+    "WRK_ENERGY": SensorDeviceClass.ENERGY,
+}
 
 
 class HealthPitMetricSensor(HealthPitUserEntity, SensorEntity):

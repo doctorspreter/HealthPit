@@ -630,11 +630,11 @@ final class BridgeSyncService {
             let points = history.map { point in
                 BridgeHistoryPointPayload(
                     start: point.date,
-                    state: point.state.map { $0 * metric.displayScale },
-                    sum: point.sum.map { $0 * metric.displayScale },
-                    mean: point.mean.map { $0 * metric.displayScale },
-                    min: point.minimum.map { $0 * metric.displayScale },
-                    max: point.maximum.map { $0 * metric.displayScale }
+                    state: point.state.map { $0 * metric.healthKitScale },
+                    sum: point.sum.map { $0 * metric.healthKitScale },
+                    mean: point.mean.map { $0 * metric.healthKitScale },
+                    min: point.minimum.map { $0 * metric.healthKitScale },
+                    max: point.maximum.map { $0 * metric.healthKitScale }
                 )
             }
             pointCount += try await uploadHistory(
@@ -1000,7 +1000,7 @@ final class BridgeSyncService {
             out.append(BridgeMetricPayload(id: syncID,
                                            category: metric.category.rawValue,
                                            title: title,
-                                           value: goal.target * metric.displayScale,
+                                           value: goal.target * metric.healthKitScale,
                                            unit: metric.unitSymbol,
                                            measuredAt: now,
                                            aggregation: "latest",
@@ -1625,7 +1625,7 @@ private extension HealthMetric {
         BridgeMetricPayload(id: bridgeID,
                             category: category.rawValue,
                             title: title,
-                            value: value * displayScale,
+                            value: value * healthKitScale,
                             unit: unitSymbol,
                             measuredAt: measuredAt,
                             aggregation: aggregation == .cumulativeSum ? "sum" : "average",

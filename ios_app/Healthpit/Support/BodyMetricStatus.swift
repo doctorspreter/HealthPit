@@ -5,6 +5,10 @@
 //  Grobe Ampel-Einordnung für Gesundheitswerte. Die Bereiche dienen nur der
 //  schnellen Orientierung und ersetzen keine medizinische Bewertung.
 //
+//  Die Grenzen stehen in der kanonischen Einheit der Datenbank – also der
+//  Einheit, in der die Werte hier ankommen. Prozente sind Prozente: 95 heisst
+//  95 %, nicht 0,95.
+//
 
 import HealthKit
 import SwiftUI
@@ -57,14 +61,14 @@ enum BodyMetricStatus: CaseIterable {
         case .bloodPressureDiastolic:
             return .target(lowCritical: 60, lowCaution: 65, highCaution: 80, highCritical: 90)
         case .peripheralPerfusionIndex:
-            return .higherIsBetter(caution: 0.005, good: 0.01)
+            return .higherIsBetter(caution: 0.5, good: 1)
         case .atrialFibrillationBurden:
-            return .lowerIsBetter(good: 0.02, caution: 0.10)
+            return .lowerIsBetter(good: 2, caution: 10)
 
         case .bodyMassIndex:
             return .target(lowCritical: 17, lowCaution: 18.5, highCaution: 24.9, highCritical: 29.9)
         case .bodyFatPercentage:
-            return .target(lowCritical: 0.06, lowCaution: 0.10, highCaution: 0.25, highCritical: 0.32)
+            return .target(lowCritical: 6, lowCaution: 10, highCaution: 25, highCritical: 32)
         case .waistCircumference:
             return .lowerIsBetter(good: 94, caution: 102)
 
@@ -87,9 +91,9 @@ enum BodyMetricStatus: CaseIterable {
         case .walkingStepLength:
             return .higherIsBetter(caution: 50, good: 65)
         case .walkingAsymmetryPercentage, .walkingDoubleSupportPercentage:
-            return .lowerIsBetter(good: 0.20, caution: 0.35)
+            return .lowerIsBetter(good: 20, caution: 35)
         case .appleWalkingSteadiness:
-            return .higherIsBetter(caution: 0.50, good: 0.75)
+            return .higherIsBetter(caution: 50, good: 75)
         case .sixMinuteWalkTestDistance:
             return .higherIsBetter(caution: 350, good: 500)
         case .runningGroundContactTime:
@@ -137,7 +141,7 @@ enum BodyMetricStatus: CaseIterable {
             return .higherIsBetter(caution: 2, good: 3)
 
         case .oxygenSaturation:
-            return .higherIsBetter(caution: 0.92, good: 0.95)
+            return .higherIsBetter(caution: 92, good: 95)
         case .respiratoryRate:
             return .target(lowCritical: 10, lowCaution: 12, highCaution: 20, highCritical: 24)
         case .bodyTemperature, .basalBodyTemperature:
