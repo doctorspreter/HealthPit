@@ -1,5 +1,16 @@
 # Änderungsprotokoll
 
+## Home Assistant 2.5.1
+
+### Fixed
+
+- **The clean-up of the previous layout was a standing rule.** It removed
+  entities whose unique ID started with the old prefix, and it ran on every
+  push — forever. That is a trap: the day something legitimately carries that
+  shape again, it would disappear without anyone being told why. It now runs
+  until one pass finds nothing left to do, and the store notes that down, so it
+  never runs again. Storage upgrades keep that note.
+
 ## Home Assistant 2.5.0
 
 ### Changed

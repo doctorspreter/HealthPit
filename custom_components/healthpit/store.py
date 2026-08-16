@@ -74,6 +74,8 @@ class HealthPitStore:
             hass, STORAGE_VERSION, STORAGE_KEY, private=True
         )
         self._users: dict[str, dict[str, Any]] = {}
+        # Einmalige Umbauten, die schon gelaufen sind. Siehe `mark_completed`.
+        self._completed: set[str] = set()
 
     async def async_load(self) -> None:
         """Read the previous contents, tolerating anything unexpected in it."""
@@ -94,6 +96,9 @@ class HealthPitStore:
         # still arrive without the new fields. Filling them in on load costs
         # nothing and keeps every reader on one shape.
         self._users = upgrade_storage({"users": self._users})["users"]
+        raw_completed = data.get("completed")
+        if isinstance(raw_completed, list):
+            self._completed = {str(item) for item in raw_completed if isinstance(item, str)}
         _LOGGER.debug(
             "Loaded %s users: %s",
             len(self._users),
@@ -108,7 +113,28 @@ class HealthPitStore:
         await self._store.async_save(self._as_dict())
 
     def _as_dict(self) -> dict[str, Any]:
-        return {"users": self._users}
+        return {"users": self._users, "completed": sorted(self._completed)}
+
+    # ------------------------------------------------------------------
+    # Einmalige Umbauten
+    # ------------------------------------------------------------------
+
+    def is_completed(self, mark: str) -> bool:
+        """Ist dieser einmalige Umbau schon gelaufen?"""
+        return mark in self._completed
+
+    def mark_completed(self, mark: str) -> None:
+        """Merken, dass ein einmaliger Umbau erledigt ist.
+
+        Aufraeumen, das Entitaeten loescht, gehoert genau einmal ausgefuehrt.
+        Bliebe es dauerhaft im Lauf, waere es eine Falle: irgendwann traegt
+        wieder etwas das alte Namensmuster, und es verschwaende ohne einen
+        Hinweis irgendwo.
+        """
+        if mark in self._completed:
+            return
+        self._completed.add(mark)
+        self._schedule_save()
 
     async def async_remove(self) -> None:
         await self._store.async_remove()

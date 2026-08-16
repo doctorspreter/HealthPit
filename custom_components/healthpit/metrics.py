@@ -356,7 +356,10 @@ def upgrade_storage(data: dict[str, Any]) -> dict[str, Any]:
     """
     users = data.get("users")
     if not isinstance(users, dict):
-        return {"users": {}}
+        # Alles andere bleibt stehen — etwa der Merker, welche einmaligen
+        # Umbauten schon gelaufen sind. Ihn hier zu verlieren hiesse, sie noch
+        # einmal laufen zu lassen.
+        return {**data, "users": {}}
 
     migrated: dict[str, Any] = {}
     for user_id, bucket in users.items():

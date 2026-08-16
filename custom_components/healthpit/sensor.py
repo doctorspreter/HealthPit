@@ -55,8 +55,6 @@ async def async_setup_entry(
             registry.async_get_or_create(
                 config_entry_id=entry.entry_id, **gym_device_info(coordinator, user_id)
             )
-        _retire_old_workout_entities(hass, coordinator.user_ids())
-        _remove_empty_legacy_devices(hass, entry, coordinator.user_ids())
 
     def _new_entities() -> list[SensorEntity]:
         _ensure_devices()
@@ -71,11 +69,20 @@ async def async_setup_entry(
                 entities.append(HealthPitRouteSensor(coordinator, user_id))
         return entities
 
+    def _clear_the_previous_layout_once() -> None:
+        """Aufraeumen, bis es nichts mehr aufzuraeumen gibt — und dann nie wieder."""
+        if coordinator.store.is_completed(PREVIOUS_LAYOUT_MARK):
+            return
+        if _clear_the_previous_layout(hass, entry, coordinator.user_ids()):
+            coordinator.store.mark_completed(PREVIOUS_LAYOUT_MARK)
+
+    _clear_the_previous_layout_once()
     async_add_entities(_new_entities())
 
     @callback
     def _add_new() -> None:
         # A new phone, a new metric or a whole new user shows up while running.
+        _clear_the_previous_layout_once()
         if new_entities := _new_entities():
             async_add_entities(new_entities)
 
@@ -106,6 +113,68 @@ def workout_device_info(
         return gym_device_info(coordinator, user_id)
     return sport_device_info(
         coordinator, user_id, sport_key, str(descriptor.get("sport") or sport_key)
+    )
+
+
+# Der Umbau auf ein Geraet je Sportart (2.5.0). Der Name bleibt stehen, auch
+# wenn spaeter weitere dazukommen: Er ist die Quittung dafuer, dass genau
+# dieses Aufraeumen schon gelaufen ist.
+PREVIOUS_LAYOUT_MARK = "cleared_workout_layout_before_2_5_0"
+
+
+def _clear_the_previous_layout(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    user_ids: list[str],
+) -> bool:
+    """Clear out the workout entities and devices of the layout before 2.5.0.
+
+    Returns whether nothing of that layout is left — then the store notes it
+    down and this never runs again.
+
+    It must not become a standing rule: it deletes entities by a name pattern,
+    and a pattern that keeps matching forever is a trap. The day something
+    legitimately carries the old shape again it would disappear, and nobody
+    would be told why.
+
+    It can take two passes. A device is only removed once it holds nothing, and
+    the exercise sensors of the version before move to the gym device at the
+    moment they are added — a fraction later than this runs. So it keeps its
+    hand in until one pass finds nothing left to do.
+    """
+    _retire_old_workout_entities(hass, user_ids)
+    _remove_empty_legacy_devices(hass, entry, user_ids)
+    return not _anything_left_of_the_previous_layout(hass, entry, user_ids)
+
+
+def _anything_left_of_the_previous_layout(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    user_ids: list[str],
+) -> bool:
+    entities = er.async_get(hass)
+    prefixes = tuple(f"{user_id}_workout_" for user_id in user_ids)
+    if prefixes and any(
+        item.platform == DOMAIN and item.unique_id.startswith(prefixes)
+        for item in entities.entities.values()
+    ):
+        return True
+    devices = dr.async_get(hass)
+    return any(
+        _is_from_the_previous_layout(device, user_ids)
+        for device in dr.async_entries_for_config_entry(devices, entry.entry_id)
+    )
+
+
+def _is_from_the_previous_layout(device: dr.DeviceEntry, user_ids: list[str]) -> bool:
+    return any(
+        domain == DOMAIN
+        and (
+            is_exercise_device(identifier, user)
+            or is_legacy_workouts_device(identifier, user)
+        )
+        for domain, identifier in device.identifiers
+        for user in user_ids
     )
 
 
@@ -150,20 +219,8 @@ def _remove_empty_legacy_devices(
     """
     devices = dr.async_get(hass)
     entities = er.async_get(hass)
-
-    def is_from_the_old_layout(device: dr.DeviceEntry) -> bool:
-        return any(
-            domain == DOMAIN
-            and (
-                is_exercise_device(identifier, user)
-                or is_legacy_workouts_device(identifier, user)
-            )
-            for domain, identifier in device.identifiers
-            for user in user_ids
-        )
-
     for device in dr.async_entries_for_config_entry(devices, entry.entry_id):
-        if not is_from_the_old_layout(device):
+        if not _is_from_the_previous_layout(device, user_ids):
             continue
         if er.async_entries_for_device(
             entities, device.id, include_disabled_entities=True
