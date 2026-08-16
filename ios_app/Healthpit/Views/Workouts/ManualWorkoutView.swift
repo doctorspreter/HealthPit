@@ -736,7 +736,7 @@ struct LocalWorkoutDetailView: View {
 
     private func loadHealthDetail() async {
         guard let healthWorkout else { return }
-        healthDetail = try? await HealthKitManager.shared.workoutDetail(for: healthWorkout.uuid)
+        healthDetail = await HealthQuery.shared.workoutDetail(for: healthWorkout)
     }
 
     private func exportToAppleHealth() async {

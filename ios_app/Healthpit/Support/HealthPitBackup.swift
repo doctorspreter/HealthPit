@@ -16,20 +16,32 @@ import UniformTypeIdentifiers
 /// plain file would travel with it. The bridge connection is re-entered after
 /// a restore.
 nonisolated struct HealthPitBackup: Codable, Sendable {
-    static let currentVersion = 1
+    /// 1 = nur die selbst erfassten Trainings. 2 = der ganze Bestand.
+    static let currentVersion = 2
 
     var version: Int
     var exportedAt: Date
     var deviceID: String
     var username: String
     var workouts: [LocalWorkout]
+    /// Alles, was in der Datenbank steht, nach Herkunft geordnet.
+    ///
+    /// Fehlt in Sicherungen der Fassung 1. Die enthielten nur die von Hand
+    /// erfassten Trainings — alles aus Apple Health, jede Nacht, jeder
+    /// Messwert und jede Quellenregel fehlten darin. Der Dienst dafuer war
+    /// gebaut und wurde nie aufgerufen.
+    var observations: HealthPitObservationBackup?
 
-    init(deviceID: String, username: String, workouts: [LocalWorkout]) {
+    init(deviceID: String,
+         username: String,
+         workouts: [LocalWorkout],
+         observations: HealthPitObservationBackup? = nil) {
         self.version = Self.currentVersion
         self.exportedAt = Date()
         self.deviceID = deviceID
         self.username = username
         self.workouts = workouts
+        self.observations = observations
     }
 
     static func encoder() -> JSONEncoder {
@@ -93,12 +105,19 @@ struct HealthPitBackupDocument: FileDocument {
 }
 
 enum HealthPitBackupService {
-    /// Collect the full local workout history for export.
+    /// Alles, was die App haelt — aus der Datenbank.
     static func makeBackup(deviceID: String, username: String) async -> HealthPitBackup {
-        HealthPitBackup(
+        var observations: HealthPitObservationBackup?
+        if let store = try? await HealthPitData.shared.store() {
+            observations = try? await ObservationBackupService.makeBackup(store: store)
+        }
+        return HealthPitBackup(
             deviceID: deviceID,
             username: username,
-            workouts: await LocalWorkoutStore.shared.load()
+            // Weiterhin dabei: eine Sicherung dieser Fassung laesst sich damit
+            // auch von einer aelteren App lesen.
+            workouts: await LocalWorkoutStore.shared.load(),
+            observations: observations
         )
     }
 
@@ -129,8 +148,16 @@ enum HealthPitBackupService {
     /// workouts. Entries with a known id are replaced, the rest are added.
     @discardableResult
     static func restore(_ backup: HealthPitBackup) async -> Int {
-        guard !backup.workouts.isEmpty else { return 0 }
-        await LocalWorkoutStore.shared.saveMany(backup.workouts)
-        return backup.workouts.count
+        var restored = 0
+        if let observations = backup.observations,
+           let store = try? await HealthPitData.shared.store(),
+           let report = try? await ObservationBackupService.restore(observations, into: store) {
+            restored += report.workouts + report.observations
+        }
+        if !backup.workouts.isEmpty {
+            await LocalWorkoutStore.shared.saveMany(backup.workouts)
+            restored += backup.workouts.count
+        }
+        return restored
     }
 }

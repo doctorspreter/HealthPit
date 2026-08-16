@@ -532,12 +532,17 @@ struct BridgeSettingsView: View {
             deviceID: deviceID,
             username: username
         )
-        guard !backup.workouts.isEmpty else {
-            backupStatus = L10n.string("Es sind keine lokalen Workouts vorhanden.")
+        let observationCount = backup.observations?.sections
+            .reduce(0) { $0 + $1.observations.count } ?? 0
+        let workoutCount = backup.observations?.sections
+            .reduce(0) { $0 + $1.workouts.count } ?? backup.workouts.count
+        guard observationCount + workoutCount > 0 else {
+            backupStatus = L10n.string("Es sind keine Daten vorhanden.")
             return
         }
         backupDocument = HealthPitBackupDocument(backup: backup)
-        backupStatus = L10n.format("%lld Workouts vorbereitet.", backup.workouts.count)
+        backupStatus = L10n.format("%lld Werte und %lld Trainings vorbereitet.",
+                                   observationCount, workoutCount)
         isExportingBackup = true
     }
 
@@ -547,7 +552,7 @@ struct BridgeSettingsView: View {
             do {
                 let backup = try HealthPitBackupService.readBackup(at: url)
                 let count = await HealthPitBackupService.restore(backup)
-                backupStatus = L10n.format("%lld Workouts aus der Sicherung übernommen.", count)
+                backupStatus = L10n.format("%lld Einträge aus der Sicherung übernommen.", count)
             } catch {
                 backupStatus = L10n.string("Die Datei konnte nicht gelesen werden. Ist es eine HealthPit-Sicherung?")
             }

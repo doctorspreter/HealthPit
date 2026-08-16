@@ -679,7 +679,7 @@ struct CycleCard: View {
     }
 
     private func load() async {
-        overview = (try? await HealthKitManager.shared.fetchCycleOverview()) ?? CycleOverview()
+        overview = await HealthQuery.shared.cycleOverview()
         loaded = true
     }
 }

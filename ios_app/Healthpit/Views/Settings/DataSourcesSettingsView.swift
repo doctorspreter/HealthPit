@@ -134,6 +134,12 @@ struct DataSourcesSettingsView: View {
 
     @MainActor
     private func deleteLocalData() async {
+        // Zuerst die Datenbank. Sie ist der Bestand; die Dateien daneben sind
+        // nur Zwischenspeicher. Sie allein zu leeren hiess: Es sieht geloescht
+        // aus, bis die Ansicht das naechste Mal nachfragt.
+        if let store = try? await HealthPitData.shared.store() {
+            try? await store.resetObservationData()
+        }
         await LocalWorkoutStore.shared.deleteAll()
         await HealthWorkoutCacheStore.shared.clear()
         let defaults = UserDefaults.standard

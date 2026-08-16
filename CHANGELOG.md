@@ -1,5 +1,12 @@
 # Änderungsprotokoll
 
+## Home Assistant 2.6.1
+
+### Fixed
+
+- Nothing changed in the integration itself; this release goes with app 26.08.8
+  and GymPit, which now send the canonical sport for every workout.
+
 ## Home Assistant 2.6.0
 
 ### Changed
@@ -212,6 +219,21 @@
 
 - Non-finite metric values are rejected before they can enter storage or
   long-term statistics.
+
+## 26.08.8
+
+### Behoben — beim Durchsehen gefunden
+
+- **Die Datensicherung enthielt nur die von Hand erfassten Trainings.** Der
+  Dienst für die ganze Datenbank war gebaut und wurde von niemandem aufgerufen.
+  Alles aus Apple Health, jede Nacht, jeder Messwert und jede Quellenregel
+  fehlten in der Datei. Eine Sicherung trägt jetzt den ganzen Bestand, nach
+  Herkunft geordnet; alte Sicherungen lassen sich weiter einlesen.
+- **„Lokale Daten löschen" hat die Datenbank nie angefasst.** Geleert wurden
+  nur die Dateien daneben — es sah gelöscht aus, bis die nächste Ansicht
+  nachfragte.
+- Die Zykluskachel auf der Startseite und das Trainingsdetail im Editor lasen
+  weiter unmittelbar aus Apple Health.
 
 ## 26.08.7
 
