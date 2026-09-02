@@ -834,3 +834,24 @@
 "IE" = "IU";
 "U/min" = "转/分";
 "Workouts gesamt" = "训练总数";
+
+/* Kennzahlen je Sportart */
+"Ø Dauer" = "平均时长";
+"Längste Einheit" = "最长一次";
+"Ø Distanz" = "平均距离";
+"Längste Strecke" = "最长距离";
+"Ø Geschwindigkeit" = "平均速度";
+"Ø Tempo" = "平均配速";
+"Ø Kalorien" = "平均卡路里";
+"Max. Puls" = "最高心率";
+"Sätze" = "组数";
+"Wiederholungen" = "次数";
+
+/* Onboarding-Merkmale */
+"Privat" = "私密";
+"Aktuell" = "实时";
+
+
+/* Trainingseinheiten – getrennt von den Masseinheiten */
+"Trainingseinheit" = "次训练";
+"Trainingseinheiten" = "次训练";

@@ -834,3 +834,24 @@
 "IE" = "UI";
 "U/min" = "rpm";
 "Workouts gesamt" = "Entrenamientos en total";
+
+/* Kennzahlen je Sportart */
+"Ø Dauer" = "Duración media";
+"Längste Einheit" = "Sesión más larga";
+"Ø Distanz" = "Distancia media";
+"Längste Strecke" = "Distancia más larga";
+"Ø Geschwindigkeit" = "Velocidad media";
+"Ø Tempo" = "Ritmo medio";
+"Ø Kalorien" = "Calorías medias";
+"Max. Puls" = "Frecuencia máx.";
+"Sätze" = "Series";
+"Wiederholungen" = "Repeticiones";
+
+/* Onboarding-Merkmale */
+"Privat" = "Privado";
+"Aktuell" = "Al día";
+
+
+/* Trainingseinheiten – getrennt von den Masseinheiten */
+"Trainingseinheit" = "sesión";
+"Trainingseinheiten" = "sesiones";

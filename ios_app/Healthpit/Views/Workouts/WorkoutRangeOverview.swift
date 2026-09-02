@@ -354,8 +354,13 @@ struct WorkoutRangeOverview: View {
         }
     }
 
+    /// Aus dem Kalender, nicht fest verdrahtet: fest standen hier deutsche
+    /// Kuerzel, die auch in einer englischen App „Mo Di Mi" ergaben.
+    /// Dieselbe Herleitung benutzt die Zyklusansicht.
     private var weekdayHeaders: [String] {
-        ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+        let symbols = calendar.shortStandaloneWeekdaySymbols
+        let first = calendar.firstWeekday - 1
+        return Array(symbols[first...] + symbols[..<first])
     }
 
     private func monthGridDays() -> [Date?] {
@@ -634,15 +639,15 @@ struct WorkoutSportDetailView: View {
                     ChartGestureHint()
                 }
 
-                HStack(spacing: 12) {
-                    stat("Trainings", "\(visibleItems.count)")
-                    stat("Dauer", durationText(totalDuration))
-                    if isStrength {
-                        stat("Volumen", formatKg(totalVolumeKg))
-                    } else {
-                        stat("Distanz", totalDistanceKm > 0 ? WorkoutUnits.distance(km: totalDistanceKm) : "-")
+                // Jede Kennzahl, zu der es Werte gibt – und keine, zu der
+                // es keine gibt. Was erfasst wurde, entscheidet die Quelle,
+                // nicht diese Ansicht.
+                LazyVGrid(columns: statColumns, alignment: .leading, spacing: 14) {
+                    ForEach(SportStatistics.stats(for: visibleItems)) { entry in
+                        stat(entry.labelKey, entry.value)
                     }
                 }
+                .padding(.vertical, 2)
             }
 
             if isStrength, !strengthRows.isEmpty {
@@ -761,6 +766,10 @@ struct WorkoutSportDetailView: View {
                                            value: 1,
                                            to: referenceDate) ?? referenceDate
         return timeRange.dateInterval(referenceDate: next, calendar: .healthApp).start > Date()
+    }
+
+    private var statColumns: [GridItem] {
+        [GridItem(.adaptive(minimum: 96), spacing: 12, alignment: .leading)]
     }
 
     private func stat(_ title: String, _ value: String) -> some View {

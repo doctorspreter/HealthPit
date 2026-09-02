@@ -244,6 +244,27 @@
 - Eight keys were missing from the four translated tables (`Im Bett`,
   `Schlafzeit`, `Bettzeit`, `REM`, `IE`, `U/min`, `Workouts gesamt` and the
   efficiency subtitle).
+- **More German on English screens, found by running it.** The three labels on
+  the first screen (`Privat`, `Aktuell`) had no English entry — the very screen
+  App Review looks at. The workout calendar had its weekday initials written
+  into the source as `Mo Di Mi Do Fr Sa So`; they come from the calendar now,
+  the way the cycle view already did it.
+- **One key meant two things.** `Einheiten` was both the training sessions on
+  the workout header and the measurement units in settings, so the header read
+  "Units" in English. Sessions have their own key now.
+
+### Added
+
+- **Every figure a sport actually has.** Tapping a sport used to show three
+  fixed tiles — sessions, duration, and either volume or distance — so a run
+  showed little more than its duration while pace, calories and heart rate sat
+  in the database unused. The tiles are built from what is recorded now:
+  sessions, total and average and longest duration, distance with average and
+  longest, average pace (or average speed for cycling, rowing and skiing, which
+  nobody reads in minutes per kilometre), calories, average and maximum heart
+  rate, and volume, sets, reps and exercises for strength work. A figure with
+  no data behind it is left out rather than shown empty, so an athlete who
+  records without a chest strap sees no hollow heart-rate tile.
 
 ### Changed
 
