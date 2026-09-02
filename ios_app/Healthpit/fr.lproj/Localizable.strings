@@ -117,7 +117,6 @@
 "Messwerte" = "Mesures";
 "Metrik" = "Mesure";
 "Minuten" = "Minutes";
-"Mit Apple Health verbinden" = "Se connecter à Apple Santé";
 "Monat" = "Mois";
 "Nacht" = "Nuit";
 "Neu verbinden" = "Reconnecter";
@@ -547,7 +546,7 @@
 /* Startseite: Sichtbarkeit und Health-Freigabe */
 "Freigabe in der Health-App unter „Datenzugriff und Geräte“ erteilen." = "Accordez l'accès dans l'app Santé, sous « Accès aux données et appareils ».";
 "HealthPit braucht die Freigabe, um deine Werte zu lesen." = "HealthPit a besoin de l'autorisation pour lire vos données.";
-"Zugriff erlauben" = "Autoriser l'accès";
+"Weiter" = "Continuer";
 "Ausgeblendete Kacheln" = "Tuiles masquées";
 "Kachel ausblenden" = "Masquer la tuile";
 "Kachel einblenden" = "Afficher la tuile";
@@ -825,3 +824,13 @@
 "Trainingseinheiten und Leistungsentwicklung." = "Séances d’entraînement et évolution des performances.";
 "Schlafdauer, Phasen und Regeneration." = "Durée du sommeil, phases et récupération.";
 "Zyklusverlauf und protokollierte Symptome." = "Déroulé du cycle et symptômes consignés.";
+
+/* Schlafbereich und Einheiten – Nachtrag 26.09 */
+"Im Bett" = "Au lit";
+"Schlafzeit" = "Temps de sommeil";
+"Bettzeit" = "Temps au lit";
+"REM" = "REM";
+"%@ Effizienz" = "%@ d'efficacité";
+"IE" = "UI";
+"U/min" = "tr/min";
+"Workouts gesamt" = "Total des séances";

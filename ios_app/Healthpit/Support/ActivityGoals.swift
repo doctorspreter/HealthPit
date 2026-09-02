@@ -30,12 +30,16 @@ enum GoalPeriod: String, Codable, CaseIterable, Identifiable, Sendable {
     }
 
     /// Kurzform fuer enge Stellen wie die Zielkarte.
-    var shortTitle: String {
+    var shortTitle: String { L10n.string(shortTitleKey) }
+
+    /// Der unuebersetzte Schluessel. Namen, die nach Home Assistant gehen,
+    /// muessen hierauf schalten und nicht auf `shortTitle`.
+    var shortTitleKey: String {
         switch self {
-        case .day: return L10n.string("Tag")
-        case .week: return L10n.string("Woche")
-        case .month: return L10n.string("Monat")
-        case .year: return L10n.string("Jahr")
+        case .day: return "Tag"
+        case .week: return "Woche"
+        case .month: return "Monat"
+        case .year: return "Jahr"
         }
     }
 
@@ -187,6 +191,14 @@ enum ActivityGoalStore {
 
     nonisolated static func syncTitle(for goal: ActivityGoal) -> String {
         L10n.format("Ziel %@ (%@)", goal.title, goal.period.shortTitle)
+    }
+
+    /// Derselbe Titel auf Englisch – so heisst das Ziel in Home Assistant,
+    /// egal welche Sprache in der App eingestellt ist.
+    nonisolated static func canonicalSyncTitle(for goal: ActivityGoal) -> String {
+        L10n.canonicalFormat("Ziel %@ (%@)",
+                             goal.metric.map { L10n.canonical($0.titleKey) } ?? goal.title,
+                             L10n.canonical(goal.period.shortTitleKey))
     }
 
     /// Voreinstellung fuer ein neues Ziel: ein runder Wert in der Naehe des

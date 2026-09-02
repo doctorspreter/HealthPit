@@ -220,6 +220,59 @@
 - Non-finite metric values are rejected before they can enter storage or
   long-term statistics.
 
+## 26.09
+
+### Fixed
+
+- **German words in the sleep section, whatever the language.** Not a missing
+  translation: the stat cards looked their title up with a key that was
+  assembled at runtime — `"\(prefix)Schlafzeit"`. No such key can exist in any
+  table, so every one of them fell back to the German literal. The key is a
+  plain literal again and the "Ø" is put in front only after the lookup, since
+  it is a sign and not a word. Reported from TestFlight on an en-US device.
+- **Sensor names and units in Home Assistant followed the app language.** The
+  whole bridge payload was built from the display layer: `title` was
+  `L10n.string(titleKey)` and `unit` was `L10n.string(canonicalUnitSymbol)`,
+  both translated. Switching the app to English renamed every sensor and
+  changed its `unit_of_measurement` — the same kind of damage that sending
+  metric values was meant to prevent. Everything that leaves the app now uses
+  `L10n.canonical`, which always reads the English table. `HealthMetric.swift`
+  had forbidden exactly this in writing since it was written.
+- **`device_class` was lost outside German.** It switched on the translated
+  unit symbol, so `°C` only ever matched in German and temperature sensors
+  arrived without a device class.
+- Eight keys were missing from the four translated tables (`Im Bett`,
+  `Schlafzeit`, `Bettzeit`, `REM`, `IE`, `U/min`, `Workouts gesamt` and the
+  efficiency subtitle).
+
+### Changed
+
+- **Units follow the measurement setting all the way to Home Assistant.**
+  Choosing imperial now sends lb and mi across instead of converting for the
+  screen only. So that a switch does not tear the long-term statistics apart,
+  every such sensor carries a matching `device_class` and a unit spelled the
+  way Home Assistant spells it — `mL`, not `ml`; `fl. oz.`, not `fl oz`. Home
+  Assistant then reads the change as a conversion of the same quantity and
+  converts the history with it. The metric history is converted on the same
+  path as the current value; leaving it raw would have made one sensor jump
+  between lb and kg.
+- The data model the integration speaks is unchanged (`MODEL_VERSION = 2`), so
+  this app works with the integration already installed.
+
+### Notes
+
+- Sensors whose unit used to be a German word (`Schritte`, `Etagen`, `Züge`,
+  `Stöße`, `Atemzüge/min`) have no quantity Home Assistant knows, so they carry
+  no `device_class`. Their unit changes once, to the English word, and Home
+  Assistant will note the change for those sensors.
+
+### App Review
+
+- The button in front of the HealthKit permission request reads "Continue"
+  instead of "Connect to Apple Health", and the card on the home screen reads
+  the same instead of "Allow access" (guideline 5.1.1(iv)). The explanatory
+  text in front of the request is untouched — that part is allowed.
+
 ## 26.08.8
 
 ### Behoben — beim Durchsehen und im Simulator gefunden

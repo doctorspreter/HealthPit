@@ -100,7 +100,9 @@ struct SleepDetailView: View {
             symbol: "moon.stars.fill",
             tint: .indigo,
             value: overview?.asleep.hoursMinutes ?? "–",
-            detail: overview.map { "\(Int(($0.efficiency * 100).rounded())) % Effizienz" }
+            detail: overview.map {
+                L10n.format("%@ Effizienz", "\(Int(($0.efficiency * 100).rounded())) %")
+            }
         )
     }
 
@@ -261,12 +263,12 @@ struct SleepDetailView: View {
     }
 
     private func summaryCards(_ s: SleepOverview, showAveragePrefix: Bool) -> some View {
-        let prefix = showAveragePrefix ? "Ø " : ""
         return LazyVGrid(columns: metricColumns, spacing: 12) {
-            bigStat(s.asleep.hoursMinutes, "\(prefix)Schlafzeit", .indigo)
-            bigStat(s.timeInBed.hoursMinutes, "\(prefix)Bettzeit", .blue)
-            bigStat("\(Int((s.efficiency * 100).rounded())) %", "\(prefix)Effizienz", .teal)
-            bigStat(s.awake.hoursMinutes, "\(prefix)Wachzeit", .orange)
+            bigStat(s.asleep.hoursMinutes, "Schlafzeit", .indigo, averaged: showAveragePrefix)
+            bigStat(s.timeInBed.hoursMinutes, "Bettzeit", .blue, averaged: showAveragePrefix)
+            bigStat("\(Int((s.efficiency * 100).rounded())) %", "Effizienz", .teal,
+                    averaged: showAveragePrefix)
+            bigStat(s.awake.hoursMinutes, "Wachzeit", .orange, averaged: showAveragePrefix)
         }
     }
 
@@ -424,24 +426,31 @@ struct SleepDetailView: View {
         return VStack(alignment: .leading, spacing: 8) {
             Text(L10n.format("Durchschnitt (%lld Nächte)", Int64(sessions.count))).font(.headline)
             LazyVGrid(columns: metricColumns, spacing: 12) {
-                smallStat(avgSleep.hoursMinutes, "Ø Schlaf")
-                smallStat(avgDeep.hoursMinutes, "Ø Tief")
-                smallStat(avgREM.hoursMinutes, "Ø REM")
-                smallStat("\(Int((avgEff * 100).rounded())) %", "Ø Effizienz")
+                smallStat(avgSleep.hoursMinutes, "Schlaf", averaged: true)
+                smallStat(avgDeep.hoursMinutes, "Tief", averaged: true)
+                smallStat(avgREM.hoursMinutes, "REM", averaged: true)
+                smallStat("\(Int((avgEff * 100).rounded())) %", "Effizienz", averaged: true)
             }
         }
     }
 
     // MARK: Bausteine
 
-    private func bigStat(_ value: String, _ title: String, _ color: Color) -> some View {
+    /// `titleKey` ist immer ein Literal – nie zur Laufzeit zusammengebaut.
+    /// Ein zusammengesetzter Schluessel steht in keiner Tabelle und faellt
+    /// stumm auf den deutschen Text zurueck. Das "Ø" ist ein Zeichen, kein
+    /// Wort, und darf deshalb erst nach dem Nachschlagen davor.
+    private func bigStat(_ value: String,
+                         _ titleKey: String,
+                         _ color: Color,
+                         averaged: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             Text(value)
                 .font(.title3.bold())
                 .foregroundStyle(color)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
-            Text(L10n.string(title))
+            Text(averaged ? "Ø " + L10n.string(titleKey) : L10n.string(titleKey))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -452,13 +461,15 @@ struct SleepDetailView: View {
         .professionalCard(tint: color, cornerRadius: 18)
     }
 
-    private func smallStat(_ value: String, _ title: String) -> some View {
+    private func smallStat(_ value: String,
+                           _ titleKey: String,
+                           averaged: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(value)
                 .font(.subheadline.bold())
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
-            Text(L10n.string(title))
+            Text(averaged ? "Ø " + L10n.string(titleKey) : L10n.string(titleKey))
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)

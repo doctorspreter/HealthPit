@@ -76,6 +76,24 @@ enum L10n {
         String(format: string(key), arguments: arguments)
     }
 
+    /// Der englische Text, unabhaengig von der Sprachauswahl.
+    ///
+    /// Fuer alles, was die App verlaesst: Datenbank, Bridge, Home Assistant.
+    /// Ein Sensorname oder eine Einheit, die sich mit der App-Sprache aendert,
+    /// zerreisst drueben die Historie — derselbe Grund, aus dem an die Bridge
+    /// grundsaetzlich metrisch geht (siehe MeasurementSystem).
+    nonisolated static func canonical(_ key: String) -> String {
+        guard let path = Bundle.main.path(forResource: "en", ofType: "lproj"),
+              let bundle = Bundle(path: path) else { return key }
+        return bundle.localizedString(forKey: key, value: key, table: nil)
+    }
+
+    /// Wie `format`, aber englisch — fuer zusammengesetzte Namen, die
+    /// nach drueben gehen.
+    nonisolated static func canonicalFormat(_ key: String, _ arguments: CVarArg...) -> String {
+        String(format: canonical(key), arguments: arguments)
+    }
+
     /// Erkennt auch Texte, die in einer frueher gewaehlten Sprache im Cache
     /// gespeichert wurden, und uebersetzt sie in die aktuell gewaehlte Sprache.
     nonisolated static func stringResolvingStoredTranslation(_ value: String) -> String {

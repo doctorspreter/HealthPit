@@ -117,7 +117,6 @@
 "Messwerte" = "指标";
 "Metrik" = "指标";
 "Minuten" = "分钟";
-"Mit Apple Health verbinden" = "连接 Apple 健康";
 "Monat" = "月";
 "Nacht" = "夜晚";
 "Neu verbinden" = "重新连接";
@@ -547,7 +546,7 @@
 /* Startseite: Sichtbarkeit und Health-Freigabe */
 "Freigabe in der Health-App unter „Datenzugriff und Geräte“ erteilen." = "请在“健康”App 的“数据访问与设备”中授予访问权限。";
 "HealthPit braucht die Freigabe, um deine Werte zu lesen." = "HealthPit 需要授权才能读取你的数据。";
-"Zugriff erlauben" = "允许访问";
+"Weiter" = "继续";
 "Ausgeblendete Kacheln" = "已隐藏的卡片";
 "Kachel ausblenden" = "隐藏卡片";
 "Kachel einblenden" = "显示卡片";
@@ -825,3 +824,13 @@
 "Trainingseinheiten und Leistungsentwicklung." = "训练场次与成绩变化。";
 "Schlafdauer, Phasen und Regeneration." = "睡眠时长、阶段与恢复。";
 "Zyklusverlauf und protokollierte Symptome." = "周期变化与已记录的症状。";
+
+/* Schlafbereich und Einheiten – Nachtrag 26.09 */
+"Im Bett" = "在床上";
+"Schlafzeit" = "睡眠时间";
+"Bettzeit" = "卧床时间";
+"REM" = "REM";
+"%@ Effizienz" = "%@ 效率";
+"IE" = "IU";
+"U/min" = "转/分";
+"Workouts gesamt" = "训练总数";
