@@ -855,3 +855,38 @@
 /* Trainingseinheiten – getrennt von den Masseinheiten */
 "Trainingseinheit" = "sesión";
 "Trainingseinheiten" = "sesiones";
+
+/* Schmerzen und Verletzungen */
+"%lld laufend" = "%lld en curso";
+"Am gewählten Tag" = "En el día seleccionado";
+"Art" = "Tipo";
+"Aus einem Training" = "De un entrenamiento";
+"Beendet" = "Finalizado";
+"Beginn" = "Inicio";
+"Beschwerde" = "Molestia";
+"Brennend" = "Ardor";
+"Der Kalender färbt jeden Tag von Beginn bis Ende ein." = "El calendario colorea cada día desde el inicio hasta el final.";
+"Dieser Eintrag stammt aus einem Training. Speichern übernimmt ihn hierher." = "Esta entrada viene de un entrenamiento. Al guardar se traslada aquí.";
+"Dumpf" = "Sordo";
+"Ellbogen links" = "Codo izquierdo";
+"Ellbogen rechts" = "Codo derecho";
+"Für diesen Zeitraum ist nichts eingetragen." = "No hay nada registrado en este periodo.";
+"Im Monat" = "En el mes";
+"Kopf" = "Cabeza";
+"Körperregion" = "Zona del cuerpo";
+"Laufende Beschwerden" = "Molestias en curso";
+"Nacken" = "Cuello";
+"Nichts Laufendes" = "Nada en curso";
+"Noch nichts eingetragen." = "Aún no hay nada registrado.";
+"Notiz" = "Nota";
+"Ohne Ende gilt die Beschwerde als laufend." = "Sin fecha de fin, la molestia se considera en curso.";
+"Pochend" = "Pulsátil";
+"Schmerz" = "Dolor";
+"Schmerzen" = "Dolor";
+"Schmerzen & Verletzungen" = "Dolor y lesiones";
+"Sprunggelenk" = "Tobillo";
+"Stechend" = "Punzante";
+"Taub" = "Entumecido";
+"Was wehtut, wo es sitzt und wie lange es bleibt." = "Qué duele, dónde está y cuánto dura.";
+"Ziehend" = "Tirante";
+"Zurzeit nichts Laufendes." = "Nada en curso ahora mismo.";

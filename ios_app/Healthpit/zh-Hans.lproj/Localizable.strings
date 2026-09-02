@@ -855,3 +855,38 @@
 /* Trainingseinheiten – getrennt von den Masseinheiten */
 "Trainingseinheit" = "次训练";
 "Trainingseinheiten" = "次训练";
+
+/* Schmerzen und Verletzungen */
+"%lld laufend" = "%lld 项进行中";
+"Am gewählten Tag" = "所选日期";
+"Art" = "类型";
+"Aus einem Training" = "来自训练";
+"Beendet" = "已结束";
+"Beginn" = "开始";
+"Beschwerde" = "不适";
+"Brennend" = "灼烧";
+"Der Kalender färbt jeden Tag von Beginn bis Ende ein." = "日历会标记从开始到结束的每一天。";
+"Dieser Eintrag stammt aus einem Training. Speichern übernimmt ihn hierher." = "此记录来自一次训练。保存后将移到这里。";
+"Dumpf" = "钝痛";
+"Ellbogen links" = "左肘";
+"Ellbogen rechts" = "右肘";
+"Für diesen Zeitraum ist nichts eingetragen." = "此期间没有记录。";
+"Im Monat" = "本月";
+"Kopf" = "头部";
+"Körperregion" = "身体部位";
+"Laufende Beschwerden" = "进行中的不适";
+"Nacken" = "颈部";
+"Nichts Laufendes" = "无进行中";
+"Noch nichts eingetragen." = "尚无记录。";
+"Notiz" = "备注";
+"Ohne Ende gilt die Beschwerde als laufend." = "未填写结束日期即视为进行中。";
+"Pochend" = "抽痛";
+"Schmerz" = "疼痛";
+"Schmerzen" = "疼痛";
+"Schmerzen & Verletzungen" = "疼痛与伤病";
+"Sprunggelenk" = "踝关节";
+"Stechend" = "刺痛";
+"Taub" = "麻木";
+"Was wehtut, wo es sitzt und wie lange es bleibt." = "哪里痛、在何处、持续多久。";
+"Ziehend" = "牵拉";
+"Zurzeit nichts Laufendes." = "目前没有进行中的。";

@@ -15,9 +15,11 @@ actor HealthPitStore {
 
     /// Schemastand. Wird ueber `PRAGMA user_version` gefuehrt; jede Erhoehung
     /// braucht einen Zweig in `migrateSchema`.
-    static let schemaVersion: Int32 = 2
+    static let schemaVersion: Int32 = 3
 
-    private let database: SQLiteDatabase
+    /// Nicht `private`: die Erweiterungen in eigenen Dateien
+    /// (HealthPitStore+Pain) greifen darauf zu.
+    let database: SQLiteDatabase
     private(set) var metricRegistry: MetricRegistry
     private(set) var providerRegistry: ProviderRegistry
 
@@ -54,6 +56,9 @@ actor HealthPitStore {
         }
         if currentVersion < 2 {
             try database.execute(Self.schemaV2)
+        }
+        if currentVersion < 3 {
+            try database.execute(Self.schemaV3)
         }
         try database.execute("PRAGMA user_version = \(Self.schemaVersion);")
     }
@@ -234,6 +239,37 @@ actor HealthPitStore {
         value      TEXT,
         applied_at REAL NOT NULL
     );
+    """
+
+    /// Schema v3: Schmerzen und Verletzungen.
+    ///
+    /// Eigene Tabelle statt Observation: Ein Eintrag traegt Region, Art,
+    /// Staerke, Beginn, Ende und Notiz – das ist kein einzelner Messwert.
+    /// Region und Art stehen als englische Codes darin, so wie die Sportart
+    /// im Workout.
+    private static let schemaV3 = """
+    CREATE TABLE IF NOT EXISTS pain_entry (
+        entry_id        TEXT PRIMARY KEY NOT NULL,
+        user_id         TEXT NOT NULL,
+        kind            TEXT NOT NULL,
+        body_region     TEXT NOT NULL,
+        pain_quality    TEXT,
+        severity        INTEGER NOT NULL DEFAULT 0,
+        started_at      REAL NOT NULL,
+        ended_at        REAL,
+        notes           TEXT,
+        workout_id      TEXT,
+        origin_provider TEXT NOT NULL,
+        created_at      REAL NOT NULL,
+        updated_at      REAL NOT NULL,
+        deleted_at      REAL,
+        metadata        TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_pain_entry_time
+        ON pain_entry(user_id, started_at);
+    CREATE INDEX IF NOT EXISTS idx_pain_entry_workout
+        ON pain_entry(workout_id);
     """
 
     /// Schema v2: Wer darf welche Metrik liefern.

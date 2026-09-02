@@ -255,6 +255,24 @@
 
 ### Added
 
+- **Pain and injuries as an area of their own.** A calendar, the complaints
+  that are still running, and the history below it. A day is coloured for as
+  long as a complaint covers it — not only the day it was entered, but the
+  whole span up to its end, so a two-week strain is two weeks long on the
+  calendar. Depth of colour follows the severity. An entry carries body
+  region, kind of pain, severity, start, end and a note; leaving the end empty
+  is what makes a complaint ongoing.
+- **The injuries noted during a workout show up there too.** They are read
+  from the workouts and listed alongside the entries made here. Editing one
+  moves it into the table and it replaces the derived version, so a strain
+  noted in a workout can be given an end here. Its identifier is derived from
+  the workout, so a later sync cannot enter it twice.
+- Schema v3 adds `pain_entry`. Body region and kind of pain are stored as
+  English codes (`KNEE_LEFT`, `SHARP`), the way the sport is stored on a
+  workout — the display names are translated in the app. The German texts the
+  manual workout has been writing so far are mapped onto those codes on the
+  way in, so older entries do not arrive without a region.
+
 - **Every figure a sport actually has.** Tapping a sport used to show three
   fixed tiles — sessions, duration, and either volume or distance — so a run
   showed little more than its duration while pace, calories and heart rate sat
