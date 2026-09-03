@@ -117,7 +117,6 @@
 "Messwerte" = "指标";
 "Metrik" = "指标";
 "Minuten" = "分钟";
-"Mit Apple Health verbinden" = "连接 Apple 健康";
 "Monat" = "月";
 "Nacht" = "夜晚";
 "Neu verbinden" = "重新连接";
@@ -547,7 +546,7 @@
 /* Startseite: Sichtbarkeit und Health-Freigabe */
 "Freigabe in der Health-App unter „Datenzugriff und Geräte“ erteilen." = "请在“健康”App 的“数据访问与设备”中授予访问权限。";
 "HealthPit braucht die Freigabe, um deine Werte zu lesen." = "HealthPit 需要授权才能读取你的数据。";
-"Zugriff erlauben" = "允许访问";
+"Weiter" = "继续";
 "Ausgeblendete Kacheln" = "已隐藏的卡片";
 "Kachel ausblenden" = "隐藏卡片";
 "Kachel einblenden" = "显示卡片";
@@ -825,3 +824,269 @@
 "Trainingseinheiten und Leistungsentwicklung." = "训练场次与成绩变化。";
 "Schlafdauer, Phasen und Regeneration." = "睡眠时长、阶段与恢复。";
 "Zyklusverlauf und protokollierte Symptome." = "周期变化与已记录的症状。";
+
+/* Schlafbereich und Einheiten – Nachtrag 26.09 */
+"Im Bett" = "在床上";
+"Schlafzeit" = "睡眠时间";
+"Bettzeit" = "卧床时间";
+"REM" = "REM";
+"%@ Effizienz" = "%@ 效率";
+"IE" = "IU";
+"U/min" = "转/分";
+"Workouts gesamt" = "训练总数";
+
+/* Kennzahlen je Sportart */
+"Ø Dauer" = "平均时长";
+"Längste Einheit" = "最长一次";
+"Ø Distanz" = "平均距离";
+"Längste Strecke" = "最长距离";
+"Ø Geschwindigkeit" = "平均速度";
+"Ø Tempo" = "平均配速";
+"Ø Kalorien" = "平均卡路里";
+"Max. Puls" = "最高心率";
+"Sätze" = "组数";
+"Wiederholungen" = "次数";
+
+/* Onboarding-Merkmale */
+"Privat" = "私密";
+"Aktuell" = "实时";
+
+
+/* Trainingseinheiten – getrennt von den Masseinheiten */
+"Trainingseinheit" = "次训练";
+"Trainingseinheiten" = "次训练";
+
+/* Schmerzen und Verletzungen */
+"%lld laufend" = "%lld 项进行中";
+"Am gewählten Tag" = "所选日期";
+"Art" = "类型";
+"Aus einem Training" = "来自训练";
+"Beendet" = "已结束";
+"Beginn" = "开始";
+"Beschwerde" = "不适";
+"Brennend" = "灼烧";
+"Der Kalender färbt jeden Tag von Beginn bis Ende ein." = "日历会标记从开始到结束的每一天。";
+"Dieser Eintrag stammt aus einem Training. Speichern übernimmt ihn hierher." = "此记录来自一次训练。保存后将移到这里。";
+"Dumpf" = "钝痛";
+"Ellbogen links" = "左肘";
+"Ellbogen rechts" = "右肘";
+"Für diesen Zeitraum ist nichts eingetragen." = "此期间没有记录。";
+"Im Monat" = "本月";
+"Kopf" = "头部";
+"Körperregion" = "身体部位";
+"Laufende Beschwerden" = "进行中的不适";
+"Nacken" = "颈部";
+"Nichts Laufendes" = "无进行中";
+"Noch nichts eingetragen." = "尚无记录。";
+"Notiz" = "备注";
+"Ohne Ende gilt die Beschwerde als laufend." = "未填写结束日期即视为进行中。";
+"Pochend" = "抽痛";
+"Schmerz" = "疼痛";
+"Schmerzen" = "疼痛";
+"Schmerzen & Verletzungen" = "疼痛与伤病";
+"Sprunggelenk" = "踝关节";
+"Stechend" = "刺痛";
+"Taub" = "麻木";
+"Was wehtut, wo es sitzt und wie lange es bleibt." = "哪里痛、在何处、持续多久。";
+"Ziehend" = "牵拉";
+"Zurzeit nichts Laufendes." = "目前没有进行中的。";
+
+/* Physische Gesundheit – Tagebuch */
+"Kopfschmerz" = "头痛";
+"Migräne" = "偏头痛";
+"Panikattacke" = "惊恐发作";
+"Schwindel" = "头晕";
+"Übelkeit" = "恶心";
+"Asthma" = "哮喘";
+"Allergie" = "过敏";
+"Rückenschmerz" = "背痛";
+"Magen-Darm" = "肠胃";
+"Fieber" = "发烧";
+"Spannungskopfschmerz" = "紧张性头痛";
+"Migräne mit Aura" = "有先兆偏头痛";
+"Migräne ohne Aura" = "无先兆偏头痛";
+"Cluster" = "丛集性";
+"Nasennebenhöhlen" = "鼻窦";
+"Aus heiterem Himmel" = "突然发作";
+"Situationsgebunden" = "情境性";
+"Nachts" = "夜间";
+"Durch Anstrengung" = "运动诱发";
+"Allergisch" = "过敏性";
+"Erbrechen" = "呕吐";
+"Lichtempfindlich" = "畏光";
+"Lärmempfindlich" = "畏声";
+"Aura" = "先兆";
+"Nackenverspannung" = "颈部紧张";
+"Sehstörung" = "视觉障碍";
+"Herzrasen" = "心悸";
+"Atemnot" = "呼吸困难";
+"Schwitzen" = "出汗";
+"Zittern" = "颤抖";
+"Engegefühl in der Brust" = "胸闷";
+"Kontrollverlust-Angst" = "失控恐惧";
+"Taubheitsgefühl" = "麻木";
+"Husten" = "咳嗽";
+"Pfeifende Atmung" = "喘鸣";
+"Niesreiz" = "打喷嚏";
+"Juckreiz" = "瘙痒";
+"Hautausschlag" = "皮疹";
+"Schwellung" = "肿胀";
+"Krämpfe" = "痉挛";
+"Durchfall" = "腹泻";
+"Blähungen" = "腹胀";
+"Erschöpfung" = "疲惫";
+"Stress" = "压力";
+"Schlafmangel" = "睡眠不足";
+"Zu wenig getrunken" = "饮水不足";
+"Bildschirmzeit" = "屏幕时间";
+"Alkohol" = "酒精";
+"Essen" = "饮食";
+"Hormonell" = "激素";
+"Anstrengung" = "用力";
+"Menschenmenge" = "人群";
+"Enge Räume" = "密闭空间";
+"Konflikt" = "冲突";
+"Kalte Luft" = "冷空气";
+"Pollen" = "花粉";
+"Staub" = "灰尘";
+"Tiere" = "动物";
+"Infekt" = "感染";
+"Unbekannt" = "未知";
+"Physische Gesundheit" = "身体健康";
+"Gesundheit" = "健康";
+"Tagebuch für Beschwerden, die in Episoden kommen." = "记录阵发性不适的日记。";
+"Tagebücher" = "日记";
+"Läuft gerade" = "正在发生";
+"Noch kein Tagebuch geführt. Mit „+“ den ersten Eintrag anlegen." = "尚未记录。用“+”添加第一条。";
+"%lld Einträge · zuletzt %@" = "%lld 条 · 最近 %@";
+"Einträge" = "条目";
+"Eintrag" = "记录";
+"Häufigkeit" = "频率";
+"Häufigste Auslöser" = "最常见诱因";
+"Häufigste Begleiterscheinungen" = "最常见伴随症状";
+"%lld×" = "%lld 次";
+"Ø Stärke" = "平均强度";
+"Letzte 30 Tage" = "最近30天";
+"Medikament half" = "药物有效";
+"Medikament" = "药物";
+"Name und Dosis" = "名称与剂量";
+"Hat es geholfen?" = "有效吗？";
+"Ja" = "是";
+"Nein" = "否";
+"Ausprägung" = "类型";
+"Begleiterscheinungen" = "伴随症状";
+"Mögliche Auslöser" = "可能诱因";
+"Vorbei" = "已结束";
+"Aus Beginn und Ende ergibt sich die Dauer." = "时长由开始和结束时间得出。";
+"Ohne Ende gilt die Episode als laufend." = "未填写结束时间即视为进行中。";
+"Tage ohne Episode" = "无发作天数";
+"Noch kein Eintrag" = "尚无记录";
+
+/* Ausrüstung, Wartung und Austausch */
+"Ausrüstung" = "装备";
+"Laufschuhe" = "跑鞋";
+"Wanderschuhe" = "徒步鞋";
+"Fahrrad" = "自行车";
+"Indoor-Rad" = "室内单车";
+"Kletterschuhe" = "攀岩鞋";
+"Schwimmausrüstung" = "泳具";
+"Matte" = "垫子";
+"Schuhe, Rad und was sonst Kilometer sammelt." = "鞋子、单车以及其他累积里程的装备。";
+"Noch nichts hinterlegt. Mit „+“ ein Stück anlegen." = "尚无装备。用“+”添加。";
+"Im Einsatz" = "使用中";
+"Ausgemustert" = "已退役";
+"Ausrüstung hinzufügen" = "添加装备";
+"Austausch" = "更换";
+"Wartung" = "保养";
+"Im Einsatz seit" = "使用起始";
+"Ausgemustert am" = "退役日期";
+"Trainings vor diesem Datum zählen nicht auf dieses Stück." = "此日期之前的训练不计入。";
+"Passenden Trainings automatisch zuordnen" = "自动分配给匹配的训练";
+"Dieses Stück wird nur den Trainings zugeordnet, bei denen du es selbst auswählst." = "仅在你手动选择时分配。";
+"Für diese Art gibt es keine passende Sportart – wähle sie beim Training selbst aus." = "此类型没有对应运动，请在训练中手动选择。";
+"Fällt automatisch bei: %@" = "自动应用于：%@";
+"Austausch und Wartung" = "更换与保养";
+"Austausch nach Strecke" = "按里程更换";
+"Wartung im Abstand" = "保养间隔";
+"Wartung jetzt eintragen" = "记录本次保养";
+"Strecke" = "距离";
+"Name" = "名称";
+"nur manuell" = "仅手动";
+"seit %@" = "自 %@";
+"bis %@" = "至 %@";
+"Automatisch (%@)" = "自动（%@）";
+"Automatisch (keine)" = "自动（无）";
+"Schuhe, Rad, Wartung und Austausch" = "鞋子、单车、保养与更换";
+
+/* Diagramm mit mehreren Kennzahlen */
+"Jede Kurve ist auf ihren eigenen Höchstwert bezogen – so lassen sich Verläufe vergleichen, deren Einheiten nicht zusammenpassen." = "每条曲线按各自峰值缩放，因此单位不同的走势也能比较。";
+
+/* Ausrüstungs-Kachel */
+"Noch nichts hinterlegt" = "尚未添加";
+"%@ · fällig" = "%@ · 到期";
+
+/* Sprachdurchsicht 26.09 */
+"Übung" = "动作";
+"Ruhe-Kalorien" = "静息卡路里";
+"Distanz (Rad)" = "距离（骑行）";
+"Distanz (Schwimmen)" = "距离（游泳）";
+"Distanz (Ski)" = "距离（滑雪）";
+"Core-Training" = "核心训练";
+"Cross-Training" = "交叉训练";
+"Es sind keine Daten vorhanden." = "没有数据。";
+"%lld Werte und %lld Trainings vorbereitet." = "已准备 %lld 项数值和 %lld 次训练。";
+"%lld Einträge aus der Sicherung übernommen." = "已从备份恢复 %lld 条记录。";
+"Importierte oder manuelle Daten werden lokal und in der Bridge gelöscht." = "导入或手动录入的数据会在本地和桥接中删除。";
+"Apple-Health-Daten werden in dieser App ausgeblendet; Apple Health selbst bleibt unverändert." = "Apple Health 数据仅在本应用中隐藏，Apple Health 本身不变。";
+"Das Schreiben von Trainings nach Apple Health ist in den Datenquellen-Einstellungen deaktiviert." = "在数据源设置中已关闭向 Apple Health 写入训练。";
+"Apple Health hat das Workout nicht gespeichert." = "Apple Health 未保存该训练。";
+"Apple Health hat die Workout-Werte nicht gespeichert." = "Apple Health 未保存训练数值。";
+"Apple Health hat das Workout nicht abgeschlossen." = "Apple Health 未完成该训练。";
+"Apple Health hat kein Workout zurueckgegeben." = "Apple Health 未返回训练。";
+"lade Rekorde" = "正在加载纪录";
+
+/* Ausrüstungs-Teile und Zeitgrenzen */
+"Tauschen" = "更换";
+"Warten" = "保养";
+"Kette" = "链条";
+"Kassette" = "飞轮";
+"Bremsbeläge" = "刹车片";
+"Reifen" = "轮胎";
+"Kette ölen" = "润滑链条";
+"Inspektion" = "整车保养";
+"Einlagen" = "鞋垫";
+"Neubesohlung" = "换底";
+"Schnürsenkel" = "鞋带";
+"Reinigung" = "清洁";
+"Durchsicht" = "检查";
+"Eigenes" = "自定义";
+"Teile" = "部件";
+"Teil" = "部件";
+"Teil hinzufügen" = "添加部件";
+"Vorschläge" = "建议";
+"Noch keine Teile hinterlegt. Vorschläge unten, oder mit „+“ ein eigenes." = "尚无部件。可选下方建议，或用“+”自定义。";
+"Was passiert" = "操作";
+"Nach Strecke" = "按里程";
+"Nach Zeit" = "按时间";
+"Alle" = "每";
+"Nach" = "经过";
+"Fällig ist, was zuerst eintritt." = "以先到者为准。";
+"Mindestens eines von beidem, sonst wird nie etwas fällig." = "至少设置其中之一，否则永远不会到期。";
+"Zuletzt erledigt" = "上次完成";
+"Stand" = "读数";
+"Noch nie – gerechnet wird ab %@" = "从未 — 从 %@ 起计算";
+"Jetzt als erledigt eintragen" = "记为已完成";
+"Erledigt" = "完成";
+"Bisher" = "至今";
+"Bearbeiten" = "编辑";
+"Austausch nach Zeit" = "按时间更换";
+"nach Strecke" = "按里程";
+"nach Zeit" = "按时间";
+"%lld Jahre" = "%lld 年";
+"%.1f Jahre" = "%.1f 年";
+"%lld Monate" = "%lld 个月";
+
+/* Bridge: Schmerzen, Tagebuch, Ausrüstung */
+"Stärkster laufender Schmerz" = "当前最强疼痛";
+"Episoden (30 Tage)" = "发作次数（30天）";
+"Fällig" = "到期";

@@ -354,8 +354,13 @@ struct WorkoutRangeOverview: View {
         }
     }
 
+    /// Aus dem Kalender, nicht fest verdrahtet: fest standen hier deutsche
+    /// Kuerzel, die auch in einer englischen App „Mo Di Mi" ergaben.
+    /// Dieselbe Herleitung benutzt die Zyklusansicht.
     private var weekdayHeaders: [String] {
-        ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+        let symbols = calendar.shortStandaloneWeekdaySymbols
+        let first = calendar.firstWeekday - 1
+        return Array(symbols[first...] + symbols[..<first])
     }
 
     private func monthGridDays() -> [Date?] {
@@ -504,6 +509,9 @@ struct WorkoutSportDetailView: View {
     @State private var referenceDate = Date()
     @State private var selectedChartDate: Date?
     @State private var chartZoomLevel = 1.0
+    /// Was das Diagramm zeigt. Beim Oeffnen die Dauer, weil die es zu jedem
+    /// Training gibt; danach entscheidet der Nutzer.
+    @State private var selectedMetrics: Set<SportChartMetric> = [.duration]
 
     private var visibleItems: [UnifiedWorkout] {
         guard let timeRange = range.timeRange else { return items }
@@ -566,35 +574,23 @@ struct WorkoutSportDetailView: View {
                                            systemImage: "chart.line.uptrend.xyaxis",
                                            description: Text(L10n.string("Für diese Sportart liegen noch keine Werte vor.")))
                 } else {
-                    Chart {
-                        ForEach(points) { point in
-                            LineMark(x: .value("Tag", point.day),
-                                     y: .value(isStrength ? "Volumen" : "Minuten", point.primaryValue))
-                                .foregroundStyle(HealthCategory.workouts.tint)
-                                .interpolationMethod(showsPointSymbols ? .catmullRom : .linear)
-                            if showsPointSymbols {
-                                PointMark(x: .value("Tag", point.day),
-                                          y: .value(isStrength ? "Volumen" : "Minuten", point.primaryValue))
-                                    .foregroundStyle(HealthCategory.workouts.tint)
-                            }
+                    metricChooser
 
-                            if point.id == highlightedPoint?.id {
-                                PointMark(x: .value("Ausgewählt", point.day),
-                                          y: .value(isStrength ? "Volumen" : "Minuten", point.primaryValue))
-                                    .foregroundStyle(HealthCategory.workouts.tint)
-                                    .symbolSize(80)
-                            }
-                        }
-
-                        if let highlightedPoint {
-                            RuleMark(x: .value("Ausgewählt", highlightedPoint.day))
-                                .foregroundStyle(.secondary.opacity(0.7))
-                                .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                    Chart(metricSamples) { sample in
+                        LineMark(x: .value("Tag", sample.day),
+                                 y: .value("Anteil", sample.relative),
+                                 series: .value("Kennzahl", sample.metric.rawValue))
+                            .foregroundStyle(sample.metric.color)
+                            .interpolationMethod(showsPointSymbols ? .catmullRom : .linear)
+                        if showsPointSymbols {
+                            PointMark(x: .value("Tag", sample.day),
+                                      y: .value("Anteil", sample.relative))
+                                .foregroundStyle(sample.metric.color)
                         }
                     }
                     .frame(height: 220)
-                    .chartYAxisLabel(isStrength ? "Volumen (kg)" : "Dauer (Min)")
                     .chartXScale(domain: chartDomain)
+                    .chartYScale(domain: 0...1.05)
                     .chartXVisibleDomain(length: sportChartVisibleDuration(for: chartDomain))
                     .chartScrollableAxes(.horizontal)
                     .chartTapSelection(value: $selectedChartDate)
@@ -607,42 +603,37 @@ struct WorkoutSportDetailView: View {
                                 .font(.caption2)
                         }
                     }
-                    .chartYAxis {
-                        AxisMarks(values: .automatic(desiredCount: 4)) { value in
-                            AxisGridLine()
-                            AxisTick()
-                            AxisValueLabel {
-                                if let number = value.as(Double.self) {
-                                    Text(compactChartAxisNumber(number))
-                                        .font(.caption2)
-                                } else if let number = value.as(Int.self) {
-                                    Text(number.formatted())
-                                        .font(.caption2)
-                                }
-                            }
-                        }
-                    }
+                    // Ohne Beschriftung: die Hoehe ist ein Anteil am eigenen
+                    // Maximum, keine Groesse. Die echten Zahlen stehen unten.
+                    .chartYAxis(.hidden)
                     .modernChartSurface(tint: HealthCategory.workouts.tint)
 
-                    if let selectedChartPoint = highlightedPoint {
-                        ChartSelectedValue(
-                            title: selectedChartPoint.day.formatted(.dateTime.weekday(.abbreviated).day().month().year()),
-                            values: [(HealthCategory.workouts.tint, selectedChartPoint.label)]
-                        )
+                    Text(L10n.string("Jede Kurve ist auf ihren eigenen Höchstwert bezogen – so lassen sich Verläufe vergleichen, deren Einheiten nicht zusammenpassen."))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+
+                    if let selectedChartDate {
+                        let values = readout(on: selectedChartDate)
+                        if !values.isEmpty {
+                            ChartSelectedValue(
+                                title: selectedChartDate.formatted(.dateTime.weekday(.abbreviated).day().month().year()),
+                                values: values.map { ($0.0.color, "\(L10n.string($0.0.displayKey)): \($0.1)") }
+                            )
+                        }
                     }
 
                     ChartGestureHint()
                 }
 
-                HStack(spacing: 12) {
-                    stat("Trainings", "\(visibleItems.count)")
-                    stat("Dauer", durationText(totalDuration))
-                    if isStrength {
-                        stat("Volumen", formatKg(totalVolumeKg))
-                    } else {
-                        stat("Distanz", totalDistanceKm > 0 ? WorkoutUnits.distance(km: totalDistanceKm) : "-")
+                // Jede Kennzahl, zu der es Werte gibt – und keine, zu der
+                // es keine gibt. Was erfasst wurde, entscheidet die Quelle,
+                // nicht diese Ansicht.
+                LazyVGrid(columns: statColumns, alignment: .leading, spacing: 14) {
+                    ForEach(SportStatistics.stats(for: visibleItems)) { entry in
+                        stat(entry.labelKey, entry.value)
                     }
                 }
+                .padding(.vertical, 2)
             }
 
             if isStrength, !strengthRows.isEmpty {
@@ -700,6 +691,85 @@ struct WorkoutSportDetailView: View {
         }
         .filter { $0.primaryValue > 0 }
         .sorted { $0.day < $1.day }
+    }
+
+    // MARK: Kennzahlen im Diagramm
+
+    /// Die Kennzahlen, zu denen es im sichtbaren Zeitraum Werte gibt.
+    private var availableMetrics: [SportChartMetric] {
+        SportChartMetric.available(in: visibleItems)
+    }
+
+    /// Je Kennzahl eine Reihe, jede auf ihr eigenes Maximum bezogen.
+    private var metricSamples: [SportChartSample] {
+        let calendar = Calendar.healthApp
+        let byDay = Dictionary(grouping: visibleItems) { calendar.startOfDay(for: $0.startDate) }
+        var out: [SportChartSample] = []
+        for metric in orderedSelection {
+            let raw: [(Date, Double)] = byDay.compactMap { day, values in
+                metric.value(for: values).map { (day, $0) }
+            }
+            guard let maximum = raw.map(\.1).max(), maximum > 0 else { continue }
+            out += raw
+                .sorted { $0.0 < $1.0 }
+                .map { SportChartSample(metric: metric,
+                                        day: $0.0,
+                                        value: $0.1,
+                                        relative: $0.1 / maximum) }
+        }
+        return out
+    }
+
+    /// Stabile Reihenfolge, damit Farben und Legende nicht springen.
+    private var orderedSelection: [SportChartMetric] {
+        SportChartMetric.allCases.filter { selectedMetrics.contains($0) }
+    }
+
+    private var metricChooser: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(availableMetrics) { metric in
+                    let isOn = selectedMetrics.contains(metric)
+                    let isFull = selectedMetrics.count >= SportChartMetric.maximumSelection
+                    Button {
+                        toggle(metric)
+                    } label: {
+                        Text(L10n.string(metric.displayKey))
+                            .font(.caption.weight(.semibold))
+                            .padding(.horizontal, 11)
+                            .padding(.vertical, 6)
+                            .background(isOn ? metric.color.opacity(0.18) : Color.secondary.opacity(0.10),
+                                        in: Capsule())
+                            .foregroundStyle(isOn ? metric.color : Color.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    // Die letzte ausgewaehlte bleibt anklickbar, sonst
+                    // liesse sich eine volle Auswahl nicht mehr aendern.
+                    .disabled(!isOn && isFull)
+                    .opacity(!isOn && isFull ? 0.4 : 1)
+                }
+            }
+            .padding(.vertical, 2)
+        }
+    }
+
+    private func toggle(_ metric: SportChartMetric) {
+        if selectedMetrics.contains(metric) {
+            // Eine muss stehen bleiben, sonst zeigt das Diagramm nichts.
+            if selectedMetrics.count > 1 { selectedMetrics.remove(metric) }
+        } else if selectedMetrics.count < SportChartMetric.maximumSelection {
+            selectedMetrics.insert(metric)
+        }
+    }
+
+    /// Die Werte des angetippten Tages, echt und mit Einheit.
+    private func readout(on day: Date) -> [(SportChartMetric, String)] {
+        let calendar = Calendar.healthApp
+        let sameDay = visibleItems.filter { calendar.isDate($0.startDate, inSameDayAs: day) }
+        guard !sameDay.isEmpty else { return [] }
+        return orderedSelection.compactMap { metric in
+            metric.value(for: sameDay).map { (metric, metric.formatted($0)) }
+        }
     }
 
     private func selectedChartPoint(in points: [WorkoutSportChartPoint]) -> WorkoutSportChartPoint? {
@@ -761,6 +831,10 @@ struct WorkoutSportDetailView: View {
                                            value: 1,
                                            to: referenceDate) ?? referenceDate
         return timeRange.dateInterval(referenceDate: next, calendar: .healthApp).start > Date()
+    }
+
+    private var statColumns: [GridItem] {
+        [GridItem(.adaptive(minimum: 96), spacing: 12, alignment: .leading)]
     }
 
     private func stat(_ title: String, _ value: String) -> some View {

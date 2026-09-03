@@ -138,7 +138,9 @@ enum ManualWorkoutWriter {
         add("HRT_RATE_MAX", workout.maxHeartRate, .beatsPerMinute,
             "workout.heart_rate_max", aggregation: .maximum)
 
-        return IncomingWorkout(sportType: workout.sport.uppercased(),
+        // Kanonisch, nicht der eingetippte Name: in der Datenbank steht ein
+        // Code, keine Sprache.
+        return IncomingWorkout(sportType: SportTypeDisplay.canonicalCode(for: workout.sport),
                                title: workout.title,
                                notes: workout.notes.isEmpty ? nil : workout.notes,
                                startTime: workout.start,

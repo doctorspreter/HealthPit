@@ -172,6 +172,30 @@ struct DashboardView: View {
                         .id("cycle-\(reloadToken)")
                 }
                 .buttonStyle(.plain)
+            case .pain:
+                NavigationLink {
+                    PainDetailView()
+                } label: {
+                    PainCard(size: size)
+                        .id("pain-\(reloadToken)")
+                }
+                .buttonStyle(.plain)
+            case .diary:
+                NavigationLink {
+                    HealthDiaryView()
+                } label: {
+                    HealthDiaryCard(size: size)
+                        .id("diary-\(reloadToken)")
+                }
+                .buttonStyle(.plain)
+            case .equipment:
+                NavigationLink {
+                    EquipmentListView()
+                } label: {
+                    EquipmentCard(size: size)
+                        .id("equipment-\(reloadToken)")
+                }
+                .buttonStyle(.plain)
             case .records:
                 NavigationLink {
                     RecordsView()

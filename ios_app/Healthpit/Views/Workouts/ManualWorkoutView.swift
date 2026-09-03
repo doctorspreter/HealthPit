@@ -234,6 +234,10 @@ struct LocalWorkoutDetailView: View {
     let workout: LocalWorkout
     var records: [WorkoutRecord] = []
     var healthWorkout: WorkoutSummary?
+    /// Das zusammengefuehrte Training, wenn es eines gibt. Nur darueber
+    /// laesst sich die Ausruestung zuordnen — der Schluessel dafuer ist die
+    /// Kennung aus der Datenbank, nicht die des lokalen Eintrags.
+    var unifiedWorkout: UnifiedWorkout?
     @State private var fallbackHeartRate: HeartRateSummary?
     @State private var healthDetail: WorkoutDetail?
     @State private var isLoadingHeartRate = false
@@ -262,9 +266,14 @@ struct LocalWorkoutDetailView: View {
 
     var body: some View {
         List {
+            if let unifiedWorkout {
+                // Der Picker entscheidet selbst, ob es etwas zu zeigen gibt —
+                // sonst stand hier eine Ueberschrift ueber nichts.
+                EquipmentPicker(workout: unifiedWorkout)
+            }
             Section {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(workout.title)
+                    Text(L10n.stringResolvingStoredTranslation(workout.title))
                         .font(.headline)
                     Text(workout.start, format: .dateTime.weekday(.abbreviated).day().month().year().hour().minute())
                         .font(.caption)
@@ -484,7 +493,10 @@ struct LocalWorkoutDetailView: View {
                 }
             }
         }
-        .navigationTitle(workout.title)
+        // Der Titel steht als Text in der Datenbank („Laufen"), oft
+        // aus der Sportart uebernommen. Ohne Uebersetzung steht er
+        // deutsch in einer englischen App.
+        .navigationTitle(L10n.stringResolvingStoredTranslation(workout.title))
         .navigationBarTitleDisplayMode(.inline)
         .refreshable {
             await loadHealthDetail()
@@ -686,24 +698,12 @@ struct LocalWorkoutDetailView: View {
 
     private var mergedHealthStats: [WorkoutStat] {
         guard let stats = healthDetail?.stats else { return [] }
-        var duplicateLabels: Set<String> = [
-            "dauer",
-            "distanz",
-            "kalorien",
-            "aktive kalorien",
-            "ø puls",
-            "max puls",
-            "min puls",
-        ]
-        if tempoText != nil {
-            duplicateLabels.formUnion(["ø geschwindigkeit", "ø pace", "ø tempo"])
-        }
+        let hidesPace = tempoText != nil
         return stats.filter { stat in
-            let label = stat.label.normalizedWorkoutStatLabel
-            if duplicateLabels.contains(label) { return false }
-            if label.hasPrefix("distanz") { return false }
-            if label.contains("kalorien") { return false }
-            if label.contains("puls") { return false }
+            if WorkoutStat.isDuplicateOfLocalField(stat.label) { return false }
+            if hidesPace, WorkoutStat.paceLabels.contains(stat.label.normalizedWorkoutStatLabel) {
+                return false
+            }
             return true
         }
     }

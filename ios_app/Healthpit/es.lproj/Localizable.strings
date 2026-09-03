@@ -117,7 +117,6 @@
 "Messwerte" = "Métricas";
 "Metrik" = "Métrica";
 "Minuten" = "Minutos";
-"Mit Apple Health verbinden" = "Conectar con Apple Health";
 "Monat" = "Mes";
 "Nacht" = "Noche";
 "Neu verbinden" = "Volver a conectar";
@@ -547,7 +546,7 @@
 /* Startseite: Sichtbarkeit und Health-Freigabe */
 "Freigabe in der Health-App unter „Datenzugriff und Geräte“ erteilen." = "Concede el acceso en la app Salud, en «Acceso a datos y dispositivos».";
 "HealthPit braucht die Freigabe, um deine Werte zu lesen." = "HealthPit necesita permiso para leer tus datos.";
-"Zugriff erlauben" = "Permitir acceso";
+"Weiter" = "Continuar";
 "Ausgeblendete Kacheln" = "Tarjetas ocultas";
 "Kachel ausblenden" = "Ocultar tarjeta";
 "Kachel einblenden" = "Mostrar tarjeta";
@@ -825,3 +824,269 @@
 "Trainingseinheiten und Leistungsentwicklung." = "Sesiones de entrenamiento y evolución del rendimiento.";
 "Schlafdauer, Phasen und Regeneration." = "Duración del sueño, fases y recuperación.";
 "Zyklusverlauf und protokollierte Symptome." = "Evolución del ciclo y síntomas registrados.";
+
+/* Schlafbereich und Einheiten – Nachtrag 26.09 */
+"Im Bett" = "En la cama";
+"Schlafzeit" = "Tiempo de sueño";
+"Bettzeit" = "Tiempo en la cama";
+"REM" = "REM";
+"%@ Effizienz" = "%@ de eficiencia";
+"IE" = "UI";
+"U/min" = "rpm";
+"Workouts gesamt" = "Entrenamientos en total";
+
+/* Kennzahlen je Sportart */
+"Ø Dauer" = "Duración media";
+"Längste Einheit" = "Sesión más larga";
+"Ø Distanz" = "Distancia media";
+"Längste Strecke" = "Distancia más larga";
+"Ø Geschwindigkeit" = "Velocidad media";
+"Ø Tempo" = "Ritmo medio";
+"Ø Kalorien" = "Calorías medias";
+"Max. Puls" = "Frecuencia máx.";
+"Sätze" = "Series";
+"Wiederholungen" = "Repeticiones";
+
+/* Onboarding-Merkmale */
+"Privat" = "Privado";
+"Aktuell" = "Al día";
+
+
+/* Trainingseinheiten – getrennt von den Masseinheiten */
+"Trainingseinheit" = "sesión";
+"Trainingseinheiten" = "sesiones";
+
+/* Schmerzen und Verletzungen */
+"%lld laufend" = "%lld en curso";
+"Am gewählten Tag" = "En el día seleccionado";
+"Art" = "Tipo";
+"Aus einem Training" = "De un entrenamiento";
+"Beendet" = "Finalizado";
+"Beginn" = "Inicio";
+"Beschwerde" = "Molestia";
+"Brennend" = "Ardor";
+"Der Kalender färbt jeden Tag von Beginn bis Ende ein." = "El calendario colorea cada día desde el inicio hasta el final.";
+"Dieser Eintrag stammt aus einem Training. Speichern übernimmt ihn hierher." = "Esta entrada viene de un entrenamiento. Al guardar se traslada aquí.";
+"Dumpf" = "Sordo";
+"Ellbogen links" = "Codo izquierdo";
+"Ellbogen rechts" = "Codo derecho";
+"Für diesen Zeitraum ist nichts eingetragen." = "No hay nada registrado en este periodo.";
+"Im Monat" = "En el mes";
+"Kopf" = "Cabeza";
+"Körperregion" = "Zona del cuerpo";
+"Laufende Beschwerden" = "Molestias en curso";
+"Nacken" = "Cuello";
+"Nichts Laufendes" = "Nada en curso";
+"Noch nichts eingetragen." = "Aún no hay nada registrado.";
+"Notiz" = "Nota";
+"Ohne Ende gilt die Beschwerde als laufend." = "Sin fecha de fin, la molestia se considera en curso.";
+"Pochend" = "Pulsátil";
+"Schmerz" = "Dolor";
+"Schmerzen" = "Dolor";
+"Schmerzen & Verletzungen" = "Dolor y lesiones";
+"Sprunggelenk" = "Tobillo";
+"Stechend" = "Punzante";
+"Taub" = "Entumecido";
+"Was wehtut, wo es sitzt und wie lange es bleibt." = "Qué duele, dónde está y cuánto dura.";
+"Ziehend" = "Tirante";
+"Zurzeit nichts Laufendes." = "Nada en curso ahora mismo.";
+
+/* Physische Gesundheit – Tagebuch */
+"Kopfschmerz" = "Dolor de cabeza";
+"Migräne" = "Migraña";
+"Panikattacke" = "Ataque de pánico";
+"Schwindel" = "Mareo";
+"Übelkeit" = "Náuseas";
+"Asthma" = "Asma";
+"Allergie" = "Alergia";
+"Rückenschmerz" = "Dolor de espalda";
+"Magen-Darm" = "Estómago e intestino";
+"Fieber" = "Fiebre";
+"Spannungskopfschmerz" = "Cefalea tensional";
+"Migräne mit Aura" = "Migraña con aura";
+"Migräne ohne Aura" = "Migraña sin aura";
+"Cluster" = "En racimo";
+"Nasennebenhöhlen" = "Sinusal";
+"Aus heiterem Himmel" = "De repente";
+"Situationsgebunden" = "Situacional";
+"Nachts" = "Nocturno";
+"Durch Anstrengung" = "Por esfuerzo";
+"Allergisch" = "Alérgico";
+"Erbrechen" = "Vómitos";
+"Lichtempfindlich" = "Fotofobia";
+"Lärmempfindlich" = "Fonofobia";
+"Aura" = "Aura";
+"Nackenverspannung" = "Tensión cervical";
+"Sehstörung" = "Alteración visual";
+"Herzrasen" = "Palpitaciones";
+"Atemnot" = "Falta de aire";
+"Schwitzen" = "Sudoración";
+"Zittern" = "Temblores";
+"Engegefühl in der Brust" = "Opresión en el pecho";
+"Kontrollverlust-Angst" = "Miedo a perder el control";
+"Taubheitsgefühl" = "Entumecimiento";
+"Husten" = "Tos";
+"Pfeifende Atmung" = "Sibilancias";
+"Niesreiz" = "Estornudos";
+"Juckreiz" = "Picor";
+"Hautausschlag" = "Erupción";
+"Schwellung" = "Hinchazón";
+"Krämpfe" = "Calambres";
+"Durchfall" = "Diarrea";
+"Blähungen" = "Hinchazón abdominal";
+"Erschöpfung" = "Agotamiento";
+"Stress" = "Estrés";
+"Schlafmangel" = "Falta de sueño";
+"Zu wenig getrunken" = "Deshidratación";
+"Bildschirmzeit" = "Tiempo de pantalla";
+"Alkohol" = "Alcohol";
+"Essen" = "Comida";
+"Hormonell" = "Hormonal";
+"Anstrengung" = "Esfuerzo";
+"Menschenmenge" = "Multitudes";
+"Enge Räume" = "Espacios cerrados";
+"Konflikt" = "Conflicto";
+"Kalte Luft" = "Aire frío";
+"Pollen" = "Polen";
+"Staub" = "Polvo";
+"Tiere" = "Animales";
+"Infekt" = "Infección";
+"Unbekannt" = "Desconocido";
+"Physische Gesundheit" = "Salud física";
+"Gesundheit" = "Salud";
+"Tagebuch für Beschwerden, die in Episoden kommen." = "Un diario para molestias que vienen en episodios.";
+"Tagebücher" = "Diarios";
+"Läuft gerade" = "En curso ahora";
+"Noch kein Tagebuch geführt. Mit „+“ den ersten Eintrag anlegen." = "Aún no hay diario. Usa «+» para la primera entrada.";
+"%lld Einträge · zuletzt %@" = "%lld entradas · última %@";
+"Einträge" = "Entradas";
+"Eintrag" = "Entrada";
+"Häufigkeit" = "Frecuencia";
+"Häufigste Auslöser" = "Desencadenantes más frecuentes";
+"Häufigste Begleiterscheinungen" = "Síntomas más frecuentes";
+"%lld×" = "%lld×";
+"Ø Stärke" = "Intensidad media";
+"Letzte 30 Tage" = "Últimos 30 días";
+"Medikament half" = "El medicamento ayudó";
+"Medikament" = "Medicamento";
+"Name und Dosis" = "Nombre y dosis";
+"Hat es geholfen?" = "¿Ayudó?";
+"Ja" = "Sí";
+"Nein" = "No";
+"Ausprägung" = "Tipo";
+"Begleiterscheinungen" = "Síntomas";
+"Mögliche Auslöser" = "Posibles desencadenantes";
+"Vorbei" = "Terminado";
+"Aus Beginn und Ende ergibt sich die Dauer." = "La duración resulta del inicio y el final.";
+"Ohne Ende gilt die Episode als laufend." = "Sin final, el episodio se considera en curso.";
+"Tage ohne Episode" = "Días sin episodio";
+"Noch kein Eintrag" = "Aún sin entradas";
+
+/* Ausrüstung, Wartung und Austausch */
+"Ausrüstung" = "Equipamiento";
+"Laufschuhe" = "Zapatillas de running";
+"Wanderschuhe" = "Botas de senderismo";
+"Fahrrad" = "Bicicleta";
+"Indoor-Rad" = "Bicicleta estática";
+"Kletterschuhe" = "Pies de gato";
+"Schwimmausrüstung" = "Equipo de natación";
+"Matte" = "Esterilla";
+"Schuhe, Rad und was sonst Kilometer sammelt." = "Zapatillas, bicicleta y todo lo que acumula kilómetros.";
+"Noch nichts hinterlegt. Mit „+“ ein Stück anlegen." = "Aún no hay nada. Usa «+» para añadir una pieza.";
+"Im Einsatz" = "En uso";
+"Ausgemustert" = "Retirado";
+"Ausrüstung hinzufügen" = "Añadir equipamiento";
+"Austausch" = "Reemplazo";
+"Wartung" = "Mantenimiento";
+"Im Einsatz seit" = "En uso desde";
+"Ausgemustert am" = "Retirado el";
+"Trainings vor diesem Datum zählen nicht auf dieses Stück." = "Los entrenamientos anteriores a esta fecha no cuentan.";
+"Passenden Trainings automatisch zuordnen" = "Asignar automáticamente a los entrenamientos que encajen";
+"Dieses Stück wird nur den Trainings zugeordnet, bei denen du es selbst auswählst." = "Esta pieza solo se asigna a los entrenamientos donde la elijas.";
+"Für diese Art gibt es keine passende Sportart – wähle sie beim Training selbst aus." = "No hay deporte que encaje con este tipo: elígelo en el entrenamiento.";
+"Fällt automatisch bei: %@" = "Automático en: %@";
+"Austausch und Wartung" = "Reemplazo y mantenimiento";
+"Austausch nach Strecke" = "Reemplazar tras distancia";
+"Wartung im Abstand" = "Intervalo de mantenimiento";
+"Wartung jetzt eintragen" = "Registrar mantenimiento";
+"Strecke" = "Distancia";
+"Name" = "Nombre";
+"nur manuell" = "solo manual";
+"seit %@" = "desde %@";
+"bis %@" = "hasta %@";
+"Automatisch (%@)" = "Automático (%@)";
+"Automatisch (keine)" = "Automático (ninguna)";
+"Schuhe, Rad, Wartung und Austausch" = "Zapatillas, bici, mantenimiento y reemplazo";
+
+/* Diagramm mit mehreren Kennzahlen */
+"Jede Kurve ist auf ihren eigenen Höchstwert bezogen – so lassen sich Verläufe vergleichen, deren Einheiten nicht zusammenpassen." = "Cada línea se escala a su propio máximo, así se pueden comparar curvas con unidades distintas.";
+
+/* Ausrüstungs-Kachel */
+"Noch nichts hinterlegt" = "Aún no hay nada";
+"%@ · fällig" = "%@ · pendiente";
+
+/* Sprachdurchsicht 26.09 */
+"Übung" = "Ejercicio";
+"Ruhe-Kalorien" = "Calorías en reposo";
+"Distanz (Rad)" = "Distancia (bici)";
+"Distanz (Schwimmen)" = "Distancia (natación)";
+"Distanz (Ski)" = "Distancia (esquí)";
+"Core-Training" = "Entrenamiento del core";
+"Cross-Training" = "Entrenamiento cruzado";
+"Es sind keine Daten vorhanden." = "No hay datos.";
+"%lld Werte und %lld Trainings vorbereitet." = "%lld valores y %lld entrenamientos preparados.";
+"%lld Einträge aus der Sicherung übernommen." = "%lld entradas restauradas de la copia.";
+"Importierte oder manuelle Daten werden lokal und in der Bridge gelöscht." = "Los datos importados o manuales se eliminan localmente y en el puente.";
+"Apple-Health-Daten werden in dieser App ausgeblendet; Apple Health selbst bleibt unverändert." = "Los datos de Apple Health se ocultan en esta app; Apple Health no cambia.";
+"Das Schreiben von Trainings nach Apple Health ist in den Datenquellen-Einstellungen deaktiviert." = "La escritura de entrenamientos en Apple Health está desactivada en los ajustes de fuentes.";
+"Apple Health hat das Workout nicht gespeichert." = "Apple Health no guardó el entrenamiento.";
+"Apple Health hat die Workout-Werte nicht gespeichert." = "Apple Health no guardó los valores del entrenamiento.";
+"Apple Health hat das Workout nicht abgeschlossen." = "Apple Health no finalizó el entrenamiento.";
+"Apple Health hat kein Workout zurueckgegeben." = "Apple Health no devolvió ningún entrenamiento.";
+"lade Rekorde" = "cargando récords";
+
+/* Ausrüstungs-Teile und Zeitgrenzen */
+"Tauschen" = "Reemplazar";
+"Warten" = "Mantener";
+"Kette" = "Cadena";
+"Kassette" = "Casete";
+"Bremsbeläge" = "Pastillas de freno";
+"Reifen" = "Neumáticos";
+"Kette ölen" = "Lubricar cadena";
+"Inspektion" = "Revisión";
+"Einlagen" = "Plantillas";
+"Neubesohlung" = "Resuelado";
+"Schnürsenkel" = "Cordones";
+"Reinigung" = "Limpieza";
+"Durchsicht" = "Inspección";
+"Eigenes" = "Personalizado";
+"Teile" = "Piezas";
+"Teil" = "Pieza";
+"Teil hinzufügen" = "Añadir pieza";
+"Vorschläge" = "Sugerencias";
+"Noch keine Teile hinterlegt. Vorschläge unten, oder mit „+“ ein eigenes." = "Aún no hay piezas. Sugerencias abajo, o añade la tuya con «+».";
+"Was passiert" = "Qué ocurre";
+"Nach Strecke" = "Por distancia";
+"Nach Zeit" = "Por tiempo";
+"Alle" = "Cada";
+"Nach" = "Después de";
+"Fällig ist, was zuerst eintritt." = "Vence lo que ocurra primero.";
+"Mindestens eines von beidem, sonst wird nie etwas fällig." = "Al menos uno de los dos, o nunca vencerá nada.";
+"Zuletzt erledigt" = "Última vez";
+"Stand" = "Marcador";
+"Noch nie – gerechnet wird ab %@" = "Nunca: se cuenta desde %@";
+"Jetzt als erledigt eintragen" = "Registrar como hecho";
+"Erledigt" = "Hecho";
+"Bisher" = "Hasta ahora";
+"Bearbeiten" = "Editar";
+"Austausch nach Zeit" = "Reemplazar por tiempo";
+"nach Strecke" = "por distancia";
+"nach Zeit" = "por tiempo";
+"%lld Jahre" = "%lld años";
+"%.1f Jahre" = "%.1f años";
+"%lld Monate" = "%lld meses";
+
+/* Bridge: Schmerzen, Tagebuch, Ausrüstung */
+"Stärkster laufender Schmerz" = "Dolor activo más fuerte";
+"Episoden (30 Tage)" = "Episodios (30 días)";
+"Fällig" = "Pendiente";

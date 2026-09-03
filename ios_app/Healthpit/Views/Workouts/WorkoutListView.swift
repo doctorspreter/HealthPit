@@ -42,7 +42,9 @@ struct WorkoutListView: View {
                     symbol: "figure.run.circle.fill",
                     tint: .green,
                     value: items.isEmpty ? "–" : "\(items.count)",
-                    detail: items.count == 1 ? "Einheit" : "Einheiten"
+                    // Eigener Schluessel: "Einheiten" bedeutet in den
+                    // Einstellungen Massein­heiten und wurde dort zu "Units".
+                    detail: items.count == 1 ? "Trainingseinheit" : "Trainingseinheiten"
                 )
                 .listRowInsets(EdgeInsets(top: 8, leading: 18, bottom: 8, trailing: 18))
                 .listRowSeparator(.hidden)
@@ -92,7 +94,29 @@ struct WorkoutListView: View {
                     .padding(14)
                     .professionalCard(tint: .green)
                 }
-                .listRowInsets(EdgeInsets(top: 5, leading: 18, bottom: 8, trailing: 18))
+                .listRowInsets(EdgeInsets(top: 5, leading: 18, bottom: 4, trailing: 18))
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+
+                // Ausruestung gehoert zum Training, nicht auf die Startseite:
+                // wer nach seinen Schuhen sieht, kommt von den Läufen her.
+                NavigationLink {
+                    EquipmentListView()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "shoe")
+                            .foregroundStyle(.brown)
+                            .frame(width: 36, height: 36)
+                            .background(.brown.opacity(0.12), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(L10n.string("Ausrüstung")).font(.subheadline.weight(.semibold))
+                            Text(L10n.string("Schuhe, Rad, Wartung und Austausch")).font(.caption2).foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(14)
+                    .professionalCard(tint: .brown)
+                }
+                .listRowInsets(EdgeInsets(top: 4, leading: 18, bottom: 8, trailing: 18))
                 .listRowSeparator(.hidden)
                 .listRowBackground(Color.clear)
             }
@@ -398,6 +422,10 @@ struct UnifiedWorkout: Identifiable {
         local?.averageHeartRate
     }
 
+    nonisolated var maxHeartRate: Double? {
+        local?.maxHeartRate
+    }
+
     nonisolated var weather: WorkoutWeather? {
         local?.weather ?? health?.weather
     }
@@ -417,6 +445,11 @@ struct UnifiedWorkout: Identifiable {
     nonisolated var setCount: Int? {
         let count = strengthExercises.flatMap(\.sets).count
         return count > 0 ? count : nil
+    }
+
+    nonisolated var repCount: Int? {
+        let reps = strengthExercises.flatMap(\.sets).compactMap(\.reps).reduce(0, +)
+        return reps > 0 ? Int(reps.rounded()) : nil
     }
 
     nonisolated var strengthExercises: [UnifiedStrengthExercise] {
@@ -579,7 +612,10 @@ struct UnifiedWorkoutDetailView: View {
     var body: some View {
         if let health = item.health {
             if let local = item.local {
-                LocalWorkoutDetailLoaderView(summary: local, records: records, healthWorkout: health)
+                LocalWorkoutDetailLoaderView(summary: local,
+                                             records: records,
+                                             healthWorkout: health,
+                                             unifiedWorkout: item)
             } else {
                 LocalWorkoutDetailView(workout: LocalWorkout(id: health.uuid,
                                                              source: .appleHealth,
@@ -596,7 +632,8 @@ struct UnifiedWorkoutDetailView: View {
                                                              injury: health.injury,
                                                              route: []),
                                        records: records,
-                                       healthWorkout: health)
+                                       healthWorkout: health,
+                                       unifiedWorkout: item)
             }
         } else if let local = item.local {
             LocalWorkoutDetailLoaderView(summary: local, records: records)
@@ -613,23 +650,7 @@ struct UnifiedWorkoutDetailView: View {
 
     private var mergedHealthStats: [WorkoutStat] {
         guard let stats = healthDetail?.stats else { return [] }
-        let duplicateLabels: Set<String> = [
-            "dauer",
-            "distanz",
-            "kalorien",
-            "aktive kalorien",
-            "ø puls",
-            "max puls",
-            "min puls",
-        ]
-        return stats.filter { stat in
-            let label = stat.label.normalizedWorkoutStatLabel
-            if duplicateLabels.contains(label) { return false }
-            if label.hasPrefix("distanz") { return false }
-            if label.contains("kalorien") { return false }
-            if label.contains("puls") { return false }
-            return true
-        }
+        return stats.filter { !WorkoutStat.isDuplicateOfLocalField($0.label) }
     }
 
     private func durationText(_ seconds: TimeInterval) -> String {
@@ -655,13 +676,15 @@ struct LocalWorkoutDetailLoaderView: View {
     let summary: LocalWorkout
     var records: [WorkoutRecord] = []
     var healthWorkout: WorkoutSummary?
+    var unifiedWorkout: UnifiedWorkout?
 
     @State private var workout: LocalWorkout?
 
     var body: some View {
         LocalWorkoutDetailView(workout: workout ?? summary,
                                records: records,
-                               healthWorkout: healthWorkout)
+                               healthWorkout: healthWorkout,
+                               unifiedWorkout: unifiedWorkout)
             .task {
                 if workout == nil {
                     workout = await HealthQuery.shared.localWorkout(id: summary.id) ?? summary

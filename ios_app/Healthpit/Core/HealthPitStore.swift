@@ -15,9 +15,11 @@ actor HealthPitStore {
 
     /// Schemastand. Wird ueber `PRAGMA user_version` gefuehrt; jede Erhoehung
     /// braucht einen Zweig in `migrateSchema`.
-    static let schemaVersion: Int32 = 2
+    static let schemaVersion: Int32 = 6
 
-    private let database: SQLiteDatabase
+    /// Nicht `private`: die Erweiterungen in eigenen Dateien
+    /// (HealthPitStore+Pain) greifen darauf zu.
+    let database: SQLiteDatabase
     private(set) var metricRegistry: MetricRegistry
     private(set) var providerRegistry: ProviderRegistry
 
@@ -54,6 +56,18 @@ actor HealthPitStore {
         }
         if currentVersion < 2 {
             try database.execute(Self.schemaV2)
+        }
+        if currentVersion < 3 {
+            try database.execute(Self.schemaV3)
+        }
+        if currentVersion < 4 {
+            try database.execute(Self.schemaV4)
+        }
+        if currentVersion < 5 {
+            try database.execute(Self.schemaV5)
+        }
+        if currentVersion < 6 {
+            try database.execute(Self.schemaV6)
         }
         try database.execute("PRAGMA user_version = \(Self.schemaVersion);")
     }
@@ -234,6 +248,141 @@ actor HealthPitStore {
         value      TEXT,
         applied_at REAL NOT NULL
     );
+    """
+
+    /// Schema v6: Teile an einem Ausruestungsstueck, und Austausch nach Zeit.
+    ///
+    /// Ein Rad wird nicht ausgetauscht, seine Kette schon. Jedes Teil traegt
+    /// sein eigenes Intervall — in Kilometern, in Tagen oder in beidem, wobei
+    /// gilt, was zuerst eintritt.
+    private static let schemaV6 = """
+    ALTER TABLE equipment ADD COLUMN replace_after_days INTEGER;
+
+    CREATE TABLE IF NOT EXISTS equipment_component (
+        component_id   TEXT PRIMARY KEY NOT NULL,
+        equipment_id   TEXT NOT NULL,
+        user_id        TEXT NOT NULL,
+        kind           TEXT NOT NULL,
+        name           TEXT,
+        action         TEXT NOT NULL,
+        interval_km    REAL,
+        interval_days  INTEGER,
+        last_done_km   REAL NOT NULL DEFAULT 0,
+        last_done_at   REAL,
+        notes          TEXT,
+        created_at     REAL NOT NULL,
+        updated_at     REAL NOT NULL,
+        deleted_at     REAL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_component_equipment
+        ON equipment_component(equipment_id);
+    """
+
+    /// Schema v5: Ausruestung und ihre Wartung.
+    ///
+    /// `equipment_usage` steht nur fuer die Faelle, die von der
+    /// automatischen Zuordnung abweichen. Jedes Training einzeln
+    /// einzutragen waere eine zweite Wahrheit neben den Trainings selbst —
+    /// und die erste, die auseinanderlaeuft. `equipment_id IS NULL` heisst
+    /// ausdruecklich „hier keine Ausruestung", damit sich die automatische
+    /// Zuordnung auch abwaehlen laesst.
+    private static let schemaV5 = """
+    CREATE TABLE IF NOT EXISTS equipment (
+        equipment_id     TEXT PRIMARY KEY NOT NULL,
+        user_id          TEXT NOT NULL,
+        kind             TEXT NOT NULL,
+        name             TEXT,
+        in_use_from      REAL NOT NULL,
+        retired_at       REAL,
+        is_automatic     INTEGER NOT NULL DEFAULT 1,
+        replace_after_km REAL,
+        service_every_km REAL,
+        last_service_km  REAL NOT NULL DEFAULT 0,
+        last_service_at  REAL,
+        notes            TEXT,
+        origin_provider  TEXT NOT NULL,
+        created_at       REAL NOT NULL,
+        updated_at       REAL NOT NULL,
+        deleted_at       REAL,
+        metadata         TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS equipment_usage (
+        workout_id   TEXT NOT NULL,
+        user_id      TEXT NOT NULL,
+        equipment_id TEXT,
+        updated_at   REAL NOT NULL,
+        PRIMARY KEY (workout_id, user_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_equipment_in_use
+        ON equipment(user_id, in_use_from);
+    CREATE INDEX IF NOT EXISTS idx_equipment_usage_equipment
+        ON equipment_usage(equipment_id);
+    """
+
+    /// Schema v4: Tagebuch fuer wiederkehrende Beschwerdebilder.
+    ///
+    /// Begleiterscheinungen und Ausloeser sind mehrere je Eintrag und stehen
+    /// als kommagetrennte Codeliste in einer Spalte. Eine eigene Tabelle
+    /// dafuer waere sauberer normalisiert, aber niemand fragt hier je nach
+    /// „alle Episoden mit Aura ausser im Winter" — gelesen wird immer die
+    /// ganze Episode.
+    private static let schemaV4 = """
+    CREATE TABLE IF NOT EXISTS health_episode (
+        episode_id        TEXT PRIMARY KEY NOT NULL,
+        user_id           TEXT NOT NULL,
+        condition         TEXT NOT NULL,
+        subtype           TEXT,
+        severity          INTEGER NOT NULL DEFAULT 0,
+        started_at        REAL NOT NULL,
+        ended_at          REAL,
+        symptoms          TEXT,
+        triggers          TEXT,
+        medication        TEXT,
+        medication_helped INTEGER,
+        notes             TEXT,
+        origin_provider   TEXT NOT NULL,
+        created_at        REAL NOT NULL,
+        updated_at        REAL NOT NULL,
+        deleted_at        REAL,
+        metadata          TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_health_episode_time
+        ON health_episode(user_id, condition, started_at);
+    """
+
+    /// Schema v3: Schmerzen und Verletzungen.
+    ///
+    /// Eigene Tabelle statt Observation: Ein Eintrag traegt Region, Art,
+    /// Staerke, Beginn, Ende und Notiz – das ist kein einzelner Messwert.
+    /// Region und Art stehen als englische Codes darin, so wie die Sportart
+    /// im Workout.
+    private static let schemaV3 = """
+    CREATE TABLE IF NOT EXISTS pain_entry (
+        entry_id        TEXT PRIMARY KEY NOT NULL,
+        user_id         TEXT NOT NULL,
+        kind            TEXT NOT NULL,
+        body_region     TEXT NOT NULL,
+        pain_quality    TEXT,
+        severity        INTEGER NOT NULL DEFAULT 0,
+        started_at      REAL NOT NULL,
+        ended_at        REAL,
+        notes           TEXT,
+        workout_id      TEXT,
+        origin_provider TEXT NOT NULL,
+        created_at      REAL NOT NULL,
+        updated_at      REAL NOT NULL,
+        deleted_at      REAL,
+        metadata        TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_pain_entry_time
+        ON pain_entry(user_id, started_at);
+    CREATE INDEX IF NOT EXISTS idx_pain_entry_workout
+        ON pain_entry(workout_id);
     """
 
     /// Schema v2: Wer darf welche Metrik liefern.

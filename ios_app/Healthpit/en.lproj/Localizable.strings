@@ -119,7 +119,6 @@
 "Messwerte" = "Metrics";
 "Metrik" = "Metric";
 "Minuten" = "Minutes";
-"Mit Apple Health verbinden" = "Connect to Apple Health";
 "Monat" = "Month";
 "Nacht" = "Night";
 "Neu verbinden" = "Reconnect";
@@ -547,7 +546,7 @@
 /* Startseite: Sichtbarkeit und Health-Freigabe */
 "Freigabe in der Health-App unter „Datenzugriff und Geräte“ erteilen." = "Grant access in the Health app under “Data Access & Devices”.";
 "HealthPit braucht die Freigabe, um deine Werte zu lesen." = "HealthPit needs permission to read your data.";
-"Zugriff erlauben" = "Allow access";
+"Weiter" = "Continue";
 "Ausgeblendete Kacheln" = "Hidden tiles";
 "Kachel ausblenden" = "Hide tile";
 "Kachel einblenden" = "Show tile";
@@ -825,3 +824,269 @@
 "Trainingseinheiten und Leistungsentwicklung." = "Training sessions and performance over time.";
 "Schlafdauer, Phasen und Regeneration." = "Sleep duration, stages and recovery.";
 "Zyklusverlauf und protokollierte Symptome." = "Cycle history and the symptoms you logged.";
+
+/* Schlafbereich und Einheiten – Nachtrag 26.09 */
+"Im Bett" = "In bed";
+"Schlafzeit" = "Sleep time";
+"Bettzeit" = "Time in bed";
+"REM" = "REM";
+"%@ Effizienz" = "%@ efficiency";
+"IE" = "IU";
+"U/min" = "rpm";
+"Workouts gesamt" = "Workouts total";
+
+/* Kennzahlen je Sportart */
+"Ø Dauer" = "Avg. duration";
+"Längste Einheit" = "Longest session";
+"Ø Distanz" = "Avg. distance";
+"Längste Strecke" = "Longest distance";
+"Ø Geschwindigkeit" = "Avg. speed";
+"Ø Tempo" = "Avg. pace";
+"Ø Kalorien" = "Avg. calories";
+"Max. Puls" = "Max. heart rate";
+"Sätze" = "Sets";
+"Wiederholungen" = "Reps";
+
+/* Onboarding-Merkmale */
+"Privat" = "Private";
+"Aktuell" = "Up to date";
+
+
+/* Trainingseinheiten – getrennt von den Masseinheiten */
+"Trainingseinheit" = "session";
+"Trainingseinheiten" = "sessions";
+
+/* Schmerzen und Verletzungen */
+"%lld laufend" = "%lld ongoing";
+"Am gewählten Tag" = "On the selected day";
+"Art" = "Kind";
+"Aus einem Training" = "From a workout";
+"Beendet" = "Ended";
+"Beginn" = "Start";
+"Beschwerde" = "Complaint";
+"Brennend" = "Burning";
+"Der Kalender färbt jeden Tag von Beginn bis Ende ein." = "The calendar colours every day from start to end.";
+"Dieser Eintrag stammt aus einem Training. Speichern übernimmt ihn hierher." = "This entry comes from a workout. Saving moves it here.";
+"Dumpf" = "Dull";
+"Ellbogen links" = "Left elbow";
+"Ellbogen rechts" = "Right elbow";
+"Für diesen Zeitraum ist nichts eingetragen." = "Nothing is recorded for this period.";
+"Im Monat" = "This month";
+"Kopf" = "Head";
+"Körperregion" = "Body region";
+"Laufende Beschwerden" = "Ongoing complaints";
+"Nacken" = "Neck";
+"Nichts Laufendes" = "Nothing ongoing";
+"Noch nichts eingetragen." = "Nothing recorded yet.";
+"Notiz" = "Note";
+"Ohne Ende gilt die Beschwerde als laufend." = "Without an end the complaint counts as ongoing.";
+"Pochend" = "Throbbing";
+"Schmerz" = "Pain";
+"Schmerzen" = "Pain";
+"Schmerzen & Verletzungen" = "Pain & injuries";
+"Sprunggelenk" = "Ankle";
+"Stechend" = "Sharp";
+"Taub" = "Numb";
+"Was wehtut, wo es sitzt und wie lange es bleibt." = "What hurts, where it sits and how long it stays.";
+"Ziehend" = "Pulling";
+"Zurzeit nichts Laufendes." = "Nothing ongoing right now.";
+
+/* Physische Gesundheit – Tagebuch */
+"Kopfschmerz" = "Headache";
+"Migräne" = "Migraine";
+"Panikattacke" = "Panic attack";
+"Schwindel" = "Dizziness";
+"Übelkeit" = "Nausea";
+"Asthma" = "Asthma";
+"Allergie" = "Allergy";
+"Rückenschmerz" = "Back pain";
+"Magen-Darm" = "Stomach & bowel";
+"Fieber" = "Fever";
+"Spannungskopfschmerz" = "Tension headache";
+"Migräne mit Aura" = "Migraine with aura";
+"Migräne ohne Aura" = "Migraine without aura";
+"Cluster" = "Cluster";
+"Nasennebenhöhlen" = "Sinus";
+"Aus heiterem Himmel" = "Out of the blue";
+"Situationsgebunden" = "Situational";
+"Nachts" = "Nocturnal";
+"Durch Anstrengung" = "Exercise-induced";
+"Allergisch" = "Allergic";
+"Erbrechen" = "Vomiting";
+"Lichtempfindlich" = "Light sensitivity";
+"Lärmempfindlich" = "Sound sensitivity";
+"Aura" = "Aura";
+"Nackenverspannung" = "Neck tension";
+"Sehstörung" = "Visual disturbance";
+"Herzrasen" = "Palpitations";
+"Atemnot" = "Shortness of breath";
+"Schwitzen" = "Sweating";
+"Zittern" = "Trembling";
+"Engegefühl in der Brust" = "Chest tightness";
+"Kontrollverlust-Angst" = "Fear of losing control";
+"Taubheitsgefühl" = "Numbness";
+"Husten" = "Cough";
+"Pfeifende Atmung" = "Wheezing";
+"Niesreiz" = "Sneezing";
+"Juckreiz" = "Itching";
+"Hautausschlag" = "Rash";
+"Schwellung" = "Swelling";
+"Krämpfe" = "Cramps";
+"Durchfall" = "Diarrhoea";
+"Blähungen" = "Bloating";
+"Erschöpfung" = "Fatigue";
+"Stress" = "Stress";
+"Schlafmangel" = "Lack of sleep";
+"Zu wenig getrunken" = "Dehydration";
+"Bildschirmzeit" = "Screen time";
+"Alkohol" = "Alcohol";
+"Essen" = "Food";
+"Hormonell" = "Hormonal";
+"Anstrengung" = "Exertion";
+"Menschenmenge" = "Crowds";
+"Enge Räume" = "Confined spaces";
+"Konflikt" = "Conflict";
+"Kalte Luft" = "Cold air";
+"Pollen" = "Pollen";
+"Staub" = "Dust";
+"Tiere" = "Animals";
+"Infekt" = "Infection";
+"Unbekannt" = "Unknown";
+"Physische Gesundheit" = "Physical health";
+"Gesundheit" = "Health";
+"Tagebuch für Beschwerden, die in Episoden kommen." = "A diary for complaints that come in episodes.";
+"Tagebücher" = "Diaries";
+"Läuft gerade" = "Happening now";
+"Noch kein Tagebuch geführt. Mit „+“ den ersten Eintrag anlegen." = "No diary kept yet. Use “+” for the first entry.";
+"%lld Einträge · zuletzt %@" = "%lld entries · last %@";
+"Einträge" = "Entries";
+"Eintrag" = "Entry";
+"Häufigkeit" = "Frequency";
+"Häufigste Auslöser" = "Most common triggers";
+"Häufigste Begleiterscheinungen" = "Most common symptoms";
+"%lld×" = "%lld×";
+"Ø Stärke" = "Avg. severity";
+"Letzte 30 Tage" = "Last 30 days";
+"Medikament half" = "Medication helped";
+"Medikament" = "Medication";
+"Name und Dosis" = "Name and dose";
+"Hat es geholfen?" = "Did it help?";
+"Ja" = "Yes";
+"Nein" = "No";
+"Ausprägung" = "Form";
+"Begleiterscheinungen" = "Symptoms";
+"Mögliche Auslöser" = "Possible triggers";
+"Vorbei" = "Over";
+"Aus Beginn und Ende ergibt sich die Dauer." = "The duration follows from start and end.";
+"Ohne Ende gilt die Episode als laufend." = "Without an end the episode counts as ongoing.";
+"Tage ohne Episode" = "Days without an episode";
+"Noch kein Eintrag" = "No entry yet";
+
+/* Ausrüstung, Wartung und Austausch */
+"Ausrüstung" = "Equipment";
+"Laufschuhe" = "Running shoes";
+"Wanderschuhe" = "Walking shoes";
+"Fahrrad" = "Bike";
+"Indoor-Rad" = "Indoor bike";
+"Kletterschuhe" = "Climbing shoes";
+"Schwimmausrüstung" = "Swim gear";
+"Matte" = "Mat";
+"Schuhe, Rad und was sonst Kilometer sammelt." = "Shoes, bike and whatever else collects kilometres.";
+"Noch nichts hinterlegt. Mit „+“ ein Stück anlegen." = "Nothing recorded yet. Use “+” to add a piece.";
+"Im Einsatz" = "In use";
+"Ausgemustert" = "Retired";
+"Ausrüstung hinzufügen" = "Add equipment";
+"Austausch" = "Replacement";
+"Wartung" = "Service";
+"Im Einsatz seit" = "In use since";
+"Ausgemustert am" = "Retired on";
+"Trainings vor diesem Datum zählen nicht auf dieses Stück." = "Workouts before this date do not count towards this piece.";
+"Passenden Trainings automatisch zuordnen" = "Assign to matching workouts automatically";
+"Dieses Stück wird nur den Trainings zugeordnet, bei denen du es selbst auswählst." = "This piece is only assigned to workouts where you pick it yourself.";
+"Für diese Art gibt es keine passende Sportart – wähle sie beim Training selbst aus." = "There is no matching sport for this kind — pick it on the workout itself.";
+"Fällt automatisch bei: %@" = "Automatic for: %@";
+"Austausch und Wartung" = "Replacement and service";
+"Austausch nach Strecke" = "Replace after distance";
+"Wartung im Abstand" = "Service interval";
+"Wartung jetzt eintragen" = "Record service now";
+"Strecke" = "Distance";
+"Name" = "Name";
+"nur manuell" = "manual only";
+"seit %@" = "since %@";
+"bis %@" = "until %@";
+"Automatisch (%@)" = "Automatic (%@)";
+"Automatisch (keine)" = "Automatic (none)";
+"Schuhe, Rad, Wartung und Austausch" = "Shoes, bike, service and replacement";
+
+/* Diagramm mit mehreren Kennzahlen */
+"Jede Kurve ist auf ihren eigenen Höchstwert bezogen – so lassen sich Verläufe vergleichen, deren Einheiten nicht zusammenpassen." = "Each line is scaled to its own peak, so curves whose units do not match can still be compared.";
+
+/* Ausrüstungs-Kachel */
+"Noch nichts hinterlegt" = "Nothing recorded yet";
+"%@ · fällig" = "%@ · due";
+
+/* Sprachdurchsicht 26.09 */
+"Übung" = "Exercise";
+"Ruhe-Kalorien" = "Resting calories";
+"Distanz (Rad)" = "Distance (cycling)";
+"Distanz (Schwimmen)" = "Distance (swimming)";
+"Distanz (Ski)" = "Distance (skiing)";
+"Core-Training" = "Core training";
+"Cross-Training" = "Cross training";
+"Es sind keine Daten vorhanden." = "There is no data.";
+"%lld Werte und %lld Trainings vorbereitet." = "%lld values and %lld workouts prepared.";
+"%lld Einträge aus der Sicherung übernommen." = "%lld entries restored from the backup.";
+"Importierte oder manuelle Daten werden lokal und in der Bridge gelöscht." = "Imported or manual data is deleted locally and in the bridge.";
+"Apple-Health-Daten werden in dieser App ausgeblendet; Apple Health selbst bleibt unverändert." = "Apple Health data is hidden in this app; Apple Health itself is unchanged.";
+"Das Schreiben von Trainings nach Apple Health ist in den Datenquellen-Einstellungen deaktiviert." = "Writing workouts to Apple Health is switched off in the data source settings.";
+"Apple Health hat das Workout nicht gespeichert." = "Apple Health did not save the workout.";
+"Apple Health hat die Workout-Werte nicht gespeichert." = "Apple Health did not save the workout values.";
+"Apple Health hat das Workout nicht abgeschlossen." = "Apple Health did not finish the workout.";
+"Apple Health hat kein Workout zurueckgegeben." = "Apple Health returned no workout.";
+"lade Rekorde" = "loading records";
+
+/* Ausrüstungs-Teile und Zeitgrenzen */
+"Tauschen" = "Replace";
+"Warten" = "Service";
+"Kette" = "Chain";
+"Kassette" = "Cassette";
+"Bremsbeläge" = "Brake pads";
+"Reifen" = "Tyres";
+"Kette ölen" = "Lube chain";
+"Inspektion" = "Full service";
+"Einlagen" = "Insoles";
+"Neubesohlung" = "Resole";
+"Schnürsenkel" = "Laces";
+"Reinigung" = "Cleaning";
+"Durchsicht" = "Check-over";
+"Eigenes" = "Custom";
+"Teile" = "Parts";
+"Teil" = "Part";
+"Teil hinzufügen" = "Add part";
+"Vorschläge" = "Suggestions";
+"Noch keine Teile hinterlegt. Vorschläge unten, oder mit „+“ ein eigenes." = "No parts yet. Suggestions below, or add your own with “+”.";
+"Was passiert" = "What happens";
+"Nach Strecke" = "By distance";
+"Nach Zeit" = "By time";
+"Alle" = "Every";
+"Nach" = "After";
+"Fällig ist, was zuerst eintritt." = "Whichever comes first is what falls due.";
+"Mindestens eines von beidem, sonst wird nie etwas fällig." = "At least one of the two, or nothing ever falls due.";
+"Zuletzt erledigt" = "Last done";
+"Stand" = "Reading";
+"Noch nie – gerechnet wird ab %@" = "Never — counted from %@";
+"Jetzt als erledigt eintragen" = "Record as done now";
+"Erledigt" = "Done";
+"Bisher" = "So far";
+"Bearbeiten" = "Edit";
+"Austausch nach Zeit" = "Replace after time";
+"nach Strecke" = "by distance";
+"nach Zeit" = "by time";
+"%lld Jahre" = "%lld years";
+"%.1f Jahre" = "%.1f years";
+"%lld Monate" = "%lld months";
+
+/* Bridge: Schmerzen, Tagebuch, Ausrüstung */
+"Stärkster laufender Schmerz" = "Strongest ongoing pain";
+"Episoden (30 Tage)" = "Episodes (30 days)";
+"Fällig" = "Due";

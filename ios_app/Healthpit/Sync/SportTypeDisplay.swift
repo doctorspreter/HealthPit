@@ -13,6 +13,47 @@ import HealthKit
 
 enum SportTypeDisplay {
 
+    /// Der kanonische Code zu einem eingetippten oder angezeigten Sportnamen.
+    ///
+    /// Selbst erfasste Trainings trugen bisher den deutschen Namen als
+    /// Sporttyp — aus „Laufen" wurde „LAUFEN", weil die vorhandene
+    /// Normalisierung nur Schreibweise glaettet und nicht uebersetzt. In der
+    /// Datenbank steht damit Sprache statt Code, und alles, was auf „RUNNING"
+    /// prueft, geht daran vorbei: die Ausruestung waere einem manuell
+    /// erfassten Lauf nie zugefallen.
+    static func canonicalCode(for sport: String) -> String {
+        let normalized = sport
+            .folding(options: [.diacriticInsensitive], locale: Locale(identifier: "en_US_POSIX"))
+            .lowercased()
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalized.isEmpty else { return "OTHER" }
+
+        for (fragments, code) in nameFragments where fragments.contains(where: normalized.contains) {
+            return code
+        }
+        // Unbekanntes bleibt, wie es kam – nur in der Schreibweise geglaettet.
+        return normalized.uppercased()
+            .map { ($0.isLetter || $0.isNumber) ? $0 : "_" }
+            .reduce(into: "") { if $1 == "_", $0.last == "_" { return }; $0.append($1) }
+            .trimmingCharacters(in: CharacterSet(charactersIn: "_"))
+    }
+
+    /// Deutsch und Englisch, weil beides im Bestand steht.
+    private static let nameFragments: [(Set<String>, String)] = [
+        (["laufen", "lauf", "running", "run", "jogging", "jog"], "RUNNING"),
+        (["gehen", "walking", "walk", "spazier"], "WALKING"),
+        (["wandern", "hiking", "hike"], "HIKING"),
+        (["radfahren", "rad", "cycling", "bike", "biking"], "CYCLING"),
+        (["schwimmen", "swimming", "swim"], "SWIMMING"),
+        (["krafttraining", "kraft", "strength"], "STRENGTH_TRAINING"),
+        (["bouldern", "klettern", "climbing", "bouldering"], "CLIMBING"),
+        (["squash"], "SQUASH"),
+        (["yoga"], "YOGA"),
+        (["pilates"], "PILATES"),
+        (["rudern", "rowing"], "ROWING"),
+        (["sonstiges", "other"], "OTHER"),
+    ]
+
     static func activityType(for sportType: String) -> HKWorkoutActivityType {
         switch sportType.uppercased() {
         case "RUNNING":               return .running

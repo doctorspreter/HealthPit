@@ -117,7 +117,6 @@
 "Messwerte" = "Mesures";
 "Metrik" = "Mesure";
 "Minuten" = "Minutes";
-"Mit Apple Health verbinden" = "Se connecter à Apple Santé";
 "Monat" = "Mois";
 "Nacht" = "Nuit";
 "Neu verbinden" = "Reconnecter";
@@ -547,7 +546,7 @@
 /* Startseite: Sichtbarkeit und Health-Freigabe */
 "Freigabe in der Health-App unter „Datenzugriff und Geräte“ erteilen." = "Accordez l'accès dans l'app Santé, sous « Accès aux données et appareils ».";
 "HealthPit braucht die Freigabe, um deine Werte zu lesen." = "HealthPit a besoin de l'autorisation pour lire vos données.";
-"Zugriff erlauben" = "Autoriser l'accès";
+"Weiter" = "Continuer";
 "Ausgeblendete Kacheln" = "Tuiles masquées";
 "Kachel ausblenden" = "Masquer la tuile";
 "Kachel einblenden" = "Afficher la tuile";
@@ -825,3 +824,269 @@
 "Trainingseinheiten und Leistungsentwicklung." = "Séances d’entraînement et évolution des performances.";
 "Schlafdauer, Phasen und Regeneration." = "Durée du sommeil, phases et récupération.";
 "Zyklusverlauf und protokollierte Symptome." = "Déroulé du cycle et symptômes consignés.";
+
+/* Schlafbereich und Einheiten – Nachtrag 26.09 */
+"Im Bett" = "Au lit";
+"Schlafzeit" = "Temps de sommeil";
+"Bettzeit" = "Temps au lit";
+"REM" = "REM";
+"%@ Effizienz" = "%@ d'efficacité";
+"IE" = "UI";
+"U/min" = "tr/min";
+"Workouts gesamt" = "Total des séances";
+
+/* Kennzahlen je Sportart */
+"Ø Dauer" = "Durée moyenne";
+"Längste Einheit" = "Séance la plus longue";
+"Ø Distanz" = "Distance moyenne";
+"Längste Strecke" = "Distance la plus longue";
+"Ø Geschwindigkeit" = "Vitesse moyenne";
+"Ø Tempo" = "Allure moyenne";
+"Ø Kalorien" = "Calories moyennes";
+"Max. Puls" = "FC max.";
+"Sätze" = "Séries";
+"Wiederholungen" = "Répétitions";
+
+/* Onboarding-Merkmale */
+"Privat" = "Privé";
+"Aktuell" = "À jour";
+
+
+/* Trainingseinheiten – getrennt von den Masseinheiten */
+"Trainingseinheit" = "séance";
+"Trainingseinheiten" = "séances";
+
+/* Schmerzen und Verletzungen */
+"%lld laufend" = "%lld en cours";
+"Am gewählten Tag" = "Le jour sélectionné";
+"Art" = "Type";
+"Aus einem Training" = "Depuis une séance";
+"Beendet" = "Terminé";
+"Beginn" = "Début";
+"Beschwerde" = "Gêne";
+"Brennend" = "Brûlure";
+"Der Kalender färbt jeden Tag von Beginn bis Ende ein." = "Le calendrier colore chaque jour du début à la fin.";
+"Dieser Eintrag stammt aus einem Training. Speichern übernimmt ihn hierher." = "Cette entrée vient d'une séance. L'enregistrer la déplace ici.";
+"Dumpf" = "Sourde";
+"Ellbogen links" = "Coude gauche";
+"Ellbogen rechts" = "Coude droit";
+"Für diesen Zeitraum ist nichts eingetragen." = "Rien n'est enregistré pour cette période.";
+"Im Monat" = "Ce mois-ci";
+"Kopf" = "Tête";
+"Körperregion" = "Région du corps";
+"Laufende Beschwerden" = "Gênes en cours";
+"Nacken" = "Nuque";
+"Nichts Laufendes" = "Rien en cours";
+"Noch nichts eingetragen." = "Rien d'enregistré pour l'instant.";
+"Notiz" = "Note";
+"Ohne Ende gilt die Beschwerde als laufend." = "Sans fin, la gêne est considérée comme en cours.";
+"Pochend" = "Lancinante";
+"Schmerz" = "Douleur";
+"Schmerzen" = "Douleurs";
+"Schmerzen & Verletzungen" = "Douleurs et blessures";
+"Sprunggelenk" = "Cheville";
+"Stechend" = "Aiguë";
+"Taub" = "Engourdie";
+"Was wehtut, wo es sitzt und wie lange es bleibt." = "Ce qui fait mal, où et pendant combien de temps.";
+"Ziehend" = "Tiraillement";
+"Zurzeit nichts Laufendes." = "Rien en cours actuellement.";
+
+/* Physische Gesundheit – Tagebuch */
+"Kopfschmerz" = "Mal de tête";
+"Migräne" = "Migraine";
+"Panikattacke" = "Crise de panique";
+"Schwindel" = "Vertiges";
+"Übelkeit" = "Nausée";
+"Asthma" = "Asthme";
+"Allergie" = "Allergie";
+"Rückenschmerz" = "Mal de dos";
+"Magen-Darm" = "Estomac et intestin";
+"Fieber" = "Fièvre";
+"Spannungskopfschmerz" = "Céphalée de tension";
+"Migräne mit Aura" = "Migraine avec aura";
+"Migräne ohne Aura" = "Migraine sans aura";
+"Cluster" = "En grappe";
+"Nasennebenhöhlen" = "Sinusal";
+"Aus heiterem Himmel" = "Sans prévenir";
+"Situationsgebunden" = "Situationnelle";
+"Nachts" = "Nocturne";
+"Durch Anstrengung" = "À l'effort";
+"Allergisch" = "Allergique";
+"Erbrechen" = "Vomissements";
+"Lichtempfindlich" = "Photophobie";
+"Lärmempfindlich" = "Phonophobie";
+"Aura" = "Aura";
+"Nackenverspannung" = "Tension cervicale";
+"Sehstörung" = "Trouble visuel";
+"Herzrasen" = "Palpitations";
+"Atemnot" = "Essoufflement";
+"Schwitzen" = "Sueurs";
+"Zittern" = "Tremblements";
+"Engegefühl in der Brust" = "Oppression thoracique";
+"Kontrollverlust-Angst" = "Peur de perdre le contrôle";
+"Taubheitsgefühl" = "Engourdissement";
+"Husten" = "Toux";
+"Pfeifende Atmung" = "Sifflements";
+"Niesreiz" = "Éternuements";
+"Juckreiz" = "Démangeaisons";
+"Hautausschlag" = "Éruption";
+"Schwellung" = "Gonflement";
+"Krämpfe" = "Crampes";
+"Durchfall" = "Diarrhée";
+"Blähungen" = "Ballonnements";
+"Erschöpfung" = "Épuisement";
+"Stress" = "Stress";
+"Schlafmangel" = "Manque de sommeil";
+"Zu wenig getrunken" = "Déshydratation";
+"Bildschirmzeit" = "Temps d'écran";
+"Alkohol" = "Alcool";
+"Essen" = "Alimentation";
+"Hormonell" = "Hormonal";
+"Anstrengung" = "Effort";
+"Menschenmenge" = "Foule";
+"Enge Räume" = "Espaces confinés";
+"Konflikt" = "Conflit";
+"Kalte Luft" = "Air froid";
+"Pollen" = "Pollen";
+"Staub" = "Poussière";
+"Tiere" = "Animaux";
+"Infekt" = "Infection";
+"Unbekannt" = "Inconnu";
+"Physische Gesundheit" = "Santé physique";
+"Gesundheit" = "Santé";
+"Tagebuch für Beschwerden, die in Episoden kommen." = "Un journal pour les troubles qui viennent par épisodes.";
+"Tagebücher" = "Journaux";
+"Läuft gerade" = "En cours";
+"Noch kein Tagebuch geführt. Mit „+“ den ersten Eintrag anlegen." = "Aucun journal pour l'instant. Utilisez « + » pour la première entrée.";
+"%lld Einträge · zuletzt %@" = "%lld entrées · dernière %@";
+"Einträge" = "Entrées";
+"Eintrag" = "Entrée";
+"Häufigkeit" = "Fréquence";
+"Häufigste Auslöser" = "Déclencheurs les plus fréquents";
+"Häufigste Begleiterscheinungen" = "Symptômes les plus fréquents";
+"%lld×" = "%lld×";
+"Ø Stärke" = "Intensité moyenne";
+"Letzte 30 Tage" = "30 derniers jours";
+"Medikament half" = "Le médicament a aidé";
+"Medikament" = "Médicament";
+"Name und Dosis" = "Nom et dose";
+"Hat es geholfen?" = "Cela a-t-il aidé ?";
+"Ja" = "Oui";
+"Nein" = "Non";
+"Ausprägung" = "Forme";
+"Begleiterscheinungen" = "Symptômes";
+"Mögliche Auslöser" = "Déclencheurs possibles";
+"Vorbei" = "Terminé";
+"Aus Beginn und Ende ergibt sich die Dauer." = "La durée découle du début et de la fin.";
+"Ohne Ende gilt die Episode als laufend." = "Sans fin, l'épisode est considéré comme en cours.";
+"Tage ohne Episode" = "Jours sans épisode";
+"Noch kein Eintrag" = "Aucune entrée";
+
+/* Ausrüstung, Wartung und Austausch */
+"Ausrüstung" = "Équipement";
+"Laufschuhe" = "Chaussures de course";
+"Wanderschuhe" = "Chaussures de marche";
+"Fahrrad" = "Vélo";
+"Indoor-Rad" = "Vélo d'intérieur";
+"Kletterschuhe" = "Chaussons d'escalade";
+"Schwimmausrüstung" = "Équipement de natation";
+"Matte" = "Tapis";
+"Schuhe, Rad und was sonst Kilometer sammelt." = "Chaussures, vélo et tout ce qui accumule des kilomètres.";
+"Noch nichts hinterlegt. Mit „+“ ein Stück anlegen." = "Rien pour l'instant. Utilisez « + » pour ajouter un élément.";
+"Im Einsatz" = "En service";
+"Ausgemustert" = "Retiré";
+"Ausrüstung hinzufügen" = "Ajouter un équipement";
+"Austausch" = "Remplacement";
+"Wartung" = "Entretien";
+"Im Einsatz seit" = "En service depuis";
+"Ausgemustert am" = "Retiré le";
+"Trainings vor diesem Datum zählen nicht auf dieses Stück." = "Les séances antérieures à cette date ne comptent pas.";
+"Passenden Trainings automatisch zuordnen" = "Attribuer automatiquement aux séances correspondantes";
+"Dieses Stück wird nur den Trainings zugeordnet, bei denen du es selbst auswählst." = "Cet élément n'est attribué qu'aux séances où vous le choisissez.";
+"Für diese Art gibt es keine passende Sportart – wähle sie beim Training selbst aus." = "Aucun sport ne correspond à ce type — choisissez-le sur la séance.";
+"Fällt automatisch bei: %@" = "Automatique pour : %@";
+"Austausch und Wartung" = "Remplacement et entretien";
+"Austausch nach Strecke" = "Remplacer après distance";
+"Wartung im Abstand" = "Intervalle d'entretien";
+"Wartung jetzt eintragen" = "Enregistrer l'entretien";
+"Strecke" = "Distance";
+"Name" = "Nom";
+"nur manuell" = "manuel seulement";
+"seit %@" = "depuis %@";
+"bis %@" = "jusqu'au %@";
+"Automatisch (%@)" = "Automatique (%@)";
+"Automatisch (keine)" = "Automatique (aucun)";
+"Schuhe, Rad, Wartung und Austausch" = "Chaussures, vélo, entretien et remplacement";
+
+/* Diagramm mit mehreren Kennzahlen */
+"Jede Kurve ist auf ihren eigenen Höchstwert bezogen – so lassen sich Verläufe vergleichen, deren Einheiten nicht zusammenpassen." = "Chaque courbe est ramenée à son propre maximum, ce qui permet de comparer des unités différentes.";
+
+/* Ausrüstungs-Kachel */
+"Noch nichts hinterlegt" = "Rien d'enregistré";
+"%@ · fällig" = "%@ · à faire";
+
+/* Sprachdurchsicht 26.09 */
+"Übung" = "Exercice";
+"Ruhe-Kalorien" = "Calories au repos";
+"Distanz (Rad)" = "Distance (vélo)";
+"Distanz (Schwimmen)" = "Distance (natation)";
+"Distanz (Ski)" = "Distance (ski)";
+"Core-Training" = "Renforcement du tronc";
+"Cross-Training" = "Entraînement croisé";
+"Es sind keine Daten vorhanden." = "Aucune donnée.";
+"%lld Werte und %lld Trainings vorbereitet." = "%lld valeurs et %lld séances préparées.";
+"%lld Einträge aus der Sicherung übernommen." = "%lld entrées restaurées depuis la sauvegarde.";
+"Importierte oder manuelle Daten werden lokal und in der Bridge gelöscht." = "Les données importées ou manuelles sont supprimées localement et dans le pont.";
+"Apple-Health-Daten werden in dieser App ausgeblendet; Apple Health selbst bleibt unverändert." = "Les données Apple Health sont masquées dans cette app ; Apple Health reste inchangé.";
+"Das Schreiben von Trainings nach Apple Health ist in den Datenquellen-Einstellungen deaktiviert." = "L'écriture des séances vers Apple Health est désactivée dans les réglages des sources.";
+"Apple Health hat das Workout nicht gespeichert." = "Apple Health n'a pas enregistré la séance.";
+"Apple Health hat die Workout-Werte nicht gespeichert." = "Apple Health n'a pas enregistré les valeurs de la séance.";
+"Apple Health hat das Workout nicht abgeschlossen." = "Apple Health n'a pas terminé la séance.";
+"Apple Health hat kein Workout zurueckgegeben." = "Apple Health n'a renvoyé aucune séance.";
+"lade Rekorde" = "chargement des records";
+
+/* Ausrüstungs-Teile und Zeitgrenzen */
+"Tauschen" = "Remplacer";
+"Warten" = "Entretenir";
+"Kette" = "Chaîne";
+"Kassette" = "Cassette";
+"Bremsbeläge" = "Plaquettes de frein";
+"Reifen" = "Pneus";
+"Kette ölen" = "Lubrifier la chaîne";
+"Inspektion" = "Révision";
+"Einlagen" = "Semelles";
+"Neubesohlung" = "Ressemelage";
+"Schnürsenkel" = "Lacets";
+"Reinigung" = "Nettoyage";
+"Durchsicht" = "Contrôle";
+"Eigenes" = "Personnalisé";
+"Teile" = "Pièces";
+"Teil" = "Pièce";
+"Teil hinzufügen" = "Ajouter une pièce";
+"Vorschläge" = "Suggestions";
+"Noch keine Teile hinterlegt. Vorschläge unten, oder mit „+“ ein eigenes." = "Aucune pièce. Suggestions ci-dessous, ou ajoutez la vôtre avec « + ».";
+"Was passiert" = "Que faire";
+"Nach Strecke" = "Par distance";
+"Nach Zeit" = "Par durée";
+"Alle" = "Tous les";
+"Nach" = "Après";
+"Fällig ist, was zuerst eintritt." = "C'est le premier des deux qui compte.";
+"Mindestens eines von beidem, sonst wird nie etwas fällig." = "Au moins l'un des deux, sinon rien n'arrive jamais à échéance.";
+"Zuletzt erledigt" = "Dernière fois";
+"Stand" = "Relevé";
+"Noch nie – gerechnet wird ab %@" = "Jamais — compté à partir du %@";
+"Jetzt als erledigt eintragen" = "Marquer comme fait";
+"Erledigt" = "Fait";
+"Bisher" = "Jusqu'ici";
+"Bearbeiten" = "Modifier";
+"Austausch nach Zeit" = "Remplacer après durée";
+"nach Strecke" = "par distance";
+"nach Zeit" = "par durée";
+"%lld Jahre" = "%lld ans";
+"%.1f Jahre" = "%.1f ans";
+"%lld Monate" = "%lld mois";
+
+/* Bridge: Schmerzen, Tagebuch, Ausrüstung */
+"Stärkster laufender Schmerz" = "Douleur en cours la plus forte";
+"Episoden (30 Tage)" = "Épisodes (30 jours)";
+"Fällig" = "À faire";
