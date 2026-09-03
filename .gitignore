@@ -23,20 +23,17 @@ ios_app/**/*.xcworkspace/xcuserdata/
 Xcode/
 homeassistant_apps/
 
-# Working copies of the app used for experiments. They carry their own Xcode
-# projects and build output and have no place in this repository, while the
-# Python tests next to them do belong here.
+# Everything under test/ stays local: the working copies of the app carry
+# their own Xcode projects and build output, and the Python tests beside them
+# are internal too — the block further down says the same thing.
 #
-# The folder is called "test", singular. The rules below used to say "tests"
+# The folder is called "test", singular. The rules here used to say "tests"
 # and therefore matched nothing at all: `git status` listed the whole folder
 # as untracked, and one `git add -A` would have swept four complete copies of
 # the app, DerivedData included, into the repository.
-test/*/
+test/
 sandbox/
 testordner/
-
-# ... except the Python tests, which do belong here.
-!test/*.py
 
 # Tests und interne Unterlagen bleiben lokal; auf GitHub gehoeren sie nicht.
 ios_app/Tests/

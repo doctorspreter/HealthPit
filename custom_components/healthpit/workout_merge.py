@@ -242,17 +242,17 @@ def _merge_workout(imported: list[dict[str, Any]]) -> dict[str, Any]:
         merged["stats"].extend(
             [
                 {
-                    "label": "Übungen",
+                    "label": "Exercises",
                     "value": detail_owner.get("exercise_count"),
                     "systemImage": "dumbbell",
                 },
                 {
-                    "label": "Sätze",
+                    "label": "Sets",
                     "value": detail_owner.get("set_count"),
                     "systemImage": "list.number",
                 },
                 {
-                    "label": "Volumen",
+                    "label": "Volume",
                     "value": f"{round(float(detail_owner.get('volume_kg') or 0))} kg",
                     "systemImage": "scalemass",
                 },
@@ -452,7 +452,7 @@ def _base_workout_stats(item: dict[str, Any] | None) -> list[dict[str, Any]]:
     if item.get("duration_seconds"):
         stats.append(
             {
-                "label": "Dauer",
+                "label": "Duration",
                 "value": _format_duration(item["duration_seconds"]),
                 "systemImage": "clock",
             }
@@ -460,7 +460,7 @@ def _base_workout_stats(item: dict[str, Any] | None) -> list[dict[str, Any]]:
     if item.get("distance_km"):
         stats.append(
             {
-                "label": "Distanz",
+                "label": "Distance",
                 "value": f"{float(item['distance_km']):.2f} km",
                 "systemImage": "map",
             }
@@ -468,7 +468,7 @@ def _base_workout_stats(item: dict[str, Any] | None) -> list[dict[str, Any]]:
     if item.get("energy_kcal"):
         stats.append(
             {
-                "label": "Kalorien",
+                "label": "Calories",
                 "value": f"{round(float(item['energy_kcal']))} kcal",
                 "systemImage": "flame",
             }

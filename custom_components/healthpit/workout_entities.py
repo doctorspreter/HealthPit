@@ -177,7 +177,7 @@ def _sport_metrics(
 
 def exercise_name(exercise: dict[str, Any]) -> str:
     """Wie die Uebung heisst."""
-    return str(exercise.get("name") or exercise.get("title") or "Übung").strip()
+    return str(exercise.get("name") or exercise.get("title") or "Exercise").strip()
 
 
 def exercise_identity(exercise: dict[str, Any]) -> str:

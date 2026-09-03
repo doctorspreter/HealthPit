@@ -405,7 +405,7 @@ def _normalize_exercise(raw: Any, *, index: int) -> dict[str, Any]:
         "catalog_id": _text(
             _first(raw, "catalog_id", "catalogId"), field="catalog_id", max_length=160
         ),
-        "name": _required_text(raw.get("name") or raw.get("title"), field="name", default="Übung", max_length=180),
+        "name": _required_text(raw.get("name") or raw.get("title"), field="name", default="Exercise", max_length=180),
         "category": _text(raw.get("category"), field="category", max_length=120),
         "start": _datetime_text(
             _first(raw, "start", "start_time", "startTime", "startDate"),

@@ -1,5 +1,27 @@
 # Änderungsprotokoll
 
+## Home Assistant 2.7.0
+
+### Changed
+
+- **The last German words in the integration are gone.** Its entity names were
+  already English — `Last workout`, `Duration`, `Pace` — but six labels and two
+  fallbacks were not: `Übungen`, `Sätze`, `Volumen`, `Dauer`, `Distanz`,
+  `Kalorien`, and `Übung` as the name of an exercise that arrives without one.
+  They travelled into Home Assistant and back into the app, where a German
+  word ended up standing in an English screen.
+
+### Notes
+
+- These labels are read by the app, which uses them as translation keys and
+  filters its own figures against them, so this release needs app 26.09 or
+  newer to be understood fully. Older apps are not broken by it: they show the
+  English word where they used to show the German one, and nothing is lost.
+  The app of this round maps both spellings back, so an integration that has
+  not been updated yet keeps working exactly as before.
+- The data model is unchanged (`MODEL_VERSION = 2`). No entity is renamed or
+  removed, and no history is affected.
+
 ## Home Assistant 2.6.1
 
 ### Fixed
