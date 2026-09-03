@@ -9,6 +9,7 @@ three modes without knowing where the data came from.
 
 from __future__ import annotations
 
+import logging
 import re
 
 from datetime import datetime, timezone
@@ -24,6 +25,8 @@ from .metrics import (
     registry_category,
 )
 
+_LOGGER = logging.getLogger(__name__)
+
 CATEGORIES = {
     "activity",
     "workouts",
@@ -33,7 +36,21 @@ CATEGORIES = {
     "nutrition",
     "vitals",
     "cycle",
+    # Since app 26.09: pain and injuries, the diary of recurring complaints,
+    # and equipment with its service and replacement.
+    "pain",
+    "health",
+    "equipment",
 }
+
+#: What an unknown category becomes instead of a rejected payload.
+#:
+#: The app is updated from the App Store and the integration from HACS, and
+#: nobody does both in the same minute. A category this version has not heard
+#: of used to fail the whole request, so one new sensor stopped the sync for
+#: everything else — the opposite of what the compatibility module beside this
+#: one promises. It is filed under "vitals" and logged instead.
+FALLBACK_CATEGORY = "vitals"
 AGGREGATIONS = {"sum", "average", "latest"}
 STATE_CLASSES = {"measurement", "total", "total_increasing"}
 WORKOUT_SOURCES = {"manual", "apple_health", "gpx", "tcx", "garmin", "gympit"}
@@ -187,7 +204,13 @@ def normalize_metric(raw: Any) -> dict[str, Any]:
 
     category = _required_text(raw.get("category"), field="category", max_length=40)
     if category not in CATEGORIES:
-        raise PayloadError(f"category must be one of {sorted(CATEGORIES)}")
+        _LOGGER.info(
+            "Unknown category %s from a newer app; filed under %s. "
+            "Update the integration to see it in its own place.",
+            category,
+            FALLBACK_CATEGORY,
+        )
+        category = FALLBACK_CATEGORY
 
     aggregation = _required_text(
         raw.get("aggregation"), field="aggregation", default="latest", max_length=20

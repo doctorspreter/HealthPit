@@ -1,5 +1,32 @@
 # Änderungsprotokoll
 
+## Home Assistant 2.8.0
+
+### Added
+
+- **Three new categories: `pain`, `health` and `equipment`.** App 26.09 sends
+  what is ongoing in pain and injuries, how much a diary saw in the last 30
+  days, and which piece of equipment is due for service or replacement. That
+  last one is the point of the whole thing: "change the chain" does not belong
+  in an app you have to open — it belongs in a notification.
+
+### Fixed
+
+- **An unknown category no longer fails the whole sync.** The app updates from
+  the App Store and the integration from HACS, and nobody does both in the
+  same minute. A category this version had not heard of raised an error for
+  the entire request, so one new sensor stopped everything else from
+  arriving — the opposite of what the compatibility module beside it promises.
+  Unknown categories are filed under `vitals` and logged instead.
+
+### Notes
+
+- The data model is unchanged (`MODEL_VERSION = 2`). Nothing existing is
+  renamed or removed.
+- App 26.09 wants this version to file its new sensors correctly. With an
+  older integration the sync still works from now on — the new sensors simply
+  land under `vitals` until it is updated.
+
 ## Home Assistant 2.7.1
 
 ### Fixed
