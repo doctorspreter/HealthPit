@@ -26,7 +26,7 @@ from .entity import (
     HealthPitUserEntity,
 )
 from .history import async_import_history
-from .metrics import EXERCISE_METRIC_LABELS, EXERCISE_UNIT_SYMBOLS
+from .metrics import EXERCISE_METRIC_LABELS, unit_symbol
 from .precision import rounded_value, suggested_precision
 
 _LOGGER = logging.getLogger(__name__)
@@ -441,7 +441,8 @@ class HealthPitExerciseSensor(HealthPitUserEntity, SensorEntity):
     @property
     def native_unit_of_measurement(self) -> str | None:
         value = self._value() or {}
-        return UNIT_SYMBOLS.get(str(value.get("unit") or ""))
+        # Einheitenlos ist None. Siehe metrics.unit_symbol.
+        return unit_symbol(value.get("unit"))
 
     @property
     def device_class(self) -> str | None:
@@ -476,7 +477,6 @@ class HealthPitExerciseSensor(HealthPitUserEntity, SensorEntity):
 # Beschriftungen und Einheiten stehen bei den Metriken, nicht hier: der
 # Nachtrag der Vergangenheit braucht dieselbe Tabelle.
 METRIC_LABELS = EXERCISE_METRIC_LABELS
-UNIT_SYMBOLS = EXERCISE_UNIT_SYMBOLS
 
 # Nur dort, wo die Klasse wirklich passt. Eine falsche macht mehr Schaden als
 # keine: Home Assistant rechnet dann Einheiten um, die nichts miteinander zu

@@ -1,5 +1,30 @@
 # Änderungsprotokoll
 
+## Home Assistant 2.7.1
+
+### Fixed
+
+- **"The unit changed from \"\" to \"\"", over and over.** Home Assistant keeps
+  the empty string and None apart, and a sensor that reported one on this sync
+  and the other on the next was told on every sync that its unit had changed
+  and could not be converted. The message read like nonsense because both
+  units print as nothing — one of them is a string, the other is not. The
+  symbol table mapped `CNT` and `SCORE` to `""`, while an unknown or missing
+  code fell through `dict.get` to `None`: the same sensor, two answers,
+  depending on what the app happened to send. Repetitions and set counts were
+  hit hardest, from HealthPit and GymPit alike.
+- Unitless is now `None` everywhere, decided by one function that cannot
+  return `""`. Three tests hold the rule in place — one on the table, one on
+  the function, one that checks every `native_unit_of_measurement` normalises
+  before the value reaches Home Assistant.
+
+### Notes
+
+- Sensors whose stored statistics carry the empty string will ask once more
+  after this update, and then stay quiet. Home Assistant's own dialog offers
+  to update or clear those historical values; for a unitless sensor there is
+  nothing to convert, so either choice is safe.
+
 ## Home Assistant 2.7.0
 
 ### Changed

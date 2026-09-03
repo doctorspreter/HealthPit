@@ -183,14 +183,35 @@ EXERCISE_METRIC_LABELS = {
 }
 
 # Einheitencodes der Nutzlast in die Symbole, die Home Assistant fuehrt.
-EXERCISE_UNIT_SYMBOLS = {
+#
+# Einheitenlos ist None, niemals der leere String. Home Assistant haelt "" und
+# None fuer zwei verschiedene Einheiten: ein Sensor, der einmal das eine und
+# einmal das andere meldet, erzeugt bei jedem Abgleich die Meldung, seine
+# Masseinheit sei von "" nach "" geaendert worden und lasse sich nicht
+# umrechnen. Genau das ist passiert, weil CNT auf "" zeigte, ein unbekannter
+# Code aber ueber den Fehltreffer von .get() zu None wurde.
+EXERCISE_UNIT_SYMBOLS: dict[str, str | None] = {
     "KG": "kg",
-    "CNT": "",
-    "SCORE": "",
+    "CNT": None,
+    "SCORE": None,
     "S": "s",
     "KCAL": "kcal",
     "M": "m",
 }
+
+
+def unit_symbol(code: Any) -> str | None:
+    """Das Symbol zu einem Einheitencode – einheitenlos immer als None.
+
+    Die eine Stelle, an der aus einem Code ein Symbol wird. Jede Umgehung
+    dieser Funktion ist der Weg zurueck in die Meldung oben.
+    """
+    if code is None:
+        return None
+    key = str(code).strip().upper()
+    if not key:
+        return None
+    return EXERCISE_UNIT_SYMBOLS.get(key) or None
 
 # Workout sources the app used to send, mapped to provider codes.
 LEGACY_WORKOUT_SOURCES = {
@@ -230,7 +251,7 @@ def group_exercise_history(
         entry = grouped.setdefault(
             unique_id,
             {
-                "unit": EXERCISE_UNIT_SYMBOLS.get(str(value.get("unit") or "")),
+                "unit": unit_symbol(value.get("unit")),
                 "hours": {},
             },
         )
