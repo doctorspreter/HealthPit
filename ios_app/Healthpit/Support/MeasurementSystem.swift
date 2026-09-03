@@ -112,17 +112,6 @@ enum UnitConversion: Sendable {
         }
     }
 
-    /// Fuer Summen. Eine Summe von Temperaturen liesse sich ohne die Anzahl
-    /// der Summanden nicht affin umrechnen (×9/5 + 32 je Summand). Temperatur
-    /// wird nie summiert, deshalb bleibt sie hier absichtlich unveraendert.
-    func applyToSum(_ value: Double) -> Double {
-        switch self {
-        case .identity:             return value
-        case .factor(let f):        return value * f
-        case .celsiusToFahrenheit:  return value
-        }
-    }
-
     /// Rueckweg – fuer Schwellwerte, die in HealthKit-Einheiten definiert sind.
     func invert(_ value: Double) -> Double {
         switch self {

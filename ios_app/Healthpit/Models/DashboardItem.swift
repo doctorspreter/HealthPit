@@ -17,7 +17,6 @@ enum DashboardItem: String, CaseIterable, Identifiable {
     case workouts
     case sleep
     case cycle
-    case pain
     case records
 
     var id: String { rawValue }
@@ -27,8 +26,7 @@ enum DashboardItem: String, CaseIterable, Identifiable {
     static let hiddenStorageKey = "dashboardHiddenCards"
 
     static var defaultOrder: [DashboardItem] {
-        [.activity, .workouts, .sleep, .heart, .records, .body, .nutrition, .vitals,
-         .cycle, .pain]
+        [.activity, .workouts, .sleep, .heart, .records, .body, .nutrition, .vitals, .cycle]
     }
 
     static func ordered(from rawValue: String) -> [DashboardItem] {
@@ -98,7 +96,6 @@ enum DashboardItem: String, CaseIterable, Identifiable {
         case .workouts: return L10n.string("Workouts")
         case .sleep: return L10n.string("Schlaf")
         case .cycle: return HealthCategory.cycle.title
-        case .pain: return L10n.string("Schmerzen")
         case .records: return L10n.string("Rekorde")
         }
     }
@@ -113,7 +110,6 @@ enum DashboardItem: String, CaseIterable, Identifiable {
         case .workouts: return "figure.run"
         case .sleep: return "bed.double.fill"
         case .cycle: return HealthCategory.cycle.systemImage
-        case .pain: return "bandage.fill"
         case .records: return "trophy.fill"
         }
     }
@@ -126,8 +122,7 @@ enum DashboardItem: String, CaseIterable, Identifiable {
         case .nutrition: return .nutrition
         case .vitals: return .vitals
         // Zyklus hat eine eigene Ansicht, keine Metrik-Liste.
-        // Schmerzen fuehren keine Metrikliste, sondern einen eigenen Bestand.
-        case .workouts, .sleep, .cycle, .pain, .records: return nil
+        case .workouts, .sleep, .cycle, .records: return nil
         }
     }
 }

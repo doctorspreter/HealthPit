@@ -172,14 +172,6 @@ struct DashboardView: View {
                         .id("cycle-\(reloadToken)")
                 }
                 .buttonStyle(.plain)
-            case .pain:
-                NavigationLink {
-                    PainDetailView()
-                } label: {
-                    PainCard(size: size)
-                        .id("pain-\(reloadToken)")
-                }
-                .buttonStyle(.plain)
             case .records:
                 NavigationLink {
                     RecordsView()

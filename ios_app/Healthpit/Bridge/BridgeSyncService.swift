@@ -627,16 +627,13 @@ final class BridgeSyncService {
             }
             try await uploadMetrics([seed], credentials: credentials)
 
-            // Derselbe Weg wie beim Seed. Bliebe der Verlauf roh, spraenge
-            // ein und derselbe Sensor zwischen lb und kg.
-            let conversion = metric.displayUnit.conversion
             let points = history.map { point in
                 BridgeHistoryPointPayload(start: point.date,
-                                          state: point.state.map(conversion.apply),
-                                          sum: point.sum.map(conversion.applyToSum),
-                                          mean: point.mean.map(conversion.apply),
-                                          min: point.minimum.map(conversion.apply),
-                                          max: point.maximum.map(conversion.apply))
+                                          state: point.state,
+                                          sum: point.sum,
+                                          mean: point.mean,
+                                          min: point.minimum,
+                                          max: point.maximum)
             }
             pointCount += try await uploadHistory(
                 points,
@@ -757,25 +754,25 @@ final class BridgeSyncService {
         let measuredAt = latest.end
 
         let series: [(BridgeMetricPayload, [(Date, Double)])] = [
-            (.duration(id: "sleep_duration", category: .sleep, title: L10n.canonical("Schlafdauer"),
+            (.duration(id: "sleep_duration", category: .sleep, title: "Schlafdauer",
                        seconds: latest.asleep, measuredAt: measuredAt),
              sessions.map { ($0.end, $0.asleep / 3600) }),
-            (.duration(id: "sleep_time_in_bed", category: .sleep, title: L10n.canonical("Zeit im Bett"),
+            (.duration(id: "sleep_time_in_bed", category: .sleep, title: "Zeit im Bett",
                        seconds: latest.timeInBed, measuredAt: measuredAt),
              sessions.map { ($0.end, $0.timeInBed / 3600) }),
-            (.percentage(id: "sleep_efficiency", category: .sleep, title: L10n.canonical("Schlafeffizienz"),
+            (.percentage(id: "sleep_efficiency", category: .sleep, title: "Schlafeffizienz",
                          value: latest.efficiency * 100, measuredAt: measuredAt),
              sessions.map { ($0.end, $0.efficiency * 100) }),
-            (.duration(id: "sleep_deep_duration", category: .sleep, title: L10n.canonical("Tiefschlaf"),
+            (.duration(id: "sleep_deep_duration", category: .sleep, title: "Tiefschlaf",
                        seconds: latest.deep, measuredAt: measuredAt),
              sessions.map { ($0.end, $0.deep / 3600) }),
-            (.duration(id: "sleep_core_duration", category: .sleep, title: L10n.canonical("Core-Schlaf"),
+            (.duration(id: "sleep_core_duration", category: .sleep, title: "Core-Schlaf",
                        seconds: latest.core, measuredAt: measuredAt),
              sessions.map { ($0.end, $0.core / 3600) }),
-            (.duration(id: "sleep_rem_duration", category: .sleep, title: L10n.canonical("REM-Schlaf"),
+            (.duration(id: "sleep_rem_duration", category: .sleep, title: "REM-Schlaf",
                        seconds: latest.rem, measuredAt: measuredAt),
              sessions.map { ($0.end, $0.rem / 3600) }),
-            (.duration(id: "sleep_awake_duration", category: .sleep, title: L10n.canonical("Wachzeit"),
+            (.duration(id: "sleep_awake_duration", category: .sleep, title: "Wachzeit",
                        seconds: latest.awake, measuredAt: measuredAt),
              sessions.map { ($0.end, $0.awake / 3600) }),
         ]
@@ -869,10 +866,10 @@ final class BridgeSyncService {
         }
 
         let rawSeries: [(id: String, title: String, values: [(Date, Double)])] = [
-            ("cycle_current_day", L10n.canonical("Zyklustag"), cycleDayValues),
-            ("cycle_average_length", L10n.canonical("Ø Zykluslänge"), averageLengthValues),
-            ("cycle_average_period_length", L10n.canonical("Ø Periodendauer"), averagePeriodValues),
-            ("cycle_bleeding_days", L10n.canonical("Blutungstage"), bleedingDayValues),
+            ("cycle_current_day", "Zyklustag", cycleDayValues),
+            ("cycle_average_length", "Ø Zykluslänge", averageLengthValues),
+            ("cycle_average_period_length", "Ø Periodendauer", averagePeriodValues),
+            ("cycle_bleeding_days", "Blutungstage", bleedingDayValues),
         ]
 
         var metricCount = 0
@@ -1002,14 +999,12 @@ final class BridgeSyncService {
             let syncID = ActivityGoalStore.syncID(for: goal)
             guard isSharingEnabled(syncID) else { continue }
             guard let metric = goal.metric else { continue }
-            let canonicalTitle = ActivityGoalStore.canonicalSyncTitle(for: goal)
+            let title = ActivityGoalStore.syncTitle(for: goal)
             out.append(BridgeMetricPayload(id: syncID,
                                            category: metric.category.rawValue,
-                                           title: canonicalTitle,
-                                           value: metric.displayValue(goal.target),
-                                           unit: BridgeUnit.descriptor(
-                                               forDisplaySymbolKey: metric.displayUnit.symbolKey
-                                           ).symbol,
+                                           title: title,
+                                           value: goal.target,
+                                           unit: metric.unitSymbol,
                                            measuredAt: now,
                                            aggregation: "latest",
                                            icon: "mdi:target",
@@ -1020,7 +1015,7 @@ final class BridgeSyncService {
             let progress = goal.target > 0 ? min(reached / goal.target * 100, 999) : 0
             out.append(BridgeMetricPayload(id: "\(syncID)_progress",
                                            category: metric.category.rawValue,
-                                           title: L10n.canonicalFormat("%@ erreicht", canonicalTitle),
+                                           title: L10n.format("%@ erreicht", title),
                                            value: progress,
                                            unit: "%",
                                            measuredAt: now,
@@ -1035,7 +1030,7 @@ final class BridgeSyncService {
             let workoutCount = await HealthQuery.shared.workouts().count
             out.append(BridgeMetricPayload(id: "workout_count_all_time",
                                            category: HealthCategory.workouts.rawValue,
-                                           title: L10n.canonical("Workouts gesamt"),
+                                           title: "Workouts gesamt",
                                            value: Double(workoutCount),
                                            unit: "",
                                            measuredAt: now,
@@ -1631,29 +1626,32 @@ extension HealthMetric {
 
 private extension HealthMetric {
     func payload(value: Double, measuredAt: Date) -> BridgeMetricPayload {
-        // Der Wert geht im eingestellten Masssystem hinaus — waehlt der
-        // Nutzer imperial, kommen drueben lb und mi an. Damit Home Assistant
-        // den Wechsel als Umrechnung derselben Groesse begreift und die
-        // Statistik mitzieht, traegt der Sensor die passende device_class.
-        let display = displayUnit
-        let bridgeUnit = BridgeUnit.descriptor(forDisplaySymbolKey: display.symbolKey)
-        return BridgeMetricPayload(id: bridgeID,
+        BridgeMetricPayload(id: bridgeID,
                             category: category.rawValue,
-                            // Englisch, nicht uebersetzt: der Sensorname darf
-                            // sich nicht mit der App-Sprache aendern.
-                            title: englishTitle,
-                            value: display.conversion.apply(value),
-                            unit: bridgeUnit.symbol,
+                            title: title,
+                            // Kanonisch, wie die Datenbank ihn fuehrt. Der
+                            // HealthKit-Faktor gehoert nur dorthin, wo
+                            // unmittelbar aus HealthKit gelesen wird.
+                            value: value,
+                            unit: unitSymbol,
                             measuredAt: measuredAt,
                             aggregation: aggregation == .cumulativeSum ? "sum" : "average",
                             icon: mdiIcon,
-                            deviceClass: bridgeUnit.deviceClass,
+                            deviceClass: deviceClass,
                             // HealthKit sends today's running total. It resets
                             // at midnight, so HA must detect the new cycle.
                             stateClass: aggregation == .cumulativeSum
                                 ? "total_increasing"
                                 : "measurement",
-                            displayPrecision: display.fractionDigits)
+                            displayPrecision: fractionDigits)
+    }
+
+    var deviceClass: String? {
+        switch unitSymbol {
+        case "°C": return "temperature"
+        case "%": return nil
+        default: return nil
+        }
     }
 
     var mdiIcon: String? {
@@ -1717,7 +1715,7 @@ private extension BridgeMetricPayload {
                             category: category.rawValue,
                             title: title,
                             value: value,
-                            unit: L10n.canonical("Tage"),
+                            unit: L10n.string("Tage"),
                             measuredAt: measuredAt,
                             aggregation: "latest",
                             icon: "mdi:water",

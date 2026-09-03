@@ -117,6 +117,7 @@
 "Messwerte" = "Mesures";
 "Metrik" = "Mesure";
 "Minuten" = "Minutes";
+"Mit Apple Health verbinden" = "Se connecter à Apple Santé";
 "Monat" = "Mois";
 "Nacht" = "Nuit";
 "Neu verbinden" = "Reconnecter";
@@ -546,7 +547,7 @@
 /* Startseite: Sichtbarkeit und Health-Freigabe */
 "Freigabe in der Health-App unter „Datenzugriff und Geräte“ erteilen." = "Accordez l'accès dans l'app Santé, sous « Accès aux données et appareils ».";
 "HealthPit braucht die Freigabe, um deine Werte zu lesen." = "HealthPit a besoin de l'autorisation pour lire vos données.";
-"Weiter" = "Continuer";
+"Zugriff erlauben" = "Autoriser l'accès";
 "Ausgeblendete Kacheln" = "Tuiles masquées";
 "Kachel ausblenden" = "Masquer la tuile";
 "Kachel einblenden" = "Afficher la tuile";
@@ -824,69 +825,3 @@
 "Trainingseinheiten und Leistungsentwicklung." = "Séances d’entraînement et évolution des performances.";
 "Schlafdauer, Phasen und Regeneration." = "Durée du sommeil, phases et récupération.";
 "Zyklusverlauf und protokollierte Symptome." = "Déroulé du cycle et symptômes consignés.";
-
-/* Schlafbereich und Einheiten – Nachtrag 26.09 */
-"Im Bett" = "Au lit";
-"Schlafzeit" = "Temps de sommeil";
-"Bettzeit" = "Temps au lit";
-"REM" = "REM";
-"%@ Effizienz" = "%@ d'efficacité";
-"IE" = "UI";
-"U/min" = "tr/min";
-"Workouts gesamt" = "Total des séances";
-
-/* Kennzahlen je Sportart */
-"Ø Dauer" = "Durée moyenne";
-"Längste Einheit" = "Séance la plus longue";
-"Ø Distanz" = "Distance moyenne";
-"Längste Strecke" = "Distance la plus longue";
-"Ø Geschwindigkeit" = "Vitesse moyenne";
-"Ø Tempo" = "Allure moyenne";
-"Ø Kalorien" = "Calories moyennes";
-"Max. Puls" = "FC max.";
-"Sätze" = "Séries";
-"Wiederholungen" = "Répétitions";
-
-/* Onboarding-Merkmale */
-"Privat" = "Privé";
-"Aktuell" = "À jour";
-
-
-/* Trainingseinheiten – getrennt von den Masseinheiten */
-"Trainingseinheit" = "séance";
-"Trainingseinheiten" = "séances";
-
-/* Schmerzen und Verletzungen */
-"%lld laufend" = "%lld en cours";
-"Am gewählten Tag" = "Le jour sélectionné";
-"Art" = "Type";
-"Aus einem Training" = "Depuis une séance";
-"Beendet" = "Terminé";
-"Beginn" = "Début";
-"Beschwerde" = "Gêne";
-"Brennend" = "Brûlure";
-"Der Kalender färbt jeden Tag von Beginn bis Ende ein." = "Le calendrier colore chaque jour du début à la fin.";
-"Dieser Eintrag stammt aus einem Training. Speichern übernimmt ihn hierher." = "Cette entrée vient d'une séance. L'enregistrer la déplace ici.";
-"Dumpf" = "Sourde";
-"Ellbogen links" = "Coude gauche";
-"Ellbogen rechts" = "Coude droit";
-"Für diesen Zeitraum ist nichts eingetragen." = "Rien n'est enregistré pour cette période.";
-"Im Monat" = "Ce mois-ci";
-"Kopf" = "Tête";
-"Körperregion" = "Région du corps";
-"Laufende Beschwerden" = "Gênes en cours";
-"Nacken" = "Nuque";
-"Nichts Laufendes" = "Rien en cours";
-"Noch nichts eingetragen." = "Rien d'enregistré pour l'instant.";
-"Notiz" = "Note";
-"Ohne Ende gilt die Beschwerde als laufend." = "Sans fin, la gêne est considérée comme en cours.";
-"Pochend" = "Lancinante";
-"Schmerz" = "Douleur";
-"Schmerzen" = "Douleurs";
-"Schmerzen & Verletzungen" = "Douleurs et blessures";
-"Sprunggelenk" = "Cheville";
-"Stechend" = "Aiguë";
-"Taub" = "Engourdie";
-"Was wehtut, wo es sitzt und wie lange es bleibt." = "Ce qui fait mal, où et pendant combien de temps.";
-"Ziehend" = "Tiraillement";
-"Zurzeit nichts Laufendes." = "Rien en cours actuellement.";

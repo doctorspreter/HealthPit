@@ -45,7 +45,7 @@ struct HealthMetric: Identifiable, Hashable, Sendable {
     let category: HealthCategory
 
     /// Deutscher Lokalisierungsschlüssel und aktuell übersetzter Anzeigename.
-    let titleKey: String
+    private let titleKey: String
     var title: String { L10n.string(titleKey) }
 
     /// SF-Symbol für Listen/Detail.
@@ -67,15 +67,6 @@ struct HealthMetric: Identifiable, Hashable, Sendable {
 
     /// Kurzes Einheitenkürzel der gespeicherten Einheit, übersetzt.
     var unitSymbol: String { L10n.string(canonicalUnitSymbol) }
-
-    /// Name und Einheit auf Englisch, unabhängig von der Sprachauswahl.
-    ///
-    /// Alles, was die App verlässt – Datenbank, Bridge, Home Assistant –,
-    /// benutzt diese beiden und niemals `title`/`unitSymbol`. Ein Sensor,
-    /// dessen Name oder Einheit sich mit der App-Sprache ändert, verliert in
-    /// Home Assistant seine Historie.
-    var englishTitle: String { L10n.canonical(titleKey) }
-    var englishUnitSymbol: String { L10n.canonical(canonicalUnitSymbol) }
 
     /// Summieren oder Mitteln über den Zeitraum.
     let aggregation: AggregationStyle

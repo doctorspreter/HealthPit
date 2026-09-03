@@ -2,14 +2,8 @@
 //  OnboardingView.swift
 //  Healthpit
 //
-//  Screen 0 – erklärt, wofür HealthPit die Werte braucht, und stößt danach
-//  die Autorisierung an. Meldet per Closure zurück, sobald der Dialog
-//  beantwortet wurde.
-//
-//  Die Schaltfläche heißt bewusst nur „Weiter“: App Review 5.1.1(iv) wertet
-//  eine Beschriftung wie „Mit Apple Health verbinden“ vor dem Systemdialog
-//  als Lenkung der Entscheidung. Erklären darf der Text davor, die
-//  Schaltfläche selbst muss neutral bleiben.
+//  Screen 0 – Verbindung mit Apple Health herstellen. Ruft die Autorisierung
+//  an und meldet per Closure zurück, sobald der Dialog beantwortet wurde.
 //
 
 import SwiftUI
@@ -68,7 +62,7 @@ struct OnboardingView: View {
             } label: {
                 HStack {
                     if isRequesting { ProgressView().tint(.white) }
-                    Text(L10n.string("Weiter"))
+                    Text(L10n.string("Mit Apple Health verbinden"))
                 }
                 .frame(maxWidth: .infinity)
                 .padding()

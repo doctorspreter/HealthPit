@@ -42,9 +42,7 @@ struct WorkoutListView: View {
                     symbol: "figure.run.circle.fill",
                     tint: .green,
                     value: items.isEmpty ? "–" : "\(items.count)",
-                    // Eigener Schluessel: "Einheiten" bedeutet in den
-                    // Einstellungen Massein­heiten und wurde dort zu "Units".
-                    detail: items.count == 1 ? "Trainingseinheit" : "Trainingseinheiten"
+                    detail: items.count == 1 ? "Einheit" : "Einheiten"
                 )
                 .listRowInsets(EdgeInsets(top: 8, leading: 18, bottom: 8, trailing: 18))
                 .listRowSeparator(.hidden)
@@ -400,10 +398,6 @@ struct UnifiedWorkout: Identifiable {
         local?.averageHeartRate
     }
 
-    nonisolated var maxHeartRate: Double? {
-        local?.maxHeartRate
-    }
-
     nonisolated var weather: WorkoutWeather? {
         local?.weather ?? health?.weather
     }
@@ -423,11 +417,6 @@ struct UnifiedWorkout: Identifiable {
     nonisolated var setCount: Int? {
         let count = strengthExercises.flatMap(\.sets).count
         return count > 0 ? count : nil
-    }
-
-    nonisolated var repCount: Int? {
-        let reps = strengthExercises.flatMap(\.sets).compactMap(\.reps).reduce(0, +)
-        return reps > 0 ? Int(reps.rounded()) : nil
     }
 
     nonisolated var strengthExercises: [UnifiedStrengthExercise] {

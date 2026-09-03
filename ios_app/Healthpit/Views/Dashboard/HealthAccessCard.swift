@@ -6,10 +6,6 @@
 //  Ohne sie bleibt die Startseite nach einem abgelehnten Onboarding leer,
 //  ohne zu sagen warum.
 //
-//  Sie sagt, wofuer die Werte gebraucht werden; die Aktion selbst heisst nur
-//  „Weiter“. App Review 5.1.1(iv) verbietet Beschriftungen, die den Nutzer zur
-//  Freigabe draengen („Zugriff erlauben“, „Mit Apple Health verbinden“).
-//
 
 import SwiftUI
 
@@ -51,19 +47,19 @@ struct HealthAccessCard: View {
                 }
             }
 
+            Text(L10n.string("Zugriff erlauben"))
+                .font(size == .small ? .caption.weight(.semibold) : .headline)
+                .lineLimit(2)
+                .minimumScaleFactor(0.7)
+
             if size != .small {
                 Text(errorMessage ?? L10n.string("HealthPit braucht die Freigabe, um deine Werte zu lesen."))
-                    .font(.subheadline)
-                    .foregroundStyle(errorMessage == nil ? Color.primary : Color.red)
+                    .font(.caption2)
+                    .foregroundStyle(errorMessage == nil ? Color.secondary : Color.red)
                     .lineLimit(3)
-                    .minimumScaleFactor(0.8)
             }
 
             Spacer(minLength: 0)
-
-            Text(L10n.string("Weiter"))
-                .font(size == .small ? .caption.weight(.semibold) : .headline)
-                .lineLimit(1)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(12)

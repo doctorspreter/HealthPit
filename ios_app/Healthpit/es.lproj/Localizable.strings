@@ -117,6 +117,7 @@
 "Messwerte" = "Métricas";
 "Metrik" = "Métrica";
 "Minuten" = "Minutos";
+"Mit Apple Health verbinden" = "Conectar con Apple Health";
 "Monat" = "Mes";
 "Nacht" = "Noche";
 "Neu verbinden" = "Volver a conectar";
@@ -546,7 +547,7 @@
 /* Startseite: Sichtbarkeit und Health-Freigabe */
 "Freigabe in der Health-App unter „Datenzugriff und Geräte“ erteilen." = "Concede el acceso en la app Salud, en «Acceso a datos y dispositivos».";
 "HealthPit braucht die Freigabe, um deine Werte zu lesen." = "HealthPit necesita permiso para leer tus datos.";
-"Weiter" = "Continuar";
+"Zugriff erlauben" = "Permitir acceso";
 "Ausgeblendete Kacheln" = "Tarjetas ocultas";
 "Kachel ausblenden" = "Ocultar tarjeta";
 "Kachel einblenden" = "Mostrar tarjeta";
@@ -824,69 +825,3 @@
 "Trainingseinheiten und Leistungsentwicklung." = "Sesiones de entrenamiento y evolución del rendimiento.";
 "Schlafdauer, Phasen und Regeneration." = "Duración del sueño, fases y recuperación.";
 "Zyklusverlauf und protokollierte Symptome." = "Evolución del ciclo y síntomas registrados.";
-
-/* Schlafbereich und Einheiten – Nachtrag 26.09 */
-"Im Bett" = "En la cama";
-"Schlafzeit" = "Tiempo de sueño";
-"Bettzeit" = "Tiempo en la cama";
-"REM" = "REM";
-"%@ Effizienz" = "%@ de eficiencia";
-"IE" = "UI";
-"U/min" = "rpm";
-"Workouts gesamt" = "Entrenamientos en total";
-
-/* Kennzahlen je Sportart */
-"Ø Dauer" = "Duración media";
-"Längste Einheit" = "Sesión más larga";
-"Ø Distanz" = "Distancia media";
-"Längste Strecke" = "Distancia más larga";
-"Ø Geschwindigkeit" = "Velocidad media";
-"Ø Tempo" = "Ritmo medio";
-"Ø Kalorien" = "Calorías medias";
-"Max. Puls" = "Frecuencia máx.";
-"Sätze" = "Series";
-"Wiederholungen" = "Repeticiones";
-
-/* Onboarding-Merkmale */
-"Privat" = "Privado";
-"Aktuell" = "Al día";
-
-
-/* Trainingseinheiten – getrennt von den Masseinheiten */
-"Trainingseinheit" = "sesión";
-"Trainingseinheiten" = "sesiones";
-
-/* Schmerzen und Verletzungen */
-"%lld laufend" = "%lld en curso";
-"Am gewählten Tag" = "En el día seleccionado";
-"Art" = "Tipo";
-"Aus einem Training" = "De un entrenamiento";
-"Beendet" = "Finalizado";
-"Beginn" = "Inicio";
-"Beschwerde" = "Molestia";
-"Brennend" = "Ardor";
-"Der Kalender färbt jeden Tag von Beginn bis Ende ein." = "El calendario colorea cada día desde el inicio hasta el final.";
-"Dieser Eintrag stammt aus einem Training. Speichern übernimmt ihn hierher." = "Esta entrada viene de un entrenamiento. Al guardar se traslada aquí.";
-"Dumpf" = "Sordo";
-"Ellbogen links" = "Codo izquierdo";
-"Ellbogen rechts" = "Codo derecho";
-"Für diesen Zeitraum ist nichts eingetragen." = "No hay nada registrado en este periodo.";
-"Im Monat" = "En el mes";
-"Kopf" = "Cabeza";
-"Körperregion" = "Zona del cuerpo";
-"Laufende Beschwerden" = "Molestias en curso";
-"Nacken" = "Cuello";
-"Nichts Laufendes" = "Nada en curso";
-"Noch nichts eingetragen." = "Aún no hay nada registrado.";
-"Notiz" = "Nota";
-"Ohne Ende gilt die Beschwerde als laufend." = "Sin fecha de fin, la molestia se considera en curso.";
-"Pochend" = "Pulsátil";
-"Schmerz" = "Dolor";
-"Schmerzen" = "Dolor";
-"Schmerzen & Verletzungen" = "Dolor y lesiones";
-"Sprunggelenk" = "Tobillo";
-"Stechend" = "Punzante";
-"Taub" = "Entumecido";
-"Was wehtut, wo es sitzt und wie lange es bleibt." = "Qué duele, dónde está y cuánto dura.";
-"Ziehend" = "Tirante";
-"Zurzeit nichts Laufendes." = "Nada en curso ahora mismo.";
