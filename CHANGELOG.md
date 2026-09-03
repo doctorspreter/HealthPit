@@ -298,30 +298,19 @@
 
 ### Added
 
-- **Pain from a workout ends with the training day.** It used to be left open,
-  which meant every single one counted as an ongoing complaint for ever and
-  filled the screen. What hurt during sport is not automatically still there
-  the next morning. Whoever wants it to carry on opens the entry and takes the
-  end out or pushes it back; from then on it lives in the table and this
-  default no longer applies to it.
-- **Equipment has parts.** A bike is not replaced when the chain has done
-  3000 km — the chain is. Each piece carries a list of parts, each with its own
-  interval and its own "last done": chain, brake pads, tyres, cassette, cables,
-  chain lube and a full service for a bike; insoles and laces for shoes; a
-  resole for climbing shoes. The suggestions are starting points, every
-  interval can be changed, and a free-named part covers whatever nobody
-  thought of here.
-- **Distance and time, together.** A threshold can be set in kilometres, in
-  days, or in both — shoes after 800 km *or* after three years, whichever comes
-  first, because the foam hardens in the cupboard too. Whichever limit is
-  driving the display is named underneath it.
-- **The new areas reach Home Assistant.** Ongoing complaints and the strongest
-  of them, how much a diary saw in the last 30 days, distance per piece of
-  equipment and how many parts are due. That last one is why: "change the
-  chain" belongs in a notification, not in an app you have to open. Needs
-  integration 2.8.0.
-
-
+- **Pain and injuries as an area of their own.** A calendar, the complaints
+  that are still running, and the history below it. A day is coloured for as
+  long as a complaint covers it — not only the day it was entered, but the
+  whole span up to its end, so a two-week strain is two weeks long on the
+  calendar. Depth of colour follows the severity. An entry carries body
+  region, kind of pain, severity, start, end and a note.
+- **The injuries noted during a workout show up there too.** They are read
+  from the workouts and listed alongside the entries made here, and they end
+  with the training day: what hurt during sport is not automatically still
+  there the next morning. Whoever wants it to carry on opens the entry and
+  takes the end out or pushes it back; from then on it lives in the table and
+  that default no longer applies to it. Its identifier is derived from the
+  workout, so a later sync cannot enter it twice.
 - **Physical health: a diary for what comes in episodes.** Headache, migraine,
   panic attack, dizziness, asthma, allergy and more. An entry carries the
   form, the severity, start and end, the symptoms alongside it, the possible
@@ -335,17 +324,51 @@
   date from which it is in use, so it falls to the matching workouts on its
   own — whoever buys shoes in March does not want to assign every run by hand.
   A single workout can still be assigned differently, and that choice beats
-  the automatic one, including the choice "none". Distance ridden or run is
-  calculated from the workouts rather than counted separately: a second tally
-  would be the first number to drift once a workout is added or deleted.
-  Replacement and service thresholds are optional and shown as progress, in
-  red once they are due.
-- **Up to three figures in one chart.** The sport chart used to show duration
-  and nothing else. Every figure that has data can now be picked — duration,
-  distance, calories, pace, heart rate, volume, sets, reps — and up to three
-  at once. Each line is scaled to its own peak, because kilometres and
-  calories on one axis would leave the distance flat on the floor; the real
-  values with their units appear on tap.
+  the automatic one, including the choice "none". Distance is calculated from
+  the workouts rather than counted separately: a second tally would be the
+  first number to drift once a workout is added or deleted.
+- **Equipment has parts.** A bike is not replaced when the chain has done
+  3000 km — the chain is. Each piece carries a list of parts, each with its own
+  interval and its own "last done": chain, brake pads, tyres, cassette, cables,
+  chain lube and a full service for a bike; insoles and laces for shoes; a
+  resole for climbing shoes. The suggestions are starting points, every
+  interval can be changed, and a free-named part covers whatever nobody
+  thought of here.
+- **Distance and time, together.** A threshold can be set in kilometres, in
+  days, or in both — shoes after 800 km *or* after three years, whichever comes
+  first, because the foam hardens in the cupboard too. Whichever limit is
+  driving the display is named underneath it.
+- **Every figure a sport actually has.** Tapping a sport used to show three
+  fixed tiles — sessions, duration, and either volume or distance — so a run
+  showed little more than its duration while pace, calories and heart rate sat
+  in the database unused. The tiles are built from what is recorded now, and a
+  figure with no data behind it is left out rather than shown empty.
+- **Up to three figures in one chart.** Every figure that has data can be
+  picked — duration, distance, calories, pace, heart rate, volume, sets,
+  reps — and up to three at once. Each line is scaled to its own peak, because
+  kilometres and calories on one axis would leave the distance flat on the
+  floor; the real values with their units appear on tap.
+- **The new areas reach Home Assistant.** Ongoing complaints and the strongest
+  of them, how much a diary saw in the last 30 days, distance per piece of
+  equipment and how many parts are due. That last one is why: "change the
+  chain" belongs in a notification, not in an app you have to open. Needs
+  integration 2.8.0.
+
+### Changed
+
+- **Units follow the measurement setting all the way to Home Assistant.**
+  Choosing imperial now sends lb and mi across instead of converting for the
+  screen only. So that a switch does not tear the long-term statistics apart,
+  every such sensor carries a matching `device_class` and a unit spelled the
+  way Home Assistant spells it — `mL`, not `ml`; `fl. oz.`, not `fl oz`. The
+  metric history is converted on the same path as the current value; leaving
+  it raw would have made one sensor jump between lb and kg.
+- **A manual workout stores a canonical sport.** It used to store the typed
+  name: "Laufen" became `LAUFEN`, because the existing normalisation only
+  smooths spelling and does not translate. The database held language instead
+  of a code, and everything checking for `RUNNING` walked past it — running
+  shoes would never have fallen to a manually recorded run. Existing rows
+  still resolve, by name.
 
 ### Fixed
 
@@ -359,69 +382,27 @@
   whole bridge payload was built from the display layer: `title` was
   `L10n.string(titleKey)` and `unit` was `L10n.string(canonicalUnitSymbol)`,
   both translated. Switching the app to English renamed every sensor and
-  changed its `unit_of_measurement` — the same kind of damage that sending
-  metric values was meant to prevent. Everything that leaves the app now uses
+  changed its `unit_of_measurement`. Everything that leaves the app now uses
   `L10n.canonical`, which always reads the English table. `HealthMetric.swift`
   had forbidden exactly this in writing since it was written.
 - **`device_class` was lost outside German.** It switched on the translated
   unit symbol, so `°C` only ever matched in German and temperature sensors
   arrived without a device class.
-- Eight keys were missing from the four translated tables (`Im Bett`,
-  `Schlafzeit`, `Bettzeit`, `REM`, `IE`, `U/min`, `Workouts gesamt` and the
-  efficiency subtitle).
-- **More German on English screens, found by running it.** The three labels on
-  the first screen (`Privat`, `Aktuell`) had no English entry — the very screen
-  App Review looks at. The workout calendar had its weekday initials written
-  into the source as `Mo Di Mi Do Fr Sa So`; they come from the calendar now,
-  the way the cycle view already did it.
+- **Pain recorded in a workout never reached the pain area.** It was read
+  through the Apple Health side of a workout, and an injury typed into the
+  editor hangs on the locally recorded one — the wrong of the two sources.
+- **More German on English screens, found by running it.** The two labels on
+  the first screen had no English entry at all — the very screen App Review
+  looks at. The workout calendar had its weekday initials written into the
+  source as `Mo Di Mi Do Fr Sa So`; they come from the calendar now. A
+  workout's title is stored text and went past the translation. In total 60
+  keys were added across this round, and all four translated tables are
+  complete: 1024 keys, none missing in Spanish, French or Simplified Chinese.
 - **One key meant two things.** `Einheiten` was both the training sessions on
   the workout header and the measurement units in settings, so the header read
   "Units" in English. Sessions have their own key now.
-
-### Added
-
-- **Pain and injuries as an area of their own.** A calendar, the complaints
-  that are still running, and the history below it. A day is coloured for as
-  long as a complaint covers it — not only the day it was entered, but the
-  whole span up to its end, so a two-week strain is two weeks long on the
-  calendar. Depth of colour follows the severity. An entry carries body
-  region, kind of pain, severity, start, end and a note; leaving the end empty
-  is what makes a complaint ongoing.
-- **The injuries noted during a workout show up there too.** They are read
-  from the workouts and listed alongside the entries made here. Editing one
-  moves it into the table and it replaces the derived version, so a strain
-  noted in a workout can be given an end here. Its identifier is derived from
-  the workout, so a later sync cannot enter it twice.
-- Schema v3 adds `pain_entry`. Body region and kind of pain are stored as
-  English codes (`KNEE_LEFT`, `SHARP`), the way the sport is stored on a
-  workout — the display names are translated in the app. The German texts the
-  manual workout has been writing so far are mapped onto those codes on the
-  way in, so older entries do not arrive without a region.
-
-- **Every figure a sport actually has.** Tapping a sport used to show three
-  fixed tiles — sessions, duration, and either volume or distance — so a run
-  showed little more than its duration while pace, calories and heart rate sat
-  in the database unused. The tiles are built from what is recorded now:
-  sessions, total and average and longest duration, distance with average and
-  longest, average pace (or average speed for cycling, rowing and skiing, which
-  nobody reads in minutes per kilometre), calories, average and maximum heart
-  rate, and volume, sets, reps and exercises for strength work. A figure with
-  no data behind it is left out rather than shown empty, so an athlete who
-  records without a chest strap sees no hollow heart-rate tile.
-
-### Changed
-
-- **Units follow the measurement setting all the way to Home Assistant.**
-  Choosing imperial now sends lb and mi across instead of converting for the
-  screen only. So that a switch does not tear the long-term statistics apart,
-  every such sensor carries a matching `device_class` and a unit spelled the
-  way Home Assistant spells it — `mL`, not `ml`; `fl. oz.`, not `fl oz`. Home
-  Assistant then reads the change as a conversion of the same quantity and
-  converts the history with it. The metric history is converted on the same
-  path as the current value; leaving it raw would have made one sensor jump
-  between lb and kg.
-- The data model the integration speaks is unchanged (`MODEL_VERSION = 2`), so
-  this app works with the integration already installed.
+- An "Equipment" heading stood over an empty section on a workout when no
+  equipment was recorded at all.
 
 ### Notes
 
@@ -429,6 +410,11 @@
   `Stöße`, `Atemzüge/min`) have no quantity Home Assistant knows, so they carry
   no `device_class`. Their unit changes once, to the English word, and Home
   Assistant will note the change for those sensors.
+- Schema v3 to v6: `pain_entry`, `health_episode`, `equipment`,
+  `equipment_usage` and `equipment_component`. Body regions, kinds of pain,
+  conditions, symptoms, triggers and part kinds are all stored as English
+  codes, the way the sport is stored on a workout — the display names are
+  translated in the app.
 
 ### App Review
 
