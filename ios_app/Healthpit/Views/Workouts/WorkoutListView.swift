@@ -94,29 +94,7 @@ struct WorkoutListView: View {
                     .padding(14)
                     .professionalCard(tint: .green)
                 }
-                .listRowInsets(EdgeInsets(top: 5, leading: 18, bottom: 4, trailing: 18))
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
-
-                // Ausruestung gehoert zum Training, nicht auf die Startseite:
-                // wer nach seinen Schuhen sieht, kommt von den Läufen her.
-                NavigationLink {
-                    EquipmentListView()
-                } label: {
-                    HStack(spacing: 12) {
-                        Image(systemName: "shoe")
-                            .foregroundStyle(.brown)
-                            .frame(width: 36, height: 36)
-                            .background(.brown.opacity(0.12), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(L10n.string("Ausrüstung")).font(.subheadline.weight(.semibold))
-                            Text(L10n.string("Schuhe, Rad, Wartung und Austausch")).font(.caption2).foregroundStyle(.secondary)
-                        }
-                    }
-                    .padding(14)
-                    .professionalCard(tint: .brown)
-                }
-                .listRowInsets(EdgeInsets(top: 4, leading: 18, bottom: 8, trailing: 18))
+                .listRowInsets(EdgeInsets(top: 5, leading: 18, bottom: 8, trailing: 18))
                 .listRowSeparator(.hidden)
                 .listRowBackground(Color.clear)
             }

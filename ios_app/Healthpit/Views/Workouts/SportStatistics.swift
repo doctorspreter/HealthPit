@@ -23,10 +23,18 @@ struct SportStat: Identifiable {
     let labelKey: String
     let value: String
 
+    /// Die Kurve zu dieser Kennzahl, falls es eine gibt.
+    ///
+    /// Die Kachel ist damit selbst die Auswahl fuers Diagramm. Eine eigene
+    /// Knopfreihe darueber haette dieselben Woerter ein zweites Mal
+    /// hingeschrieben — die Werte stehen ohnehin schon da.
+    let chartMetric: SportChartMetric?
+
     init(_ labelKey: String, _ value: String) {
         id = labelKey
         self.labelKey = labelKey
         self.value = value
+        chartMetric = SportChartMetric.allCases.first { $0.displayKey == labelKey }
     }
 }
 

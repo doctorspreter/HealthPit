@@ -320,8 +320,8 @@
   nobody. Each diary shows how often it happened per month, the average
   severity and duration, and the triggers and symptoms that come up most; that
   last one is the only reason anyone keeps such a diary.
-- **Equipment with service and replacement.** Shoes, bike, mat: each with a
-  date from which it is in use, so it falls to the matching workouts on its
+- **Equipment with service and replacement**, as an area of its own on the
+  home screen. Shoes, bike, mat: each with a date from which it is in use, so it falls to the matching workouts on its
   own — whoever buys shoes in March does not want to assign every run by hand.
   A single workout can still be assigned differently, and that choice beats
   the automatic one, including the choice "none". Distance is calculated from
@@ -343,11 +343,14 @@
   showed little more than its duration while pace, calories and heart rate sat
   in the database unused. The tiles are built from what is recorded now, and a
   figure with no data behind it is left out rather than shown empty.
-- **Up to three figures in one chart.** Every figure that has data can be
-  picked — duration, distance, calories, pace, heart rate, volume, sets,
-  reps — and up to three at once. Each line is scaled to its own peak, because
-  kilometres and calories on one axis would leave the distance flat on the
-  floor; the real values with their units appear on tap.
+- **Up to three figures in one chart, chosen on the figures themselves.**
+  Every figure that has data can be picked — duration, distance, calories,
+  pace, heart rate, volume, sets, reps — by tapping its own tile below the
+  chart, which then carries the colour of its line. A separate row of buttons
+  above the chart would have written the same words a second time; the values
+  are already there. Each line is scaled to its own peak, because kilometres
+  and calories on one axis would leave the distance flat on the floor; the
+  real values with their units appear on tap.
 - **The new areas reach Home Assistant.** Ongoing complaints and the strongest
   of them, how much a diary saw in the last 30 days, distance per piece of
   equipment and how many parts are due. That last one is why: "change the

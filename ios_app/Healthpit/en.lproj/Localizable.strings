@@ -1016,7 +1016,6 @@
 "bis %@" = "until %@";
 "Automatisch (%@)" = "Automatic (%@)";
 "Automatisch (keine)" = "Automatic (none)";
-"Schuhe, Rad, Wartung und Austausch" = "Shoes, bike, service and replacement";
 
 /* Diagramm mit mehreren Kennzahlen */
 "Jede Kurve ist auf ihren eigenen Höchstwert bezogen – so lassen sich Verläufe vergleichen, deren Einheiten nicht zusammenpassen." = "Each line is scaled to its own peak, so curves whose units do not match can still be compared.";

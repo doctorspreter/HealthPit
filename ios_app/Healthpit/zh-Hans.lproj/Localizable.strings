@@ -1016,7 +1016,6 @@
 "bis %@" = "至 %@";
 "Automatisch (%@)" = "自动（%@）";
 "Automatisch (keine)" = "自动（无）";
-"Schuhe, Rad, Wartung und Austausch" = "鞋子、单车、保养与更换";
 
 /* Diagramm mit mehreren Kennzahlen */
 "Jede Kurve ist auf ihren eigenen Höchstwert bezogen – so lassen sich Verläufe vergleichen, deren Einheiten nicht zusammenpassen." = "每条曲线按各自峰值缩放，因此单位不同的走势也能比较。";

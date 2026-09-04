@@ -529,7 +529,6 @@ struct WorkoutSportDetailView: View {
 
     var body: some View {
         let points = chartPoints
-        let highlightedPoint = selectedChartPoint(in: points)
         let chartDomain = sportChartDomain(for: points)
         let showsPointSymbols = points.count <= 60
         return List {
@@ -574,7 +573,6 @@ struct WorkoutSportDetailView: View {
                                            systemImage: "chart.line.uptrend.xyaxis",
                                            description: Text(L10n.string("Für diese Sportart liegen noch keine Werte vor.")))
                 } else {
-                    metricChooser
 
                     Chart(metricSamples) { sample in
                         LineMark(x: .value("Tag", sample.day),
@@ -630,7 +628,7 @@ struct WorkoutSportDetailView: View {
                 // nicht diese Ansicht.
                 LazyVGrid(columns: statColumns, alignment: .leading, spacing: 14) {
                     ForEach(SportStatistics.stats(for: visibleItems)) { entry in
-                        stat(entry.labelKey, entry.value)
+                        statTile(entry)
                     }
                 }
                 .padding(.vertical, 2)
@@ -696,9 +694,6 @@ struct WorkoutSportDetailView: View {
     // MARK: Kennzahlen im Diagramm
 
     /// Die Kennzahlen, zu denen es im sichtbaren Zeitraum Werte gibt.
-    private var availableMetrics: [SportChartMetric] {
-        SportChartMetric.available(in: visibleItems)
-    }
 
     /// Je Kennzahl eine Reihe, jede auf ihr eigenes Maximum bezogen.
     private var metricSamples: [SportChartSample] {
@@ -725,32 +720,46 @@ struct WorkoutSportDetailView: View {
         SportChartMetric.allCases.filter { selectedMetrics.contains($0) }
     }
 
-    private var metricChooser: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(availableMetrics) { metric in
-                    let isOn = selectedMetrics.contains(metric)
-                    let isFull = selectedMetrics.count >= SportChartMetric.maximumSelection
-                    Button {
-                        toggle(metric)
-                    } label: {
-                        Text(L10n.string(metric.displayKey))
-                            .font(.caption.weight(.semibold))
-                            .padding(.horizontal, 11)
-                            .padding(.vertical, 6)
-                            .background(isOn ? metric.color.opacity(0.18) : Color.secondary.opacity(0.10),
-                                        in: Capsule())
-                            .foregroundStyle(isOn ? metric.color : Color.secondary)
-                    }
-                    .buttonStyle(.plain)
-                    // Die letzte ausgewaehlte bleibt anklickbar, sonst
-                    // liesse sich eine volle Auswahl nicht mehr aendern.
-                    .disabled(!isOn && isFull)
-                    .opacity(!isOn && isFull ? 0.4 : 1)
-                }
+    /// Eine Kennzahl-Kachel. Gibt es dazu eine Kurve, waehlt ein Tippen sie
+    /// ins Diagramm — die Kachel traegt dann die Farbe ihrer Linie. Ohne
+    /// Kurve bleibt sie eine reine Anzeige und reagiert nicht.
+    @ViewBuilder
+    private func statTile(_ entry: SportStat) -> some View {
+        if let metric = entry.chartMetric {
+            let isOn = selectedMetrics.contains(metric)
+            let isFull = selectedMetrics.count >= SportChartMetric.maximumSelection
+            Button {
+                toggle(metric)
+            } label: {
+                tileBody(entry, tint: isOn ? metric.color : nil)
             }
-            .padding(.vertical, 2)
+            .buttonStyle(.plain)
+            // Die letzte gewaehlte bleibt anklickbar, sonst liesse sich eine
+            // volle Auswahl nicht mehr aendern.
+            .disabled(!isOn && isFull)
+            .opacity(!isOn && isFull ? 0.45 : 1)
+            .accessibilityAddTraits(isOn ? [.isSelected, .isButton] : .isButton)
+        } else {
+            tileBody(entry, tint: nil)
         }
+    }
+
+    private func tileBody(_ entry: SportStat, tint: Color?) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(entry.value)
+                .font(.headline)
+                .foregroundStyle(tint ?? .primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+            Text(L10n.string(entry.labelKey))
+                .font(.caption2)
+                .foregroundStyle(tint ?? .secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 6)
+        .padding(.horizontal, 8)
+        .background((tint ?? .clear).opacity(tint == nil ? 0 : 0.12),
+                    in: RoundedRectangle(cornerRadius: 9, style: .continuous))
     }
 
     private func toggle(_ metric: SportChartMetric) {
@@ -772,13 +781,6 @@ struct WorkoutSportDetailView: View {
         }
     }
 
-    private func selectedChartPoint(in points: [WorkoutSportChartPoint]) -> WorkoutSportChartPoint? {
-        guard let selectedChartDate else { return nil }
-        return points.min {
-            abs($0.day.timeIntervalSince(selectedChartDate))
-                < abs($1.day.timeIntervalSince(selectedChartDate))
-        }
-    }
 
     private func sportChartDomain(for points: [WorkoutSportChartPoint]) -> ClosedRange<Date> {
         let start = points.map(\.day).min() ?? referenceDate

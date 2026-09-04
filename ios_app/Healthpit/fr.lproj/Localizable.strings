@@ -1016,7 +1016,6 @@
 "bis %@" = "jusqu'au %@";
 "Automatisch (%@)" = "Automatique (%@)";
 "Automatisch (keine)" = "Automatique (aucun)";
-"Schuhe, Rad, Wartung und Austausch" = "Chaussures, vélo, entretien et remplacement";
 
 /* Diagramm mit mehreren Kennzahlen */
 "Jede Kurve ist auf ihren eigenen Höchstwert bezogen – so lassen sich Verläufe vergleichen, deren Einheiten nicht zusammenpassen." = "Chaque courbe est ramenée à son propre maximum, ce qui permet de comparer des unités différentes.";
