@@ -708,25 +708,6 @@ struct LocalWorkoutDetailView: View {
         }
     }
 
-    private var elevationGainBySplit: [Int: Double] {
-        Dictionary(uniqueKeysWithValues: splits.compactMap { split in
-            guard let gain = elevationGain(for: split), gain > 0 else { return nil }
-            return (split.id, gain)
-        })
-    }
-
-    private func region(for coords: [CLLocationCoordinate2D]) -> MKCoordinateRegion {
-        let lats = coords.map(\.latitude)
-        let lons = coords.map(\.longitude)
-        let minLat = lats.min() ?? 0, maxLat = lats.max() ?? 0
-        let minLon = lons.min() ?? 0, maxLon = lons.max() ?? 0
-        let center = CLLocationCoordinate2D(latitude: (minLat + maxLat) / 2,
-                                            longitude: (minLon + maxLon) / 2)
-        let span = MKCoordinateSpan(latitudeDelta: max((maxLat - minLat) * 1.4, 0.005),
-                                    longitudeDelta: max((maxLon - minLon) * 1.4, 0.005))
-        return MKCoordinateRegion(center: center, span: span)
-    }
-
     private func loadFallbackHeartRate() async {
         guard importedHeartRate?.samples.isEmpty != false else { return }
         isLoadingHeartRate = true
@@ -831,22 +812,4 @@ struct LocalWorkoutDetailView: View {
         return values.reduce(0, +) / Double(values.count)
     }
 
-    private func elevationGain(for split: WorkoutSplit) -> Double? {
-        guard let start = split.start, let end = split.end else { return nil }
-        let points = effectiveRoute
-            .filter { point in
-                guard let timestamp = point.timestamp else { return false }
-                return timestamp >= start && timestamp <= end && point.elevation != nil
-            }
-            .sorted { ($0.timestamp ?? .distantPast) < ($1.timestamp ?? .distantPast) }
-        guard points.count > 1 else { return nil }
-        var gain = 0.0
-        var previous = points[0].elevation ?? 0
-        for point in points.dropFirst() {
-            guard let elevation = point.elevation else { continue }
-            gain += max(elevation - previous, 0)
-            previous = elevation
-        }
-        return gain
-    }
 }

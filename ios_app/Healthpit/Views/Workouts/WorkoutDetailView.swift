@@ -12,8 +12,6 @@ import Charts
 
 struct WorkoutDetailView: View {
     let workout: WorkoutSummary
-    private let health = HealthKitManager.shared
-
     @State private var detail: WorkoutDetail?
     @State private var isLoading = false
     @State private var showingSplitTable = false
@@ -85,16 +83,6 @@ struct WorkoutDetailView: View {
                     .foregroundStyle(.secondary)
             }
         }
-    }
-
-    private func routeMap(_ coords: [CLLocationCoordinate2D]) -> some View {
-        Map(initialPosition: .region(region(for: coords))) {
-            MapPolyline(coordinates: coords)
-                .stroke(HealthCategory.workouts.tint, lineWidth: 4)
-        }
-        .frame(height: 260)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .allowsHitTesting(false)
     }
 
     private func statTile(_ stat: WorkoutStat) -> some View {
@@ -257,10 +245,6 @@ struct WorkoutDetailView: View {
         return max(30, domain.upperBound.timeIntervalSince(domain.lowerBound) / heartRateZoomLevel)
     }
 
-    private var routeCoordinates: [CLLocationCoordinate2D]? {
-        detail?.route.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }
-    }
-
     private var routeMapPoints: [WorkoutRouteMapPoint] {
         (detail?.route ?? []).map {
             WorkoutRouteMapPoint(latitude: $0.latitude,
@@ -277,18 +261,6 @@ struct WorkoutDetailView: View {
                                   elevation: $0.elevation,
                                   heartRate: nil)
         }
-    }
-
-    private func region(for coords: [CLLocationCoordinate2D]) -> MKCoordinateRegion {
-        let lats = coords.map(\.latitude)
-        let lons = coords.map(\.longitude)
-        let minLat = lats.min() ?? 0, maxLat = lats.max() ?? 0
-        let minLon = lons.min() ?? 0, maxLon = lons.max() ?? 0
-        let center = CLLocationCoordinate2D(latitude: (minLat + maxLat) / 2,
-                                            longitude: (minLon + maxLon) / 2)
-        let span = MKCoordinateSpan(latitudeDelta: max((maxLat - minLat) * 1.4, 0.005),
-                                    longitudeDelta: max((maxLon - minLon) * 1.4, 0.005))
-        return MKCoordinateRegion(center: center, span: span)
     }
 
     private func load() async {
@@ -331,33 +303,4 @@ struct WorkoutDetailView: View {
         return values.reduce(0, +) / Double(values.count)
     }
 
-    private func elevationGainBySplit(for splits: [WorkoutSplit]) -> [Int: Double] {
-        Dictionary(uniqueKeysWithValues: splits.compactMap { split in
-            guard let gain = elevationGain(for: split), gain > 0 else { return nil }
-            return (split.id, gain)
-        })
-    }
-
-    private func elevationGain(for split: WorkoutSplit) -> Double? {
-        guard let route = detail?.route,
-              let start = split.start,
-              let end = split.end else {
-            return nil
-        }
-        let points = route
-            .filter { point in
-                guard let timestamp = point.timestamp else { return false }
-                return timestamp >= start && timestamp <= end && point.elevation != nil
-            }
-            .sorted { ($0.timestamp ?? .distantPast) < ($1.timestamp ?? .distantPast) }
-        guard points.count > 1 else { return nil }
-        var gain = 0.0
-        var previous = points[0].elevation ?? 0
-        for point in points.dropFirst() {
-            guard let elevation = point.elevation else { continue }
-            gain += max(elevation - previous, 0)
-            previous = elevation
-        }
-        return gain
-    }
 }

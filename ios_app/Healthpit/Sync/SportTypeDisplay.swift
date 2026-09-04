@@ -54,7 +54,22 @@ enum SportTypeDisplay {
         (["sonstiges", "other"], "OTHER"),
     ]
 
+    /// Der HealthKit-Typ zu einem Sportcode.
+    ///
+    /// Trifft der Code keinen Fall, wird er einmal ueber `canonicalCode`
+    /// geschickt: Altbestaende tragen den deutschen Namen als Sporttyp
+    /// („LAUFEN"), und ohne diesen zweiten Versuch stuende auf der Kachel
+    /// „Sonstiges" statt „Laufen". Erst der Fehlschlag loest das aus — ein
+    /// gueltiger Code wie HAND_CYCLING soll nicht ueber die Namenserkennung
+    /// zu CYCLING eingedampft werden.
     static func activityType(for sportType: String) -> HKWorkoutActivityType {
+        let direkt = knownActivityType(sportType)
+        if direkt != .other { return direkt }
+        let kanonisch = canonicalCode(for: sportType)
+        return kanonisch == sportType.uppercased() ? .other : knownActivityType(kanonisch)
+    }
+
+    private static func knownActivityType(_ sportType: String) -> HKWorkoutActivityType {
         switch sportType.uppercased() {
         case "RUNNING":               return .running
         case "WALKING":               return .walking

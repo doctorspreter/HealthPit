@@ -585,8 +585,6 @@ struct UnifiedWorkoutRow: View {
 struct UnifiedWorkoutDetailView: View {
     let item: UnifiedWorkout
     var records: [WorkoutRecord] = []
-    @State private var healthDetail: WorkoutDetail?
-
     var body: some View {
         if let health = item.health {
             if let local = item.local {
@@ -626,28 +624,6 @@ struct UnifiedWorkoutDetailView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private var mergedHealthStats: [WorkoutStat] {
-        guard let stats = healthDetail?.stats else { return [] }
-        return stats.filter { !WorkoutStat.isDuplicateOfLocalField($0.label) }
-    }
-
-    private func durationText(_ seconds: TimeInterval) -> String {
-        formatWorkoutDuration(seconds)
-    }
-
-    private func tempoText(_ workout: LocalWorkout) -> String? {
-        guard let km = workout.distanceKm, km > 0, workout.duration > 0 else { return nil }
-        if isCycling(workout) {
-            return WorkoutUnits.speed(kmh: km / (workout.duration / 3600))
-        }
-        return WorkoutUnits.pace(secondsPerKilometer: Int((workout.duration / km).rounded()))
-    }
-
-    private func isCycling(_ workout: LocalWorkout) -> Bool {
-        workout.sport.localizedCaseInsensitiveContains("rad")
-            || workout.sport.localizedCaseInsensitiveContains("bike")
-            || workout.sport.localizedCaseInsensitiveContains("cycle")
-    }
 }
 
 struct LocalWorkoutDetailLoaderView: View {

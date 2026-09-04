@@ -10,8 +10,6 @@ import HealthKit
 import SwiftUI
 
 struct ActivityOverviewView: View {
-    private let health = HealthKitManager.shared
-
     @State private var today: [String: Double] = [:]
     @State private var trendStats: [String: [DailyStatistic]] = [:]
     @State private var sleepTrendSessions: [SleepSession] = []

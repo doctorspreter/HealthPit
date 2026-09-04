@@ -554,74 +554,7 @@ final class HealthKitManager: @unchecked Sendable {
         }
     }
 
-    private func earliestSampleDate(for metric: HealthMetric) async throws -> Date? {
-        let type = metric.quantityType
-        let basePredicate = HKQuery.predicateForSamples(withStart: .distantPast,
-                                                        end: .now,
-                                                        options: .strictStartDate)
-        let scope = try await configuredScope(basePredicate: basePredicate,
-                                              sampleType: type,
-                                              dataPointID: metric.id)
-        guard case .predicate(let predicate) = scope else { return nil }
-        let sort = [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
-        return try await withCheckedThrowingContinuation { continuation in
-            let query = HKSampleQuery(sampleType: type,
-                                      predicate: predicate,
-                                      limit: 1,
-                                      sortDescriptors: sort) { _, samples, error in
-                if let error {
-                    continuation.resume(throwing: HealthError.queryFailed(underlying: error))
-                    return
-                }
-                continuation.resume(returning: samples?.first?.startDate)
-            }
-            healthStore.execute(query)
-        }
-    }
-
     // MARK: - Aktueller Wert (für Dashboard-Kacheln)
-
-    /// Tagessumme über eine kumulierbare Metrik via `HKStatisticsQuery`.
-    private func todaySum(for metric: HealthMetric, referenceDate now: Date) async throws -> Double? {
-        guard isHealthDataAvailable else { throw HealthError.healthDataUnavailable }
-
-        let quantityType = metric.quantityType
-        let unit = metric.unit
-        let interval = TimeRange.day.dateInterval(referenceDate: now)
-        let store = healthStore
-        let predicate = HKQuery.predicateForSamples(withStart: interval.start,
-                                                    end: interval.end,
-                                                    options: .strictStartDate)
-
-        let scope = try await configuredScope(basePredicate: predicate,
-                                              sampleType: quantityType,
-                                              dataPointID: metric.id)
-        guard case .predicate(let configuredPredicate) = scope else { return nil }
-
-        log.info("Starte Tagessummen-Abfrage für \(metric.title) …")
-        return try await withCheckedThrowingContinuation { continuation in
-            let query = HKStatisticsQuery(quantityType: quantityType,
-                                          quantitySamplePredicate: configuredPredicate,
-                                          options: .cumulativeSum) { [log] _, stats, error in
-                if let error {
-                    log.error("Tagessummen-Abfrage fehlgeschlagen: \(error.localizedDescription)")
-                    continuation.resume(throwing: HealthError.queryFailed(underlying: error))
-                    return
-                }
-                let sum = stats?.sumQuantity()
-                let value = (sum?.is(compatibleWith: unit) == true) ? sum?.doubleValue(for: unit) : nil
-                let valueText = value.map { "\($0)" } ?? "nil"
-                log.info("Tagessummen-Abfrage zurück: \(valueText, privacy: .public)")
-                continuation.resume(returning: value)
-            }
-            store.execute(query)
-        }
-    }
-
-    /// Jüngste Einzelmessung einer Metrik (für Momentaufnahmen wie Gewicht/Puls).
-    private func mostRecentValue(for metric: HealthMetric) async throws -> Double? {
-        try await latestValue(for: metric)?.value
-    }
 
     func latestValue(for metric: HealthMetric) async throws -> LatestMetricValue? {
         guard isHealthDataAvailable else { throw HealthError.healthDataUnavailable }

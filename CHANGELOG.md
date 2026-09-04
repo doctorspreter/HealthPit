@@ -406,6 +406,15 @@
   "Units" in English. Sessions have their own key now.
 - An "Equipment" heading stood over an empty section on a workout when no
   equipment was recorded at all.
+- **A workout with a German sport code showed as "Other".** `LAUFEN` matches
+  no case in the table of canonical sports, so the home screen named the last
+  workout "Other" instead of "Running". The lookup falls back to the canonical
+  mapping when the code hits nothing — only on the miss, so a valid code such
+  as `HAND_CYCLING` is not folded into `CYCLING` by name matching.
+- **240 lines of dead code removed**: members nothing read any more, and a
+  second layer that only the first had kept alive — an unused workout detail
+  loader, an elevation calculation, three totals left over from the fixed
+  tiles, and a metric tile no screen used.
 
 ### Notes
 

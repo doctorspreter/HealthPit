@@ -243,46 +243,6 @@ struct ProfessionalSectionHeader: View {
     }
 }
 
-struct ProfessionalMetricTile: View {
-    let title: String
-    let value: String
-    let symbol: String
-    let tint: Color
-    var detail: String? = nil
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Image(systemName: symbol)
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(tint)
-                    .frame(width: 32, height: 32)
-                    .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                Spacer()
-                if let detail {
-                    Text(L10n.string(detail))
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(tint)
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 4)
-                        .background(tint.opacity(0.10), in: Capsule())
-                }
-            }
-            Text(value)
-                .font(.system(.title3, design: .rounded, weight: .bold))
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-            Text(L10n.string(title))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-        }
-        .frame(maxWidth: .infinity, minHeight: 108, alignment: .leading)
-        .padding(14)
-        .professionalCard(tint: tint)
-        .accessibilityElement(children: .combine)
-    }
-}
 
 struct ProfessionalEmptyState: View {
     let title: String

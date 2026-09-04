@@ -34,40 +34,6 @@ struct WorkoutRangeOverview: View {
     }
 
     @ViewBuilder
-    private var sportOverview: some View {
-        if !sportStats.isEmpty {
-            Text(L10n.string("Sportarten"))
-                .font(.subheadline.bold())
-            ForEach(sportStats) { row in
-                NavigationLink {
-                    WorkoutSportDetailView(sport: row.sport,
-                                           items: itemsForSport(row.sport),
-                                           onDelete: { _ in })
-                } label: {
-                    HStack(spacing: 12) {
-                        Image(systemName: row.symbol)
-                            .font(.headline)
-                            .foregroundStyle(HealthCategory.workouts.tint)
-                            .frame(width: 26)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(L10n.string(row.sport)).font(.subheadline.bold())
-                            Text(L10n.format("%lld Trainings · %@", Int64(row.count), durationText(row.duration)))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        if row.distanceKm > 0 {
-                            Text(WorkoutUnits.distance(km: row.distanceKm))
-                                .font(.caption.bold())
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .padding(.vertical, 2)
-                }
-            }
-        }
-    }
-
     private var rangeHeader: some View {
         HStack(spacing: 8) {
             Button {
@@ -324,27 +290,8 @@ struct WorkoutRangeOverview: View {
         Set(items.map { calendar.startOfDay(for: $0.startDate) })
     }
 
-    private var sportStats: [WorkoutSportStat] {
-        Dictionary(grouping: sportItems, by: \.sportName)
-            .map { sport, values in
-                WorkoutSportStat(sport: sport,
-                                 symbol: values.first?.symbol ?? "figure.run",
-                                 count: values.count,
-                                 duration: values.map(\.duration).reduce(0, +),
-                                 distanceKm: values.compactMap(\.distanceKm).reduce(0, +))
-            }
-            .sorted {
-                if $0.count == $1.count { return $0.duration > $1.duration }
-                return $0.count > $1.count
-            }
-    }
-
     private func workouts(on day: Date) -> [UnifiedWorkout] {
         items.filter { calendar.isDate($0.startDate, inSameDayAs: day) }
-    }
-
-    private func itemsForSport(_ sport: String) -> [UnifiedWorkout] {
-        sportItems.filter { $0.sportName == sport }
     }
 
     private func weekDays() -> [Date] {
@@ -428,15 +375,6 @@ private struct WorkoutMonthCount: Identifiable {
     let count: Int
 
     var id: Date { month }
-}
-
-private struct WorkoutSportStat: Identifiable {
-    var id: String { sport }
-    let sport: String
-    let symbol: String
-    let count: Int
-    let duration: TimeInterval
-    let distanceKm: Double
 }
 
 struct WorkoutSportListView: View {
@@ -792,18 +730,6 @@ struct WorkoutSportDetailView: View {
     private func sportChartVisibleDuration(for domain: ClosedRange<Date>) -> TimeInterval {
         let total = domain.upperBound.timeIntervalSince(domain.lowerBound)
         return min(total, max(86_400, total / chartZoomLevel))
-    }
-
-    private var totalDuration: TimeInterval {
-        visibleItems.map(\.duration).reduce(0, +)
-    }
-
-    private var totalDistanceKm: Double {
-        visibleItems.compactMap(\.distanceKm).reduce(0, +)
-    }
-
-    private var totalVolumeKg: Double {
-        visibleItems.compactMap(\.volumeKg).reduce(0, +)
     }
 
     private func shiftReference(by value: Int) {

@@ -24,8 +24,6 @@ extension SleepStage {
 }
 
 struct SleepDetailView: View {
-    private let health = HealthKitManager.shared
-
     @State private var range: TimeRange = .day
     @State private var referenceDate = Date()
     @State private var sessions: [SleepSession] = []
@@ -248,18 +246,6 @@ struct SleepDetailView: View {
             awake: sessions.reduce(0) { $0 + $1.awake } / count,
             efficiency: sessions.reduce(0) { $0 + $1.efficiency } / count
         )
-    }
-
-    private func lastNightSummary(_ s: SleepSession) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(s.end, format: .dateTime.weekday(.wide).day().month())
-                .font(.subheadline).foregroundStyle(.secondary)
-            HStack {
-                bigStat(s.asleep.hoursMinutes, "Schlaf", .indigo)
-                bigStat(s.timeInBed.hoursMinutes, "Im Bett", .blue)
-                bigStat("\(Int((s.efficiency * 100).rounded())) %", "Effizienz", .teal)
-            }
-        }
     }
 
     private func summaryCards(_ s: SleepOverview, showAveragePrefix: Bool) -> some View {

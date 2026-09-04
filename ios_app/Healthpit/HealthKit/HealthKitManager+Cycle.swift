@@ -122,19 +122,6 @@ extension HealthKitManager {
         return true
     }
 
-    private func categorySamples(of type: HKCategoryType,
-                                 interval: DateInterval,
-                                 dataPointID: String) async throws -> [HKCategorySample] {
-        let base = HKQuery.predicateForSamples(withStart: interval.start,
-                                               end: interval.end,
-                                               options: [])
-        let scope = try await configuredScope(basePredicate: base,
-                                              sampleType: type,
-                                              dataPointID: dataPointID)
-        guard case .predicate(let predicate) = scope else { return [] }
-        return try await samples(of: type, predicate: predicate).compactMap { $0 as? HKCategorySample }
-    }
-
     private func samples(of type: HKSampleType, predicate: NSPredicate) async throws -> [HKSample] {
         let store = healthStore
         let sort = [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]

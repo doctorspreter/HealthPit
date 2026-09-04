@@ -30,6 +30,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 
 @main
 struct HealthPitApp: App {
+    // Wird nie gelesen und ist trotzdem nicht entbehrlich: dieser Wrapper
+    // ist die Anmeldung des AppDelegate bei UIKit. Ohne ihn laufen die
+    // Standardwerte und die Registrierung des Hintergrund-Abgleichs nie.
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @AppStorage(AppLanguage.storageKey) private var appLanguageRawValue = AppLanguage.system.rawValue
     @AppStorage(MeasurementSystemSetting.storageKey) private var measurementSystemRawValue = MeasurementSystemSetting.automatic.rawValue

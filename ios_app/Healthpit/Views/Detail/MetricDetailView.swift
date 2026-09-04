@@ -12,8 +12,6 @@ import Charts
 
 struct MetricDetailView: View {
     let metric: HealthMetric
-    private let health = HealthKitManager.shared
-
     @State private var range: TimeRange = .month
     @State private var referenceDate = Date()
     @State private var stats: [DailyStatistic] = []

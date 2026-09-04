@@ -1730,10 +1730,6 @@ final class BridgeSyncService {
         }
     }
 
-    private static func isBridgeReachable(at baseURL: URL) async -> Bool {
-        await bridgeUnreachableReason(at: baseURL) == nil
-    }
-
     private func authorizedRequest(url: URL, method: String, credentials: BridgeCredentials) -> URLRequest {
         var request = URLRequest(url: url)
         request.httpMethod = method
