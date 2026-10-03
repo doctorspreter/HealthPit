@@ -1,5 +1,81 @@
-Controller:
-Peter Weber
-Taubenheimstr 98
-Stuttgart
-pithealth@pm.me
+# HealthPit Privacy Notice
+
+Last updated: 3 October 2026
+
+## Responsible developer and contact
+
+Peter Weber  
+Taubenheimstr, Stuttgart, Germany  
+Email: pithealth@pm.me
+
+This notice covers HealthPit, its iPhone application and its Home Assistant integration. It describes the existing local-first application and the intended Huawei Health test integration. Huawei connectivity is under development; requested permissions do not mean that all functions are already available.
+
+## Purpose and data sources
+
+HealthPit helps you view and manage your personal health and fitness records, review histories and workouts, and optionally synchronize selected records to your own Home Assistant installation.
+
+Records come from sources you authorize, including Apple Health, files you import, entries you create and, when available, Huawei Health. Records may include timestamps, units, source applications and device identifiers.
+
+Depending on your permissions and the available interfaces, data can include:
+
+- Activity, steps, distance, ascent, altitude, energy, active hours, intensity, goals and achievements.
+- Workouts, sport-specific samples, heart rate, routes and location.
+- Body measurements, body fat, stress, sleep, blood glucose, blood pressure, uric acid, oxygen saturation and temperature.
+- Heart-health, respiratory, nutrition and reproductive/cycle records.
+- For approved extended Huawei interfaces: available live heart data, activity-management data, source-device information and notification records.
+
+Health and reproductive records are sensitive personal information. Route records can reveal places you visit. Each requested Huawei category is optional and depends on Huawei approval, your authorization, region, account, device and the actual data available.
+
+## Authorization and intended uses
+
+Access to a source requires your authorization. You may refuse individual categories and continue using other available HealthPit functions. Huawei access is limited to the read permissions approved by Huawei and granted by you. No Huawei write permissions are requested in the current test application.
+
+Records are used for personal viewing, historical trends, workout and route views, and transfers you choose to your own Home Assistant installation. They are not used for advertising, sale, insurance decisions or profiling by the HealthPit developer. HealthPit does not make automated decisions with legal or similarly significant effects.
+
+Where the HealthPit developer processes your personal data under the GDPR on the basis of your authorization, the intended basis is consent under Article 6(1)(a), and explicit consent under Article 9(2)(a) for health data. A source permission alone does not authorize unrelated processing. Support correspondence you send is used to answer your request under Article 6(1)(b), where applicable.
+
+Providing health records is optional. Refusing access prevents the corresponding import or feature; it does not require you to grant every category. Historical access of up to one year remains limited to the categories you authorize.
+
+## Storage, recipients and transfers
+
+The existing application stores imported records in a local database on your iPhone. The HealthPit developer does not operate a central repository of users' health records.
+
+If you enable Home Assistant synchronization, selected records are sent to the installation you configure. That installation stores HealthPit records and may retain sensor history and long-term statistics. Different users are separated by their authenticated Home Assistant accounts. Your installation administrator and the hosting, backup or remote-access providers you choose may have access according to their own arrangements.
+
+Huawei authorization and data requests communicate with Huawei services. Huawei controls its account, Health application and cloud services under its own notices. The intended Huawei implementation keeps any confidential application secret out of the distributed iPhone app. A server needed for authorization must be identified to you before use; any developer-hosted authorization service or additional processor will require an updated notice before collecting your data.
+
+Exported HealthPit backup files may contain health records and account/device labels. They exclude the application's connection credentials. You choose where to save or share those files. A cloud folder or other recipient you select has its own privacy arrangements.
+
+GitHub hosts this project's documentation; visiting GitHub is governed by GitHub's notices. GitHub is not an automatic destination for your health records.
+
+The local-first application does not itself require a transfer of your health records to the developer outside your country. Huawei's processing locations and safeguards depend on its services and your region; consult Huawei's applicable privacy notice. Your own Home Assistant hosting, remote-access and backup choices can also involve international transfers.
+
+## Security and retention
+
+The app stores connection credentials using the iOS Keychain. Home Assistant API requests use Home Assistant authentication, and an external address must use HTTPS. Protect your device, Home Assistant account, tokens and exported backups.
+
+Local records remain until you remove them through the available controls or remove the app's local data. Home Assistant copies, recorder history and statistics are separate and must be managed there. Backup copies remain where you saved them until you delete them.
+
+Support correspondence is retained only as needed to resolve the request and any applicable legal obligations. Do not send complete health databases or account tokens in a support request or a public GitHub issue.
+
+## Withdrawal, disconnection and deletion
+
+You can change Apple Health permissions through the iPhone's health/privacy controls and revoke Home Assistant access tokens through Home Assistant.
+
+You can withdraw Huawei authorization through Huawei Health or Huawei account access controls. The Huawei test integration must stop further imports when authorization is revoked and offer reconnection or disconnection. These behaviors require implementation and verification before the feature is enabled.
+
+Withdrawing consent stops future consent-based processing and does not affect its lawfulness before withdrawal. Disconnecting a source does not automatically erase previously imported records. Remove existing copies using HealthPit and the separate controls of Home Assistant or any other destination.
+
+## Your rights and contact
+
+Where applicable, you may request access, correction, erasure, restriction, portability or objection, withdraw consent, and complain to a supervisory authority. Contact pithealth@pm.me for processing for which the HealthPit developer is responsible. For locally held records or your own Home Assistant installation, you may need to use the controls on your device or installation. For records held by Huawei, use Huawei's controls and contact channels.
+
+No health records are required to contact the developer about privacy.
+
+## Changes
+
+This notice will be updated when the processing arrangements change. Before enabling an additional service, processor or materially different use, HealthPit must explain that change and request any authorization required.
+
+User information and terms: https://github.com/doctorspreter/healthpit/blob/main/TERMS.md  
+Source code: https://github.com/doctorspreter/healthpit
+
